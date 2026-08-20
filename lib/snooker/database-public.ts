@@ -11,13 +11,11 @@ import type {
 } from "./domain";
 import { dashboardSnapshot } from "./foundation";
 import { compactEventTypeLabel, normalizeEventTaxonomy, normalizePlayerStatus } from "./taxonomy";
+import { getSnookerSupabasePublicConfig } from "./supabase-config";
 
-const DEFAULT_SUPABASE_URL = "https://rtlvncsmbueatdzqvhbn.supabase.co";
-const DEFAULT_PUBLISHABLE_KEY = "sb_publishable_SR0NVsqpSBGBMP3xg9utvQ_jywPEUNP";
 const ID_FILTER_BATCH_SIZE = 32;
 
-const SUPABASE_URL = process.env.SNOOKER_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SNOOKER_SUPABASE_PUBLISHABLE_KEY || DEFAULT_PUBLISHABLE_KEY;
+const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = getSnookerSupabasePublicConfig();
 const REST_URL = `${SUPABASE_URL}/rest/v1`;
 
 export type SnookerDatabaseView = {

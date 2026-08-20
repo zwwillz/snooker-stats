@@ -51,7 +51,7 @@ test("snooker frontend is database-first and only live matches poll every 30 sec
   assert.doesNotMatch(pageSource, /getCachedDashboardWithLiveOverlay/);
   assert.match(pageSource, /export const revalidate = 30/);
   assert.doesNotMatch(pageSource, /dynamic = "force-dynamic"/);
-  assert.match(dbSource, /rtlvncsmbueatdzqvhbn\.supabase\.co/);
+  assert.match(dbSource, /getSnookerSupabasePublicConfig/);
   assert.match(dbSource, /snooker_events\?select=/);
   assert.match(dbSource, /snooker_matches\?select=/);
   assert.match(dbSource, /snooker_frames\?select=/);

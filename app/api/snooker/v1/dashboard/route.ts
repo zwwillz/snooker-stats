@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { eventSummary, SNOOKER_BUILD_MARK, SNOOKER_FOUNDATION_VERSION } from "@/lib/snooker/foundation";
 import { getCachedDashboardWithLiveOverlay } from "@/lib/snooker/live-dashboard-cache";
-import { getSnookerRepository } from "@/lib/snooker/repository";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
-  const repository = getSnookerRepository();
   if (request.nextUrl.searchParams.has("monitor")) {
     const { snapshot, sourceHealth } = await getCachedDashboardWithLiveOverlay();
-    return NextResponse.json({ ok: true, product: "世界斯诺克数据中心", version: SNOOKER_FOUNDATION_VERSION, buildMark: SNOOKER_BUILD_MARK, repositoryMode: repository.mode, dataMode: "upstream-monitor", snapshot, summary: eventSummary(snapshot.event), sourceHealth }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ ok: true, product: "世界斯诺克数据中心", version: SNOOKER_FOUNDATION_VERSION, buildMark: SNOOKER_BUILD_MARK, repositoryMode: "supabase-monitor", dataMode: "upstream-monitor", snapshot, summary: eventSummary(snapshot.event), sourceHealth }, { headers: { "Cache-Control": "no-store" } });
   }
 
   const database = await loadSnookerDatabaseViewV2();
@@ -41,7 +39,7 @@ export async function GET(request: NextRequest) {
     product: "世界斯诺克数据中心",
     version: "0.8.0-ui-performance",
     buildMark: `${SNOOKER_BUILD_MARK}-DB08`,
-    repositoryMode: repository.mode,
+    repositoryMode: database.databaseOnline ? "supabase" : "verified-snapshot",
     dataMode: database.databaseOnline ? "snooker-database" : "verified-snapshot-fallback",
     snapshot: database.snapshot,
     databaseEvents: database.eventDetails,

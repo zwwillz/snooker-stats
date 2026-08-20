@@ -43,9 +43,15 @@ SNOOKER_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
 ## 数据库与 Edge Function
 
-- `supabase/migrations/`：独立数据库增量迁移
-- `supabase/functions/snooker-ops-api/`：Snooker Admin、同步操作与访问监测接口
+- `supabase/migrations/`：生产 Supabase 的完整 58 条基线迁移及后续独立项目迁移
+- `supabase/functions/`：仍在使用的 Snooker Admin、同步操作与头像处理函数
+- `supabase/retired-functions/`：仅用于审计、不会被批量部署的停用函数
+- `supabase/config.toml`：Edge Function JWT 校验配置
 - `lib/snooker/schema.sql`：斯诺克数据基础结构参考
+- `lib/supabase/database.types.ts`：由正式数据库生成的公开 schema 类型
+
+完整恢复和迁移规范见 `supabase/README.md`。生产数据库业务数据、访问日志、
+管理员凭据与任何 Secret/Service Role Key 都不进入 GitHub。
 
 ## 常用命令
 

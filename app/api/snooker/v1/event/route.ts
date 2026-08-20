@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eventSummary, getPlayerEventStats, SNOOKER_BUILD_MARK, SNOOKER_FOUNDATION_VERSION } from "@/lib/snooker/foundation";
-import { getSnookerRepository } from "@/lib/snooker/repository";
+import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 
 export async function GET(request: NextRequest) {
-  const repository = getSnookerRepository();
-  const snapshot = await repository.getDashboard();
+  const database = await loadSnookerDatabaseViewV2();
+  const snapshot = database.snapshot;
   const slug = request.nextUrl.searchParams.get("slug")?.trim() ?? snapshot.event.slug;
-  const event = await repository.getEvent(slug);
+  const event = database.eventDetails.find((item) => item.slug === slug)
+    ?? (snapshot.event.slug === slug ? snapshot.event : null);
   if (!event) return NextResponse.json({ ok: false, error: "EVENT_NOT_FOUND" }, { status: 404 });
 
   const playerStats = snapshot.players
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     ok: true,
     version: SNOOKER_FOUNDATION_VERSION,
     buildMark: SNOOKER_BUILD_MARK,
-    repositoryMode: repository.mode,
+    repositoryMode: database.databaseOnline ? "supabase" : "verified-snapshot",
     event,
     summary: eventSummary(event),
     playerStats,

@@ -1,0 +1,10 @@
+project_id = "snooker-stats"
+
+[functions.snooker-ops-api]
+verify_jwt = false
+
+[functions.hyper-api]
+verify_jwt = true
+
+[functions.generate-player-avatar-webp]
+verify_jwt = true

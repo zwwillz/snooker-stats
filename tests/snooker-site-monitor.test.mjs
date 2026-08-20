@@ -19,7 +19,7 @@ test("snooker monitor is admin protected and switches between visitor and data s
     read("app/api/snooker/v1/visit/route.ts"),
     read("app/api/snooker/v1/visits/route.ts"),
     read("supabase/functions/snooker-ops-api/index.ts"),
-    read("supabase/migrations/20260821000000_create_snooker_visit_logs.sql"),
+    read("supabase/migrations/20260820154657_create_snooker_visit_logs.sql"),
   ]);
 
   assert.match(page, /SnookerVisitMonitor/);

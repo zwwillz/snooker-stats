@@ -33,7 +33,8 @@ test("repository contains only the independent snooker application surface", asy
   assert.match(tracker, /\/api\/snooker\/v1\/visit/);
   assert.doesNotMatch(tracker, /huacai/i);
   assert.match(redirectPage, /redirect\("\/"\)/);
-  assert.match(opsApi, /rtlvncsmbueatdzqvhbn\.supabase\.co/);
+  assert.match(opsApi, /getSnookerSupabasePublicConfig/);
+  assert.doesNotMatch(opsApi, /rtlvncsmbueatdzqvhbn|sb_publishable_/);
   assert.doesNotMatch(opsApi, /SERVICE_ROLE|DATABASE_URL/);
 });
 

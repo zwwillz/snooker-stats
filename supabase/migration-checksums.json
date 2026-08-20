@@ -1,0 +1,297 @@
+{
+  "source": "supabase_migrations.schema_migrations",
+  "normalization": "exact SQL with one trailing newline",
+  "projectRef": "rtlvncsmbueatdzqvhbn",
+  "migrations": [
+    {
+      "version": "20260816151702",
+      "name": "initialize_snooker_data_center",
+      "md5": "54260720866cd726b44dacaaca2832d2"
+    },
+    {
+      "version": "20260816151744",
+      "name": "harden_snooker_schema_indexes",
+      "md5": "98ef98397737393486a653e031d155e0"
+    },
+    {
+      "version": "20260816152042",
+      "name": "enable_http_extension",
+      "md5": "5412ae4d7b62b5e7e83dfb9508839043"
+    },
+    {
+      "version": "20260816152724",
+      "name": "enable_pg_net_for_import_jobs",
+      "md5": "04dd3c4980196daab411c78dcc4c4680"
+    },
+    {
+      "version": "20260816160250",
+      "name": "extend_snooker_data_foundation",
+      "md5": "a8bd61a98308a55a6bd5bdc266f8a9e4"
+    },
+    {
+      "version": "20260816160331",
+      "name": "index_snooker_break_frame_fk",
+      "md5": "4949f08ea9aed710508d5d0a6fa791c4"
+    },
+    {
+      "version": "20260816160437",
+      "name": "seed_snooker_player_master_v1",
+      "md5": "92d6feb1d5875341daec3fd8454452b8"
+    },
+    {
+      "version": "20260816160711",
+      "name": "add_wst_sync_functions",
+      "md5": "99d6c54530af2eeea14fb88cf036cf4c"
+    },
+    {
+      "version": "20260816161246",
+      "name": "add_sync_policies_and_freeze_completed_matches",
+      "md5": "99df39adcc8a20965a8f70c6c0d25cce"
+    },
+    {
+      "version": "20260816161324",
+      "name": "enforce_adaptive_wst_sync_policy",
+      "md5": "3989ba8c31bb0e033b7cd47801e32d5e"
+    },
+    {
+      "version": "20260816170940",
+      "name": "add_player_profile_and_stats_model",
+      "md5": "5b45b1171c9bcc56c4b96519e9bbdb24"
+    },
+    {
+      "version": "20260816171540",
+      "name": "add_internal_wst_player_profile_batch_sync",
+      "md5": "3bbae6c79842044052c467fab1e3c221"
+    },
+    {
+      "version": "20260816182637",
+      "name": "add_event_prizes_match_stats_h2h",
+      "md5": "1495ab90e5ff20ad0153283bf61aade3"
+    },
+    {
+      "version": "20260816182825",
+      "name": "add_wst_match_detail_and_h2h_sync",
+      "md5": "6961b4a29a025c16a0fe44dbfdd1455a"
+    },
+    {
+      "version": "20260816182925",
+      "name": "add_wst_match_detail_v2",
+      "md5": "b71e1f4ca59f22de67d707941aa90e28"
+    },
+    {
+      "version": "20260816183002",
+      "name": "fix_match_h2h_json_names",
+      "md5": "df54b93c2c0309d44fb7c0a7ee8405e9"
+    },
+    {
+      "version": "20260816183533",
+      "name": "support_wuhan_held_over_rounds_in_tournament_sync",
+      "md5": "8dd2ab9905b2e782e8cb0bfd5dd78410"
+    },
+    {
+      "version": "20260816183626",
+      "name": "enable_pg_cron_for_snooker_sync",
+      "md5": "e9fac815a1d2a46b58075c292ab56c12"
+    },
+    {
+      "version": "20260816183707",
+      "name": "add_central_snooker_sync_jobs",
+      "md5": "9e93c58edb54d1a4026051012c792da6"
+    },
+    {
+      "version": "20260816184609",
+      "name": "add_event_expected_match_count",
+      "md5": "18bcb33132022d428c74af0764a51f8e"
+    },
+    {
+      "version": "20260816185206",
+      "name": "index_snooker_insight_foreign_keys",
+      "md5": "472535f70d76b500c29f2d56e00a43e7"
+    },
+    {
+      "version": "20260816185418",
+      "name": "expand_h2h_wst_history_window",
+      "md5": "5cc41b9b3c1e885deb9c45756dbb7b44"
+    },
+    {
+      "version": "20260816200243",
+      "name": "add_english_player_short_name",
+      "md5": "f47e4fa071eb83dbd2657c11e923171d"
+    },
+    {
+      "version": "20260816204828",
+      "name": "upgrade_snooker_ranking_center",
+      "md5": "cd533587095e64e72039c986f33bf4cd"
+    },
+    {
+      "version": "20260816205412",
+      "name": "harden_ranking_conflict_table",
+      "md5": "061f97a03668f52688f1f85f6b6dc521"
+    },
+    {
+      "version": "20260817060243",
+      "name": "add_fast_public_player_detail_rpc",
+      "md5": "da1e747ab8f2e4532564d7acb9774a20"
+    },
+    {
+      "version": "20260817132423",
+      "name": "add_chinese_player_profile_translation_fields",
+      "md5": "f0a6f07ebc114ee8aaac60fd34d0c7e5"
+    },
+    {
+      "version": "20260817182505",
+      "name": "expose_chinese_player_profile_in_public_rpc",
+      "md5": "4efab31f53d509c31ea15adbf4d8dcf9"
+    },
+    {
+      "version": "20260818123831",
+      "name": "add_player_status_event_taxonomy_and_entry_types",
+      "md5": "7b8dbf12a739ad0d031ca98aed96d8d2"
+    },
+    {
+      "version": "20260818125547",
+      "name": "keep_snooker_player_event_taxonomy_in_sync",
+      "md5": "e416974670e52f8fcb72f65abfff4ab5"
+    },
+    {
+      "version": "20260819095340",
+      "name": "add_internal_cuetracker_history_importer_v2",
+      "md5": "c1a83ea378346bac6fae710d582d7894"
+    },
+    {
+      "version": "20260819095604",
+      "name": "relax_cuetracker_player_flag_html",
+      "md5": "af0fae1c2bfcfd93587ef6d636c9c09b"
+    },
+    {
+      "version": "20260819095725",
+      "name": "relax_cuetracker_player_whitespace_html",
+      "md5": "35df595ee87e26b0166cb8bd607fc08a"
+    },
+    {
+      "version": "20260819100433",
+      "name": "support_repeated_equal_breaks_in_frame",
+      "md5": "398c03461de3d2d62470778d62c137e2"
+    },
+    {
+      "version": "20260819101802",
+      "name": "optimize_cuetracker_break_player_resolution",
+      "md5": "a08a1a246cf04c4dd1e0c13473bbd06f"
+    },
+    {
+      "version": "20260819102026",
+      "name": "normalize_cuetracker_colon_frame_delimiter",
+      "md5": "deb61bb1d07638ab0239d905fac9e441"
+    },
+    {
+      "version": "20260819102202",
+      "name": "add_internal_cuetracker_season_registry",
+      "md5": "3df46f5f810746d130808c172f31befd"
+    },
+    {
+      "version": "20260819102239",
+      "name": "handle_cuetracker_cross_season_slug_collisions",
+      "md5": "c5279899d82996a4ce2c183232831f2e"
+    },
+    {
+      "version": "20260819124259",
+      "name": "create_snooker_analytics_engine_v1_tables",
+      "md5": "a8e391cdd819b3edb87aea4d56fa2018"
+    },
+    {
+      "version": "20260819124437",
+      "name": "create_snooker_analytics_engine_v1_functions",
+      "md5": "e4be8009ae42dc6cef7b0127572ca7f5"
+    },
+    {
+      "version": "20260819124814",
+      "name": "add_analytics_career_coverage_metadata",
+      "md5": "c0dafc23585d883321a39796b1fd179a"
+    },
+    {
+      "version": "20260819124920",
+      "name": "schedule_snooker_analytics_engine_v1_cron",
+      "md5": "ebce53267c51e0c6072786ad1019ad1a"
+    },
+    {
+      "version": "20260819125043",
+      "name": "harden_snooker_analytics_helper_search_paths",
+      "md5": "bd668a3c13b4ddeaf39abc85514ff22c"
+    },
+    {
+      "version": "20260819173017",
+      "name": "snooker_sync_center_v2_foundation",
+      "md5": "b7277fa9320b7dcf657c0ef916ef2e91"
+    },
+    {
+      "version": "20260819173248",
+      "name": "snooker_sync_center_v2_rankings",
+      "md5": "85ee441ac564ae89caaf3d6ec90eb104"
+    },
+    {
+      "version": "20260819173336",
+      "name": "snooker_sync_center_v2_ranking_conflict_type_fix",
+      "md5": "47d3889b10a031214d24185ea6e766be"
+    },
+    {
+      "version": "20260819173707",
+      "name": "snooker_sync_center_v2_sources",
+      "md5": "a64075d2f0d1bc1de5cb17978fe35f00"
+    },
+    {
+      "version": "20260819173844",
+      "name": "snooker_sync_center_v2_calendar_reconcile",
+      "md5": "e702612f4897e07c9e009255dbaace09"
+    },
+    {
+      "version": "20260819174012",
+      "name": "snooker_sync_center_v2_scheduler",
+      "md5": "3b67b132db2cc476cb1d6ecfc4c36056"
+    },
+    {
+      "version": "20260819174106",
+      "name": "snooker_sync_center_v2_policy_update_fix",
+      "md5": "b02cd86505f5db91a1ebd4f98bda1c58"
+    },
+    {
+      "version": "20260819174352",
+      "name": "snooker_sync_center_v2_due_logic",
+      "md5": "7961b5224f8040c1fce8b2c4d544cbf5"
+    },
+    {
+      "version": "20260819174414",
+      "name": "snooker_sync_center_v2_ops_snapshot_actions",
+      "md5": "3e68cd79c758e1285434d0e0b4646dfa"
+    },
+    {
+      "version": "20260819175358",
+      "name": "snooker_sync_center_v2_upcoming_discovery_fix",
+      "md5": "2c4b8c7e2c1df5eca8a75a1a5798b3ca"
+    },
+    {
+      "version": "20260819175654",
+      "name": "snooker_sync_center_v2_postmatch_security",
+      "md5": "65a9fbfffc4ae51aeeb97ef1076124d1"
+    },
+    {
+      "version": "20260819182757",
+      "name": "sync_center_v2_1_ranking_tasks_and_manual_queue",
+      "md5": "1d068962fe6c8e1537dd918e08bb6f61"
+    },
+    {
+      "version": "20260819183428",
+      "name": "sync_center_v2_1_world_live_manual_mode",
+      "md5": "9cc3a66b207feee5f38612ecf4592545"
+    },
+    {
+      "version": "20260819183635",
+      "name": "sync_center_v2_1_queue_permissions",
+      "md5": "f0aa8b874c0b24570433c6f64ee526c5"
+    },
+    {
+      "version": "20260820154657",
+      "name": "create_snooker_visit_logs",
+      "md5": "2d3682f50b9c1cc1f601ea8a17a0a7e4"
+    }
+  ]
+}

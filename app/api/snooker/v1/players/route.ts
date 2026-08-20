@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPlayerEventStats, SNOOKER_BUILD_MARK, SNOOKER_FOUNDATION_VERSION } from "@/lib/snooker/foundation";
-import { getSnookerRepository } from "@/lib/snooker/repository";
+import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 
 export async function GET(request: NextRequest) {
-  const repository = getSnookerRepository();
-  const snapshot = await repository.getDashboard();
+  const database = await loadSnookerDatabaseViewV2();
+  const snapshot = database.snapshot;
   const slug = request.nextUrl.searchParams.get("slug")?.trim();
 
   if (slug) {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       ok: true,
       version: SNOOKER_FOUNDATION_VERSION,
       buildMark: SNOOKER_BUILD_MARK,
-      repositoryMode: repository.mode,
+      repositoryMode: database.databaseOnline ? "supabase" : "verified-snapshot",
       player,
       currentEventStats: getPlayerEventStats(player.id, snapshot.event),
     });
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     ok: true,
     version: SNOOKER_FOUNDATION_VERSION,
     buildMark: SNOOKER_BUILD_MARK,
-    repositoryMode: repository.mode,
+    repositoryMode: database.databaseOnline ? "supabase" : "verified-snapshot",
     count: snapshot.players.length,
     players: snapshot.players.map((player) => ({
       ...player,

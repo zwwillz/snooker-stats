@@ -1,11 +1,8 @@
 import type { SnookerPlayerDetail, SnookerPlayerStatus } from "./player-data";
 import { getSnookerPlayerDetail } from "./player-data";
+import { getSnookerSupabasePublicConfig } from "./supabase-config";
 
-const DEFAULT_SUPABASE_URL = "https://rtlvncsmbueatdzqvhbn.supabase.co";
-const DEFAULT_PUBLISHABLE_KEY = "sb_publishable_SR0NVsqpSBGBMP3xg9utvQ_jywPEUNP";
-
-const SUPABASE_URL = process.env.SNOOKER_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SNOOKER_SUPABASE_PUBLISHABLE_KEY || DEFAULT_PUBLISHABLE_KEY;
+const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = getSnookerSupabasePublicConfig();
 const RPC_URL = `${SUPABASE_URL}/rest/v1/rpc/snooker_player_detail_public`;
 
 type RpcPlayer = {
