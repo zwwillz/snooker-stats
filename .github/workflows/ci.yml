@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, "agent/**"]
+    branches: [main, snooker-independent-v1]
   pull_request:
     branches: [main]
 
@@ -30,6 +30,4 @@ jobs:
       - name: Core regression tests
         run: npm run test:core
       - name: Next build
-        run: npm run build
-        env:
-          GITHUB_ACTIONS: "true"
+        run: npm run build:offline

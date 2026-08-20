@@ -8,31 +8,23 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:offline": "SNOOKER_BUILD_OFFLINE=1 next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ignore-pattern .next",
     "test:core": "node --test tests/*.test.mjs",
-    "test:db-smoke": "node scripts/qualification-db-smoke.mjs",
-    "test": "npm run typecheck && npm run lint && npm run test:core && npm run build",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "test": "npm run typecheck && npm run lint && npm run test:core && npm run build:offline"
   },
   "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "drizzle-orm": "0.45.2",
     "next": "16.2.6",
-    "postgres": "^3.4.7",
     "react": "19.2.6",
-    "react-dom": "19.2.6",
-    "ws": "8.18.3"
+    "react-dom": "19.2.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@types/ws": "8.18.1",
-    "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "4.2.1",

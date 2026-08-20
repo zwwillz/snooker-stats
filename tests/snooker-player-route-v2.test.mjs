@@ -9,7 +9,7 @@ test("V2 keeps player directory and detail inside the root SnookerDataCenterV2 f
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/players/player-directory.tsx"),
     read("app/snooker/players/player-detail-content.tsx"),
-    read("app/snooker/page.tsx"),
+    read("app/page.tsx"),
   ]);
 
   assert.match(ui, /type MainView = "home" \| "matches" \| "players" \| "data"/);

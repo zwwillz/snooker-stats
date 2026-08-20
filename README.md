@@ -19,8 +19,8 @@
 
 - Framework：Next.js 16
 - Database：Supabase PostgreSQL
-- ORM：Drizzle ORM
-- Deployment：EdgeOne Pages
+- Data access：Supabase REST + Edge Function
+- Deployment：EdgeOne Makers（原 EdgeOne Pages）
 
 ## 本地开发
 
@@ -35,24 +35,29 @@ npm run dev
 配置 `.env.local`：
 
 ```env
-DATABASE_URL=postgresql://...
+SNOOKER_SUPABASE_URL=https://rtlvncsmbueatdzqvhbn.supabase.co
+SNOOKER_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
-## 数据库初始化
+公开读取只使用 Publishable Key；管理操作和访问日志通过 `snooker-ops-api` Edge Function 完成，数据库 Service Role 不进入网站运行环境。
 
-```bash
-npm run db:generate
-npm run db:migrate
-```
+## 数据库与 Edge Function
+
+- `supabase/migrations/`：独立数据库增量迁移
+- `supabase/functions/snooker-ops-api/`：Snooker Admin、同步操作与访问监测接口
+- `lib/snooker/schema.sql`：斯诺克数据基础结构参考
 
 ## 常用命令
 
 ```bash
 npm run dev
+npm run typecheck
 npm run lint
+npm run test:core
 npm run build
-npm run db:migrate
 ```
+
+CI 使用 `npm run build:offline`，以本地验证快照完成可重复构建；EdgeOne 正式构建使用 `npm run build` 并读取独立 Supabase。
 
 ## 品牌
 

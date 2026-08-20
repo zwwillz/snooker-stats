@@ -180,6 +180,7 @@ function chinaTimeLabel(value: string | null) {
 }
 
 async function rest<T>(path: string, revalidate = 30): Promise<T> {
+  if (process.env.SNOOKER_BUILD_OFFLINE === "1") throw new Error("SNOOKER_BUILD_OFFLINE");
   const response = await fetch(`${REST_URL}/${path}`, {
     headers: {
       apikey: SUPABASE_KEY,
@@ -467,7 +468,9 @@ export async function loadSnookerDatabaseView(): Promise<SnookerDatabaseView> {
       databaseOnline: true,
     };
   } catch (error) {
-    console.error("[snooker-db] public database read failed", error);
+    if (process.env.SNOOKER_BUILD_OFFLINE !== "1") {
+      console.error("[snooker-db] public database read failed", error);
+    }
     return {
       snapshot: dashboardSnapshot,
       eventDetails: [dashboardSnapshot.event],
