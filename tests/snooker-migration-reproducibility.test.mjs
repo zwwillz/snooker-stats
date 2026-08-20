@@ -79,8 +79,8 @@ test("runtime Supabase configuration is environment-only", async () => {
   assert.match(database, /getSnookerSupabasePublicConfig/);
   assert.match(operations, /getSnookerSupabasePublicConfig/);
   for (const clientImportedModule of [rankings, technical, honours]) {
-    assert.doesNotMatch(clientImportedModule, /const \\{ url: SUPABASE_URL, publishableKey: SUPABASE_KEY \\} = getSnookerSupabasePublicConfig\\(\\)/);
-    assert.match(clientImportedModule, /const \\{ url, publishableKey \\} = getSnookerSupabasePublicConfig\\(\\)/);
+    assert.doesNotMatch(clientImportedModule, /const \{ url: SUPABASE_URL, publishableKey: SUPABASE_KEY \} = getSnookerSupabasePublicConfig\(\)/);
+    assert.match(clientImportedModule, /const \{ url, publishableKey \} = getSnookerSupabasePublicConfig\(\)/);
   }
 });
 
