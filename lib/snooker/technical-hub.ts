@@ -1,8 +1,5 @@
 import { getSnookerSupabasePublicConfig } from "./supabase-config";
 
-const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = getSnookerSupabasePublicConfig();
-const REST_URL = `${SUPABASE_URL}/rest/v1`;
-
 export const TECHNICAL_METRIC_KEYS = [
   "centuries",
   "fifties",
@@ -90,8 +87,9 @@ const metricDefinitions: SnookerTechnicalMetric[] = [
 ];
 
 async function rest<T>(resource: string, params: URLSearchParams, revalidate = 300): Promise<T> {
-  const response = await fetch(`${REST_URL}/${resource}?${params.toString()}`, {
-    headers: { apikey: SUPABASE_KEY, Accept: "application/json" },
+  const { url, publishableKey } = getSnookerSupabasePublicConfig();
+  const response = await fetch(`${url}/rest/v1/${resource}?${params.toString()}`, {
+    headers: { apikey: publishableKey, Accept: "application/json" },
     next: { revalidate },
   });
   if (!response.ok) throw new Error(`SNOOKER_TECHNICAL_HUB_HTTP_${response.status}`);
