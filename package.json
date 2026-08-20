@@ -1,5 +1,5 @@
 {
-  "name": "huacai-youth-2026",
+  "name": "snooker-stats",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -39,5 +39,5 @@
     "typescript": "5.9.3"
   },
   "type": "module",
-  "displayName": "2026华彩十六球青少年系列赛"
+  "displayName": "147数据局"
 }
