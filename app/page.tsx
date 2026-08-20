@@ -3,8 +3,10 @@ import SnookerViewUrlSync from "./snooker/snooker-view-url-sync";
 import { SNOOKER_BUILD_MARK } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { CURRENT_RANKING_KEYS, loadSnookerRankingHub, type SnookerCurrentRankingKey, type SnookerRankingSection } from "@/lib/snooker/ranking-hub";
+import { snookerCacheLabel, SNOOKER_CACHE_SECONDS } from "@/lib/snooker/cache-policy";
 
-export const revalidate = 30;
+// Next.js requires this route-segment value to remain statically analyzable.
+export const revalidate = 300;
 
 type SnookerRootView = "home" | "matches" | "players" | "data";
 
@@ -32,6 +34,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
     online: database.databaseOnline,
     accepted: database.databaseOnline,
     fetchedAt: database.loadedAt,
+    sourceLabel: snookerCacheLabel(database.databaseOnline),
+    cacheSeconds: database.databaseOnline ? SNOOKER_CACHE_SECONDS.recent : SNOOKER_CACHE_SECONDS.history,
     message: database.databaseOnline
       ? "前端读取独立斯诺克数据库；官方数据由中央同步任务统一写入。"
       : "独立数据库暂不可用，当前使用本地已验证快照兜底。",
