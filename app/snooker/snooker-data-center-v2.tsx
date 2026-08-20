@@ -41,6 +41,8 @@ type SourceHealth = {
   accepted: boolean;
   fetchedAt: string;
   message: string;
+  sourceLabel?: string;
+  cacheSeconds?: number;
 };
 
 type DashboardResponse = {
@@ -82,6 +84,20 @@ function formatDateRange(start: string, end: string) {
 function formatMonthDay(value: string) {
   const [, month, day] = value.split("-").map(Number);
   return `${month}/${day}`;
+}
+
+function formatUpdatedAt(value?: string) {
+  if (!value) return "更新时间待确认";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "更新时间待确认";
+  return new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
 }
 
 function bestOfLabel(bestOf: number) {
@@ -386,7 +402,7 @@ export default function SnookerDataCenterV2({
     if (typeof document !== "undefined" && document.hidden) return;
     setRefreshing(true);
     try {
-      const response = await fetch(`/api/snooker/v1/dashboard?ts=${Date.now()}`, { cache: "no-store", headers: { "cache-control": "no-cache" } });
+      const response = await fetch("/api/snooker/v1/dashboard", { headers: { Accept: "application/json" } });
       const data = await response.json() as DashboardResponse;
       if (response.ok && data.ok && data.snapshot) {
         setSnapshot(data.snapshot);
@@ -714,7 +730,7 @@ export default function SnookerDataCenterV2({
         </div> : null}
       </section> : null}
 
-      {realtime ? <div className={styles.liveFooter}><i className={sourceHealth?.accepted ? styles.liveOk : styles.liveWait} /><span>本站数据库实时快照</span><small>30秒自动同步</small></div> : null}
+      {realtime ? <div className={styles.liveFooter}><i className={sourceHealth?.accepted ? styles.liveOk : styles.liveWait} /><span>本站数据库实时快照</span><small>30秒自动同步 · {formatUpdatedAt(sourceHealth?.fetchedAt)}</small></div> : null}
     </div></main>;
   }
 
@@ -777,7 +793,7 @@ export default function SnookerDataCenterV2({
             <button onClick={() => openPlayer(headlineMatch.player2Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={players.get(headlineMatch.player2Id)!} size="lg" />{headlineMatch.winnerId === headlineMatch.player2Id ? <em className={polish.winBadge}>胜</em> : null}</div><span className={polish.homePlayerName}>{players.get(headlineMatch.player2Id)!.shortNameZh}</span></button>
           </div>
           <button className={styles.fullButton} onClick={() => openMatch(headlineMatch.id, headlineEvent.slug)}>查看比赛详情</button>
-          <div className={styles.sourceLine}><i className={sourceHealth?.accepted ? styles.liveOk : styles.liveWait} /><b>官方比赛数据</b><small>{headlineMatch.status === "completed" ? "已冻结保存" : "30秒同步"}</small></div>
+          <div className={styles.sourceLine}><i className={sourceHealth?.accepted ? styles.liveOk : styles.liveWait} /><b>{sourceHealth?.sourceLabel ?? "官方比赛数据"}</b><small>{headlineMatch.status === "completed" ? `更新 ${formatUpdatedAt(sourceHealth?.fetchedAt)}` : `30秒同步 · ${formatUpdatedAt(sourceHealth?.fetchedAt)}`}</small></div>
         </section> : null}
 
         {nextEventCard ? <section className={styles.card}><SectionHeader eyebrow="NEXT EVENT" title="下一站" action={eventStatusLabel(nextEventCard)} actionClassName={`${polish.eventStatusText} ${eventStatusClass(nextEventCard.status)}`} /><button className={styles.nextEvent} onClick={() => openEvent(nextEventCard.slug)}><span>{nextEventCard.cityZh?.slice(0, 1) || "赛"}</span><div><strong>{nextEventCard.nameZh}</strong><small>{nextEventCard.nameEn}</small><p>{formatDateRange(nextEventCard.startDate, nextEventCard.endDate)} · {nextEventCard.cityZh}</p></div><em>›</em></button></section> : null}
@@ -794,6 +810,11 @@ export default function SnookerDataCenterV2({
       {activeView === "players" ? <PlayerDirectoryContent players={directoryPlayers} query={playerQuery} filter={playerFilter} onQueryChange={setPlayerQuery} onFilterChange={setPlayerFilter} onOpenPlayer={(player) => openPlayer(player.id)} onPrefetchPlayer={(player) => prefetchPlayerDetail(player.slug)} /> : null}
 
       {activeView === "data" ? <DataHubContent hub={initialRankingHub} players={directoryPlayers} selectedKey={selectedRankingKey} onSelectKey={setSelectedRankingKey} onOpenRankings={openRankings} onOpenPlayer={openPlayerBySlug} /> : null}
+      <div className={styles.dataStatus} role="status">
+        <i className={sourceHealth?.accepted ? styles.liveOk : styles.liveWait} />
+        <span>{sourceHealth?.sourceLabel ?? (sourceHealth?.online ? "Snooker Supabase" : "数据服务降级")}</span>
+        <small>更新 {formatUpdatedAt(sourceHealth?.fetchedAt)}{sourceHealth?.cacheSeconds ? ` · 缓存 ${Math.round(sourceHealth.cacheSeconds / 60)} 分钟` : ""}</small>
+      </div>
     </div>
     <nav className={`${styles.bottomNav} ${polish.fastNav}`}>{navItems.map((item) => <button key={item.id} className={item.id === activeView ? styles.activeNav : ""} onClick={() => changeView(item.id)}><span>{item.icon}</span><b>{item.label}</b></button>)}</nav>
     <span className={styles.buildMark}>{buildMark}</span>
