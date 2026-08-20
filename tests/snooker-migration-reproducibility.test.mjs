@@ -63,10 +63,13 @@ test("active and retired Edge Functions are explicitly inventoried", async () =>
 });
 
 test("runtime Supabase configuration is environment-only", async () => {
-  const [config, database, operations] = await Promise.all([
+  const [config, database, operations, rankings, technical, honours] = await Promise.all([
     read("lib/snooker/supabase-config.ts"),
     read("lib/snooker/database-public.ts"),
     read("lib/snooker/ops-api.ts"),
+    read("lib/snooker/ranking-hub.ts"),
+    read("lib/snooker/technical-hub.ts"),
+    read("lib/snooker/honours-hub.ts"),
   ]);
 
   assert.match(config, /SNOOKER_SUPABASE_URL/);
@@ -75,6 +78,10 @@ test("runtime Supabase configuration is environment-only", async () => {
   assert.doesNotMatch(config, /rtlvncsmbueatdzqvhbn|sb_publishable_/);
   assert.match(database, /getSnookerSupabasePublicConfig/);
   assert.match(operations, /getSnookerSupabasePublicConfig/);
+  for (const clientImportedModule of [rankings, technical, honours]) {
+    assert.doesNotMatch(clientImportedModule, /const \\{ url: SUPABASE_URL, publishableKey: SUPABASE_KEY \\} = getSnookerSupabasePublicConfig\\(\\)/);
+    assert.match(clientImportedModule, /const \\{ url, publishableKey \\} = getSnookerSupabasePublicConfig\\(\\)/);
+  }
 });
 
 test("legacy public API routes use the independent Supabase read model", async () => {
