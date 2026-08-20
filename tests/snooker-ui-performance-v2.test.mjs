@@ -109,6 +109,14 @@ test("event overview typography and public source wording are consistent", async
   assert.doesNotMatch(ui, /WST Match Centre/);
 });
 
+test("calendar dates render identically across EdgeOne and browser time zones", async () => {
+  const ui = await read("app/snooker/snooker-data-center-v2.tsx");
+
+  assert.match(ui, /start\.split\("-"\)\.map\(Number\)/);
+  assert.match(ui, /formatMonthDay\(item\.startDate\)/);
+  assert.doesNotMatch(ui, /new Date\(`\$\{item\.startDate\}T00:00:00\+08:00`\)/);
+});
+
 test("recent events keep original type/status positions and semantic colors", async () => {
   const [ui, css] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),
