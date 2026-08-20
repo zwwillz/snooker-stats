@@ -1,8 +1,5 @@
 import { getSnookerSupabasePublicConfig } from "./supabase-config";
 
-const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = getSnookerSupabasePublicConfig();
-const REST_URL = `${SUPABASE_URL}/rest/v1`;
-
 export const HONOURS_METRIC_KEYS = [
   "ranking_titles",
   "triple_crown_titles",
@@ -71,8 +68,9 @@ const metricDefinitions: SnookerHonoursMetric[] = [
 ];
 
 async function rest<T>(resource: string, params: URLSearchParams, revalidate = 1800): Promise<T> {
-  const response = await fetch(`${REST_URL}/${resource}?${params.toString()}`, {
-    headers: { apikey: SUPABASE_KEY, Accept: "application/json" },
+  const { url, publishableKey } = getSnookerSupabasePublicConfig();
+  const response = await fetch(`${url}/rest/v1/${resource}?${params.toString()}`, {
+    headers: { apikey: publishableKey, Accept: "application/json" },
     next: { revalidate },
   });
   if (!response.ok) throw new Error(`SNOOKER_HONOURS_HUB_HTTP_${response.status}`);
