@@ -55,7 +55,7 @@ production schema changes through the Dashboard SQL editor.
 5. Verify the homepage, player detail RPC, Sync Center, visit logging, and the
    three production cron jobs.
 
-The `20260821090000` hardening migration is data-preserving. It removes the
+The `20260820192152` hardening migration is data-preserving. It removes the
 unused `pg_net` extension, changes browser table privileges to read-only,
 adds explicit deny policies to service-only tables, and indexes both manual
 queue foreign keys. If an unknown integration is later found to require
