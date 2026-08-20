@@ -10,6 +10,8 @@ import type {
   SnookerSeasonStatistics,
 } from "./domain";
 import { getSnookerSupabasePublicConfig } from "./supabase-config";
+import { unstable_cache } from "next/cache";
+import { SNOOKER_CACHE_SECONDS } from "./cache-policy";
 
 const ID_FILTER_BATCH_SIZE = 32;
 const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = getSnookerSupabasePublicConfig();
@@ -89,7 +91,7 @@ type DbHeadToHead = {
   source_updated_at: string | null;
 };
 
-async function rest<T>(path: string, revalidate = 30): Promise<T> {
+async function rest<T>(path: string, revalidate: number = SNOOKER_CACHE_SECONDS.recent): Promise<T> {
   if (process.env.SNOOKER_BUILD_OFFLINE === "1") throw new Error("SNOOKER_BUILD_OFFLINE");
   const response = await fetch(`${REST_URL}/${path}`, {
     headers: { apikey: SUPABASE_KEY, Accept: "application/json" },
@@ -115,10 +117,11 @@ async function restInBatchesBestEffort<T>(
   ids: string[],
   buildPath: (batch: string[]) => string,
   label: string,
+  revalidate: number = SNOOKER_CACHE_SECONDS.recent,
 ): Promise<T[]> {
   if (!ids.length) return [];
   const results = await Promise.allSettled(
-    idBatches(ids).map((batch) => rest<T[]>(buildPath(batch))),
+    idBatches(ids).map((batch) => rest<T[]>(buildPath(batch), revalidate)),
   );
   const rows: T[] = [];
   results.forEach((result, index) => {
@@ -225,7 +228,7 @@ function enrichEvent(
   } satisfies SnookerEvent;
 }
 
-export async function loadSnookerDatabaseViewV2(): Promise<SnookerDatabaseView> {
+async function loadSnookerDatabaseViewV2Uncached(): Promise<SnookerDatabaseView> {
   const base = await loadSnookerDatabaseView();
   if (!base.databaseOnline || !base.eventDetails.length) return base;
 
@@ -244,11 +247,13 @@ export async function loadSnookerDatabaseViewV2(): Promise<SnookerDatabaseView> 
         matchUuids,
         (batch) => `snooker_match_statistics?select=match_id,player_id,total_points,average_shot_time_seconds,pot_rate,breaks_50_plus,breaks_100_plus,highest_break,average_break,shots_taken,time_on_table_pct&match_id=in.${inFilter(batch)}`,
         "match statistics",
+        SNOOKER_CACHE_SECONDS.realtime,
       ),
       restInBatchesBestEffort<DbHeadToHead>(
         matchUuids,
         (batch) => `snooker_match_head_to_head?select=match_id,meetings_before,player1_wins,player2_wins,player1_frames,player2_frames,recent_meetings,source_updated_at&match_id=in.${inFilter(batch)}`,
         "head-to-head",
+        SNOOKER_CACHE_SECONDS.realtime,
       ),
     ]);
 
@@ -341,3 +346,12 @@ export async function loadSnookerDatabaseViewV2(): Promise<SnookerDatabaseView> 
     return base;
   }
 }
+
+export const loadSnookerDatabaseViewV2 = unstable_cache(
+  loadSnookerDatabaseViewV2Uncached,
+  ["snooker-database-view-v2"],
+  {
+    revalidate: SNOOKER_CACHE_SECONDS.realtime,
+    tags: ["snooker-dashboard", "snooker-realtime"],
+  },
+);
