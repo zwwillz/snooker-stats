@@ -1,5 +1,5 @@
-import SnookerDataCenterV2 from "./snooker-data-center-v2";
-import SnookerViewUrlSync from "./snooker-view-url-sync";
+import SnookerDataCenterV2 from "./snooker/snooker-data-center-v2";
+import SnookerViewUrlSync from "./snooker/snooker-view-url-sync";
 import { SNOOKER_BUILD_MARK } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { CURRENT_RANKING_KEYS, loadSnookerRankingHub, type SnookerCurrentRankingKey, type SnookerRankingSection } from "@/lib/snooker/ranking-hub";
