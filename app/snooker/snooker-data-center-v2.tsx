@@ -74,13 +74,14 @@ function isChina(player?: SnookerPlayer) {
 }
 
 function formatDateRange(start: string, end: string) {
-  const s = new Date(`${start}T00:00:00+08:00`);
-  const e = new Date(`${end}T00:00:00+08:00`);
-  const sm = s.getMonth() + 1;
-  const sd = s.getDate();
-  const em = e.getMonth() + 1;
-  const ed = e.getDate();
+  const [, sm, sd] = start.split("-").map(Number);
+  const [, em, ed] = end.split("-").map(Number);
   return sm === em ? `${sm}月${sd}日—${ed}日` : `${sm}月${sd}日—${em}月${ed}日`;
+}
+
+function formatMonthDay(value: string) {
+  const [, month, day] = value.split("-").map(Number);
+  return `${month}/${day}`;
 }
 
 function bestOfLabel(bestOf: number) {
@@ -284,7 +285,7 @@ function MatchListRow({ match, players, onOpen }: { match: SnookerMatch; players
 
 function CalendarCard({ item, onOpen, interactive = true }: { item: SnookerCalendarEvent; onOpen?: () => void; interactive?: boolean }) {
   const content = <>
-    <div className={styles.calendarDate}><b>{new Date(`${item.startDate}T00:00:00+08:00`).getMonth() + 1}/{new Date(`${item.startDate}T00:00:00+08:00`).getDate()}</b><small className={`${polish.eventStatusText} ${eventStatusClass(item.status)}`}>{eventStatusLabel(item)}</small></div>
+    <div className={styles.calendarDate}><b>{formatMonthDay(item.startDate)}</b><small className={`${polish.eventStatusText} ${eventStatusClass(item.status)}`}>{eventStatusLabel(item)}</small></div>
     <div><span><StatusPill status="type" label={item.typeZh} /></span><strong>{item.nameZh}</strong><small>{item.nameEn}</small><p>{formatDateRange(item.startDate, item.endDate)} · {item.countryZh} {item.cityZh}{item.winnerZh ? ` · 冠军 ${item.winnerZh}` : ""}</p></div>
     {interactive ? <em>›</em> : null}
   </>;
