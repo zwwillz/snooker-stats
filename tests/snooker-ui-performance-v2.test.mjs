@@ -187,7 +187,7 @@ test("bottom navigation keeps all four main tabs local while the root owns playe
   assert.match(page, /<SnookerViewUrlSync \/>/);
   assert.match(page, /initialPlayerSlug=\{requestedPlayer\}/);
   assert.match(db, /next: \{ revalidate \}/);
-  assert.match(page, /export const revalidate = 30/);
+  assert.match(page, /export const revalidate = 300/);
   assert.doesNotMatch(page, /force-dynamic/);
   assert.doesNotMatch(ui, /behavior: "smooth"/);
 });
