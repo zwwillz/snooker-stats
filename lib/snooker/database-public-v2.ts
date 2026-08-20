@@ -139,6 +139,21 @@ function dbMatchUuid(matchId: string) {
   return matchId.startsWith("db-") ? matchId.slice(3) : null;
 }
 
+function focusedEvents(events: SnookerEvent[], today: string) {
+  const active = events.filter((event) => event.startDate <= today && event.endDate >= today);
+  const latestCompleted = events
+    .filter((event) => event.endDate < today)
+    .sort((a, b) => b.endDate.localeCompare(a.endDate))[0];
+  const nextUpcoming = events
+    .filter((event) => event.startDate > today)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
+  return [
+    ...active,
+    ...(latestCompleted ? [latestCompleted] : []),
+    ...(nextUpcoming ? [nextUpcoming] : []),
+  ].filter((event, index, list) => list.findIndex((item) => item.id === event.id) === index);
+}
+
 function finite(value: number | string | null | undefined) {
   return value === null || value === undefined || !Number.isFinite(Number(value)) ? undefined : Number(value);
 }
@@ -216,7 +231,8 @@ export async function loadSnookerDatabaseViewV2(): Promise<SnookerDatabaseView> 
 
   try {
     const eventUuids = base.eventDetails.map(dbEventUuid).filter((id): id is string => Boolean(id));
-    const matchUuids = base.eventDetails.flatMap((event) => event.rounds.flatMap((round) => round.matches.map((match) => dbMatchUuid(match.id)))).filter((id): id is string => Boolean(id));
+    const detailEvents = focusedEvents(base.eventDetails, new Date().toISOString().slice(0, 10));
+    const matchUuids = detailEvents.flatMap((event) => event.rounds.flatMap((round) => round.matches.map((match) => dbMatchUuid(match.id)))).filter((id): id is string => Boolean(id));
 
     const [eventMeta, playerKeys, seasonStats, officialRanking, prizes, stats, h2h] = await Promise.all([
       rest<DbEventMeta[]>(`snooker_events?select=id,slug,previous_champion_name_zh,previous_champion_year,expected_match_count&id=in.${inFilter(eventUuids)}`),

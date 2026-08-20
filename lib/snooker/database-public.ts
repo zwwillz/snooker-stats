@@ -202,6 +202,22 @@ function idBatches(ids: string[], batchSize = ID_FILTER_BATCH_SIZE) {
   return batches;
 }
 
+function focusedEventIds(rows: DbEvent[], today: string) {
+  const ready = rows.filter((row) => row.data_ready);
+  const active = ready.filter((row) => row.start_date && row.end_date && row.start_date <= today && row.end_date >= today);
+  const latestCompleted = ready
+    .filter((row) => row.end_date && row.end_date < today)
+    .sort((a, b) => (b.end_date ?? "").localeCompare(a.end_date ?? ""))[0];
+  const nextUpcoming = ready
+    .filter((row) => row.start_date && row.start_date > today)
+    .sort((a, b) => (a.start_date ?? "").localeCompare(b.start_date ?? ""))[0];
+  return new Set([
+    ...active.map((row) => row.id),
+    ...(latestCompleted ? [latestCompleted.id] : []),
+    ...(nextUpcoming ? [nextUpcoming.id] : []),
+  ]);
+}
+
 async function restInBatchesBestEffort<T>(
   ids: string[],
   buildPath: (batch: string[]) => string,
@@ -396,7 +412,8 @@ export async function loadSnookerDatabaseView(): Promise<SnookerDatabaseView> {
         rest<DbRound[]>(`snooker_rounds?select=id,event_id,round_key,label_en,label_zh,sort_order,best_of,loser_prize&event_id=in.${inFilter(dataReadyIds)}&order=sort_order.asc`),
         rest<DbMatch[]>(`snooker_matches?select=id,event_id,round_id,source_match_id,match_no,player1_id,player2_id,score1,score2,best_of,status,scheduled_at,session_label_zh,winner_id,note,source_updated_at&event_id=in.${inFilter(dataReadyIds)}&order=match_no.asc`),
       ]);
-      const matchIds = matchRows.map((row) => row.id);
+      const detailEventIds = focusedEventIds(eventRows, loadedAt.slice(0, 10));
+      const matchIds = matchRows.filter((row) => detailEventIds.has(row.event_id)).map((row) => row.id);
       frameRows = await restInBatchesBestEffort<DbFrame>(
         matchIds,
         (batch) => `snooker_frames?select=id,match_id,frame_no,score1,score2,break1,break2,note&match_id=in.${inFilter(batch)}&order=frame_no.asc`,
