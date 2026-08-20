@@ -36,3 +36,11 @@ test("repository contains only the independent snooker application surface", asy
   assert.match(opsApi, /rtlvncsmbueatdzqvhbn\.supabase\.co/);
   assert.doesNotMatch(opsApi, /SERVICE_ROLE|DATABASE_URL/);
 });
+
+test("EdgeOne uses the current Cloud Functions configuration shape", async () => {
+  const config = JSON.parse(await read("edgeone.json"));
+  assert.equal(config.cloudFunctions.maxDuration, 60);
+  assert.deepEqual(config.cloudFunctions.regions?.overseas, ["ap-singapore"]);
+  assert.equal("overseasRegions" in config.cloudFunctions, false);
+  assert.equal("nodejs" in config.cloudFunctions, false);
+});
