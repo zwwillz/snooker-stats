@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { eventSummary, SNOOKER_BUILD_MARK, SNOOKER_FOUNDATION_VERSION } from "@/lib/snooker/foundation";
 import { getCachedDashboardWithLiveOverlay } from "@/lib/snooker/live-dashboard-cache";
+import { SNOOKER_CACHE_SECONDS, SNOOKER_DASHBOARD_CACHE_CONTROL, snookerCacheLabel } from "@/lib/snooker/cache-policy";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -22,6 +23,8 @@ export async function GET(request: NextRequest) {
     liveAccepted: liveMatches.length > 0,
     source: "Snooker DB",
     fetchedAt: database.loadedAt,
+    sourceLabel: snookerCacheLabel(database.databaseOnline),
+    cacheSeconds: liveMatches.length ? SNOOKER_CACHE_SECONDS.realtime : SNOOKER_CACHE_SECONDS.recent,
     latencyMs: 0,
     parsedRoundCount: database.snapshot.event.rounds.length,
     parsedMatchCount: allMatches.length,
@@ -45,5 +48,5 @@ export async function GET(request: NextRequest) {
     databaseEvents: database.eventDetails,
     summary: eventSummary(database.snapshot.event),
     sourceHealth,
-  }, { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0", Pragma: "no-cache", Expires: "0" } });
+  }, { headers: { "Cache-Control": SNOOKER_DASHBOARD_CACHE_CONTROL } });
 }
