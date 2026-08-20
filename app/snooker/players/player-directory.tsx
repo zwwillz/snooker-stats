@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { SnookerPlayerListItem, SnookerPlayerStatus } from "@/lib/snooker/player-data";
 import { prefetchPlayerExperience } from "./player-detail-client";
 import styles from "./player.module.css";
@@ -69,16 +69,18 @@ export function PlayerDirectoryContent({
   onPrefetchPlayer?: (player: SnookerPlayerListItem) => void;
 }) {
   const directoryRef = useRef<HTMLDivElement | null>(null);
-  const needle = query.trim().toLocaleLowerCase("zh-CN");
-  const filtered = players.filter(isConcretePlayer).filter((player) => {
-    const status = resolvedPlayerStatus(player);
-    if (filter === "china" && player.countryCode !== "CHN" && player.countryCode !== "CN") return false;
-    if (filter === "top16" && (player.currentRank === null || player.currentRank > 16)) return false;
-    if (filter === "current" && status !== "tour") return false;
-    if (!needle) return true;
-    const haystack = `${player.nameZh} ${player.shortNameZh ?? ""} ${player.nameEn} ${player.nationalityZh ?? ""}`.toLocaleLowerCase("zh-CN");
-    return haystack.includes(needle);
-  });
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase("zh-CN");
+    return players.filter(isConcretePlayer).filter((player) => {
+      const status = resolvedPlayerStatus(player);
+      if (filter === "china" && player.countryCode !== "CHN" && player.countryCode !== "CN") return false;
+      if (filter === "top16" && (player.currentRank === null || player.currentRank > 16)) return false;
+      if (filter === "current" && status !== "tour") return false;
+      if (!needle) return true;
+      const haystack = `${player.nameZh} ${player.shortNameZh ?? ""} ${player.nameEn} ${player.nationalityZh ?? ""}`.toLocaleLowerCase("zh-CN");
+      return haystack.includes(needle);
+    });
+  }, [players, query, filter]);
 
   useEffect(() => {
     const root = directoryRef.current;
@@ -106,7 +108,7 @@ export function PlayerDirectoryContent({
 
     root.querySelectorAll<HTMLElement>("[data-player-slug]").forEach((row) => observer.observe(row));
     return () => observer.disconnect();
-  }, [players, query, filter, onPrefetchPlayer]);
+  }, [filtered, onPrefetchPlayer]);
 
   const warmHighPriority = (player: SnookerPlayerListItem) => {
     prefetchPlayerExperience(player.slug, player.avatarUrl, "high");

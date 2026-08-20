@@ -68,7 +68,7 @@ test("Wuhan partial schedule is database backed and public copy is source-neutra
 
 test("root and dashboard use enriched database view while upstream monitor remains separate", async () => {
   const [page, route] = await Promise.all([
-    read("app/snooker/page.tsx"),
+    read("app/page.tsx"),
     read("app/api/snooker/v1/dashboard/route.ts"),
   ]);
   assert.match(page, /loadSnookerDatabaseViewV2/);

@@ -1,7 +1,7 @@
-# World Snooker Data Center POC
+# 147数据局 domain
 
-The `/snooker` module is isolated from Huacai business data. It currently shares the Next.js repository and EdgeOne deployment only.
+This directory contains the public read models, data loaders, live-data adapters, ranking and analytics views used by the independent website.
 
-Data flow: verified bundled snapshot -> server-side live source validation -> optional live overlay -> our `/api/snooker/v1/*` endpoints -> mobile UI.
+Data flow: dedicated Supabase -> server-side public read models -> optional WST live overlay -> `/api/snooker/v1/*` -> responsive UI.
 
-The future independent Supabase schema is stored in `lib/snooker/schema.sql` and has not been applied to the Huacai database.
+`schema.sql` documents the base domain schema. Deployable incremental changes and the privileged API source are versioned under `supabase/`.

@@ -33,17 +33,17 @@ test("snooker player master covers every China Open participant", async () => {
 });
 
 test("snooker public UI serves lightweight letter avatars", async () => {
-  const uiSource = await read("app/snooker/snooker-data-center.tsx");
+  const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
   assert.match(uiSource, /initials\(player\.nameEn\)/);
   assert.doesNotMatch(uiSource, /backgroundImage:/);
 });
 
 test("snooker frontend is database-first and only live matches poll every 30 seconds", async () => {
   const [pageSource, dashboardSource, dbSource, uiSource, priorityCss] = await Promise.all([
-    read("app/snooker/page.tsx"),
+    read("app/page.tsx"),
     read("app/api/snooker/v1/dashboard/route.ts"),
     read("lib/snooker/database-public.ts"),
-    read("app/snooker/snooker-data-center.tsx"),
+    read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-priority.module.css"),
   ]);
   assert.match(pageSource, /loadSnookerDatabaseView/);
@@ -76,52 +76,50 @@ test("snooker frontend is database-first and only live matches poll every 30 sec
 });
 
 test("snooker event lifecycle keeps a finished event featured for one day then advances", async () => {
-  const uiSource = await read("app/snooker/snooker-data-center.tsx");
+  const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
   assert.match(uiSource, /addDateDays\(item\.endDate, 1\) === today/);
   assert.match(uiSource, /activeEventCard \?\? graceEventCard \?\? firstUpcomingMain/);
-  assert.match(uiSource, /featuredLabel = activeEventCard/);
-  assert.match(uiSource, /"刚刚结束"/);
+  assert.match(uiSource, /label=\{activeEventCard \? "当前赛事" : graceEventCard \? "刚刚结束" : "下一站"\}/);
   assert.match(uiSource, /nextEventCard = featuredEventCard/);
 });
 
 test("recent events include season history and one upcoming event instead of only two cards", async () => {
-  const uiSource = await read("app/snooker/snooker-data-center.tsx");
-  assert.match(uiSource, /const recentEvents = useMemo/);
-  assert.match(uiSource, /item\.endDate < today \|\| isActiveOn\(item, today\) \|\| item\.id === firstUpcomingAny\?\.id/);
+  const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
+  assert.match(uiSource, /const recentEvents = seasonCalendar/);
+  assert.match(uiSource, /item\.endDate < today \|\| isActiveOn\(item, today\) \|\| item\.id === firstUpcomingAny\?\.id \|\| item\.id === featuredEventCard\?\.id/);
   assert.doesNotMatch(uiSource, /recentSecondaryEvents/);
-  assert.match(uiSource, /近期赛事显示本赛季所有已经结束的赛事/);
+  assert.match(uiSource, /近期赛事展示本赛季已完成赛事、当前赛事和即将开始的一站/);
   assert.match(uiSource, /recentEvents\.map/);
 });
 
 test("database-backed completed events can open their own schedules and matches", async () => {
   const [uiSource, dbSource] = await Promise.all([
-    read("app/snooker/snooker-data-center.tsx"),
+    read("app/snooker/snooker-data-center-v2.tsx"),
     read("lib/snooker/database-public.ts"),
   ]);
-  assert.match(uiSource, /eventDetailsBySlug/);
-  assert.match(uiSource, /eventDetailsBySlug\.get\(calendarEvent\.slug\)/);
-  assert.match(uiSource, /detailEvent\.rounds\.map/);
-  assert.match(uiSource, /openMatch\(match\.id, detailEvent\.slug\)/);
-  assert.match(uiSource, /WST 当前未返回该场历史逐局数据，已保存官方总比分/);
+  assert.match(uiSource, /const full = eventBySlug\.get\(detail\.slug\)/);
+  assert.match(uiSource, /full\.rounds\.map/);
+  assert.match(uiSource, /openMatch\(match\.id, full\.slug\)/);
+  assert.match(uiSource, /该站详细赛程尚未入库/);
   assert.match(dbSource, /eventDetails/);
   assert.match(dbSource, /buildEventDetails/);
 });
 
 test("home result card marks the winner and persists until the next event begins", async () => {
-  const uiSource = await read("app/snooker/snooker-data-center.tsx");
-  assert.match(uiSource, /scoreEvent = activeDetail \?\?/);
-  assert.match(uiSource, /!activeEventCard \? latestCompletedDetail/);
-  assert.match(uiSource, /scoreMatch\.winnerId === scoreMatch\.player1Id \? <em>胜<\/em>/);
-  assert.match(uiSource, /scoreMatch\.winnerId === scoreMatch\.player2Id \? <em>胜<\/em>/);
-  assert.match(uiSource, /官方结果已入库/);
+  const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
+  assert.match(uiSource, /const latestCompleted = \[\.\.\.databaseEvents\]/);
+  assert.match(uiSource, /const headlineMatch = activeEventCard/);
+  assert.match(uiSource, /headlineMatch\.winnerId === headlineMatch\.player1Id/);
+  assert.match(uiSource, /headlineMatch\.winnerId === headlineMatch\.player2Id/);
+  assert.match(uiSource, /headlineMatch\.status === "completed" \? "已冻结保存" : "30秒同步"/);
 });
 
 test("player main view stays a directory and detail opens on click", async () => {
-  const uiSource = await read("app/snooker/snooker-data-center.tsx");
-  assert.match(uiSource, /球员页只保留目录与搜索/);
-  assert.match(uiSource, /搜索中文名 \/ 英文名/);
+  const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
+  assert.match(uiSource, /activeView === "players" \? <PlayerDirectoryContent/);
+  assert.match(uiSource, /onQueryChange=\{setPlayerQuery\}/);
   assert.match(uiSource, /openPlayer\(player\.id\)/);
-  assert.match(uiSource, /球员详情/);
+  assert.match(uiSource, /setDetail\(\{ type: "player", slug: target\.slug, returnView \}\)/);
   assert.doesNotMatch(uiSource, /useState\("p-zhao-xintong"\)/);
 });
 

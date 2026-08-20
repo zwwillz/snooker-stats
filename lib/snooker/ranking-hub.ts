@@ -85,6 +85,7 @@ function isCurrentRankingKey(value: string): value is SnookerCurrentRankingKey {
 }
 
 async function rest<T>(resource: string, params: URLSearchParams, revalidate = 300): Promise<T> {
+  if (process.env.SNOOKER_BUILD_OFFLINE === "1") throw new Error("SNOOKER_BUILD_OFFLINE");
   const response = await fetch(`${REST_URL}/${resource}?${params.toString()}`, {
     headers: { apikey: SUPABASE_KEY, Accept: "application/json" },
     next: { revalidate },
@@ -159,7 +160,9 @@ export async function loadSnookerRankingHub(): Promise<SnookerRankingHub> {
 
     return { lists, loadedAt, online: lists.some((list) => list.rows.length > 0) };
   } catch (error) {
-    console.error("[snooker-ranking-hub] ranking read failed", error);
+    if (process.env.SNOOKER_BUILD_OFFLINE !== "1") {
+      console.error("[snooker-ranking-hub] ranking read failed", error);
+    }
     return { lists: [], loadedAt, online: false };
   }
 }

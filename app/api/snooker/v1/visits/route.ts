@@ -3,7 +3,7 @@ import { getSnookerOpsViewer } from "@/lib/snooker/data-ops-auth";
 import {
   getSnookerVisitMonitorData,
   type SnookerVisitRange,
-} from "@/db/snooker-visit-monitor";
+} from "@/lib/snooker/visit-monitor";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

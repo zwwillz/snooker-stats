@@ -6,7 +6,7 @@ import type { FormEvent } from "react";
 import type {
   SnookerVisitMonitorRow,
   SnookerVisitRange,
-} from "@/db/snooker-visit-monitor";
+} from "@/lib/snooker/visit-monitor";
 import styles from "./visit-monitor.module.css";
 
 type VisitResponse = {

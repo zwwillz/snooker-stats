@@ -1,5 +1,4 @@
--- World Snooker Data Center - independent Supabase foundation schema
--- POC note: this file is NOT applied to the Huacai database.
+-- 147数据局 - dedicated Supabase foundation schema reference.
 
 create extension if not exists pgcrypto;
 

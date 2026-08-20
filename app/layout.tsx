@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import "./public-ux-polish.css";
-import PublicVisitTracker from "./public-visit-tracker";
+import SnookerVisitTracker from "./snooker-visit-tracker";
 
 export const metadata: Metadata = {
-  title: "中国华彩十六球青少年系列赛｜官方赛事平台",
-  description: "中国华彩十六球青少年系列赛官方赛事平台，提供赛事信息、赛程、对阵、排名及球员数据。",
+  title: "147数据局｜中文斯诺克数据平台",
+  description: "147数据局提供世界斯诺克赛事、实时比分、球员资料、世界排名、历史纪录与专业数据分析。",
   other: {
     "codex-preview": "development",
   },
@@ -24,7 +23,7 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body>
         {children}
-        <PublicVisitTracker />
+        <SnookerVisitTracker />
       </body>
     </html>
   );

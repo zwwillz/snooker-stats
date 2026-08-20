@@ -158,7 +158,7 @@ test("bottom navigation keeps all four main tabs local while the root owns playe
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-view-url-sync.tsx"),
     read("lib/snooker/database-public.ts"),
-    read("app/snooker/page.tsx"),
+    read("app/page.tsx"),
   ]);
 
   assert.match(ui, /type MainView = "home" \| "matches" \| "players" \| "data"/);
@@ -175,7 +175,7 @@ test("bottom navigation keeps all four main tabs local while the root owns playe
   assert.match(sync, /url\.searchParams\.delete\("view"\)/);
   assert.match(sync, /url\.searchParams\.set\("view", view\)/);
   assert.match(sync, /window\.history\.replaceState\(window\.history\.state/);
-  assert.match(page, /import SnookerViewUrlSync from "\.\/snooker-view-url-sync"/);
+  assert.match(page, /import SnookerViewUrlSync from "\.\/snooker\/snooker-view-url-sync"/);
   assert.match(page, /<SnookerViewUrlSync \/>/);
   assert.match(page, /initialPlayerSlug=\{requestedPlayer\}/);
   assert.match(db, /next: \{ revalidate \}/);

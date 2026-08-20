@@ -6,7 +6,7 @@ const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
 test("snooker monitor is admin protected and switches between visitor and data source views", async () => {
-  const [page, dataPage, layout, login, switcher, visitorClient, dataClient, visitReader, tracker, visitRoute, adminVisitRoute] = await Promise.all([
+  const [page, dataPage, layout, login, switcher, visitorClient, dataClient, visitReader, tracker, visitRoute, adminVisitRoute, edgeFunction, migration] = await Promise.all([
     read("app/snooker/site-monitor/page.tsx"),
     read("app/snooker/site-monitor/data/page.tsx"),
     read("app/snooker/site-monitor/layout.tsx"),
@@ -14,10 +14,12 @@ test("snooker monitor is admin protected and switches between visitor and data s
     read("app/snooker/site-monitor/monitor-mode-nav.tsx"),
     read("app/snooker/site-monitor/snooker-visit-monitor.tsx"),
     read("app/snooker/site-monitor/snooker-site-monitor.tsx"),
-    read("db/snooker-visit-monitor.ts"),
-    read("app/public-visit-tracker.tsx"),
-    read("app/api/public/visit/route.ts"),
+    read("lib/snooker/visit-monitor.ts"),
+    read("app/snooker-visit-tracker.tsx"),
+    read("app/api/snooker/v1/visit/route.ts"),
     read("app/api/snooker/v1/visits/route.ts"),
+    read("supabase/functions/snooker-ops-api/index.ts"),
+    read("supabase/migrations/20260821000000_create_snooker_visit_logs.sql"),
   ]);
 
   assert.match(page, /SnookerVisitMonitor/);
@@ -67,18 +69,24 @@ test("snooker monitor is admin protected and switches between visitor and data s
   assert.match(adminVisitRoute, /status: 428/);
   assert.match(adminVisitRoute, /请先登录数据运维中心/);
 
-  assert.match(visitReader, /module_type='public_visit'/);
-  assert.match(visitReader, /like '\/snooker%'/);
-  assert.match(visitReader, /not like '\/snooker\/site-monitor%'/);
-  assert.match(visitReader, /PAGE_SIZE = 100/);
-  assert.match(visitReader, /function fullIp/);
-  assert.doesNotMatch(visitReader, /function maskIp/);
+  assert.match(visitReader, /runAuthenticatedSnookerOps/);
+  assert.match(visitReader, /"visits"/);
+  assert.match(visitReader, /query: \(input\.query \|\| ""\)\.trim\(\)\.slice\(0, 80\)/);
 
   assert.match(tracker, /"\/snooker\/site-monitor"/);
-  assert.match(tracker, /snookerPageContext/);
+  assert.match(tracker, /currentPageContext/);
   assert.match(tracker, /MutationObserver/);
+  assert.match(tracker, /\/api\/snooker\/v1\/visit/);
+  assert.doesNotMatch(tracker, /huacai/i);
   assert.match(visitRoute, /"\/snooker\/site-monitor"/);
-  assert.match(visitRoute, /->>'pageLabel'=\$\{pageLabel\}/);
+  assert.match(visitRoute, /callSnookerOps\("log-visit"/);
+  assert.match(edgeFunction, /operation === "log-visit"/);
+  assert.match(edgeFunction, /operation === "visits"/);
+  assert.match(edgeFunction, /snooker_ops_session/);
+  assert.match(edgeFunction, /PAGE_SIZE = 100/);
+  assert.match(migration, /create table if not exists public\.snooker_visit_logs/);
+  assert.match(migration, /enable row level security/);
+  assert.match(migration, /grant execute on function public\.snooker_visit_list/);
 
   assert.match(dataClient, /斯诺克数据监测/);
   assert.match(dataClient, /管理员专用/);

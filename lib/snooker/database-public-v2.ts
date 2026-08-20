@@ -92,6 +92,7 @@ type DbHeadToHead = {
 };
 
 async function rest<T>(path: string, revalidate = 30): Promise<T> {
+  if (process.env.SNOOKER_BUILD_OFFLINE === "1") throw new Error("SNOOKER_BUILD_OFFLINE");
   const response = await fetch(`${REST_URL}/${path}`, {
     headers: { apikey: SUPABASE_KEY, Accept: "application/json" },
     next: { revalidate },

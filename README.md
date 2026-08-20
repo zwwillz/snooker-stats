@@ -1,20 +1,26 @@
-# 华彩十六球青少年系列赛
+# 147数据局
 
-公众赛事网站与赛事管理后台，使用标准 Next.js 16 开发，部署目标为腾讯云 EdgeOne Pages，后台数据存储在 Supabase PostgreSQL。
+**SnookerStats｜中文斯诺克数据平台**
 
-## 系统结构
+面向中文用户的世界斯诺克数据服务平台，提供赛事、球员、排名、历史纪录和专业数据分析。
 
-- 公众前端：赛事、规程、赛程、对阵、排名和球员资料。
-- 管理后台：赛事管理、内容发布、报名、球员、竞赛执行、排名积分和账号管理。
-- 登录方式：系统自有用户名和密码，不开放注册。
-- 角色：系统管理员、组委会、裁判。
-- 数据库：Supabase PostgreSQL，通过 Drizzle ORM 访问。
+## 平台功能
 
-## 后台页面开发原则
+- WST 赛事数据
+- 实时比分与比赛状态
+- 球员数据库与职业生涯资料
+- 世界排名与历史排名
+- 147 满分杆、破百等技术统计
+- 冠军、荣誉、奖金等数据榜单
+- 数据同步中心（Sync Center）
+- 数据运营与监控工具
 
-后台页面统一遵循 **Structure first, data second（结构优先，数据随后）**：页面框架和不依赖数据库的 UI 先显示，轻数据、主数据、深层数据按数据域渐进补齐；禁止为了少量动态数据阻塞整页结构。后台数据不得使用公共 CDN 缓存。
+## 技术架构
 
-详细规范见：[`docs/admin-ui-performance.md`](docs/admin-ui-performance.md)。后续新增或重构后台页面时，应将该文档作为默认性能与加载规范执行。
+- Framework：Next.js 16
+- Database：Supabase PostgreSQL
+- Data access：Supabase REST + Edge Function
+- Deployment：EdgeOne Makers（原 EdgeOne Pages）
 
 ## 本地开发
 
@@ -26,51 +32,35 @@ cp .env.example .env.local
 npm run dev
 ```
 
-在 `.env.local` 中填写 Supabase 提供的 PostgreSQL 连接池地址：
+配置 `.env.local`：
 
 ```env
-DATABASE_URL=postgresql://...
+SNOOKER_SUPABASE_URL=https://rtlvncsmbueatdzqvhbn.supabase.co
+SNOOKER_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
-## 初始化数据库
+公开读取只使用 Publishable Key；管理操作和访问日志通过 `snooker-ops-api` Edge Function 完成，数据库 Service Role 不进入网站运行环境。
 
-先在 Supabase 创建项目，再将 `drizzle` 目录中的 PostgreSQL 迁移应用到数据库。也可以在配置好 `DATABASE_URL` 后运行：
+## 数据库与 Edge Function
 
-```bash
-npm run db:migrate
-```
-
-数据库迁移完成后打开 `/admin/login`：
-
-1. 系统检测到没有后台账号时进入首次设置。
-2. 首位系统管理员用户名固定为 `admin`。
-3. 页面要求立即设置至少 8 位密码。
-4. 设置完成后首次设置入口永久关闭。
-5. `admin` 在“账号与日志”中创建组委会和裁判账号，并分发用户名与初始密码。
-
-原始密码不会写入数据库、日志或 GitHub；数据库只保存 bcrypt 密码哈希。
-
-## EdgeOne Pages 部署
-
-在 EdgeOne Pages 中导入 GitHub 仓库 `zwwillz/huacai-youth`，使用以下配置：
-
-- Framework Preset：Next.js
-- Production Branch：`main`
-- Node.js：`22.17.1`
-- Install Command：`npm ci`
-- Build Command：`npm run build`
-- Output Directory：`.next`
-- Environment Variable：`DATABASE_URL`
-- Auto Deploy：开启
-
-以后推送到 GitHub `main` 分支后，EdgeOne Pages 会自动构建并更新正式网站。
+- `supabase/migrations/`：独立数据库增量迁移
+- `supabase/functions/snooker-ops-api/`：Snooker Admin、同步操作与访问监测接口
+- `lib/snooker/schema.sql`：斯诺克数据基础结构参考
 
 ## 常用命令
 
 ```bash
 npm run dev
+npm run typecheck
 npm run lint
+npm run test:core
 npm run build
-npm run db:generate
-npm run db:migrate
 ```
+
+CI 使用 `npm run build:offline`，以本地验证快照完成可重复构建；EdgeOne 正式构建使用 `npm run build` 并读取独立 Supabase。
+
+## 品牌
+
+中文品牌：**147数据局**
+
+英文项目：**SnookerStats**

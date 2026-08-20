@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 
 const root = readFileSync(new URL("../app/snooker/snooker-data-center-v2.tsx", import.meta.url), "utf8");
-const page = readFileSync(new URL("../app/snooker/page.tsx", import.meta.url), "utf8");
+const page = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
 const directory = readFileSync(new URL("../app/snooker/players/player-directory.tsx", import.meta.url), "utf8");
 const inline = readFileSync(new URL("../app/snooker/players/player-detail-inline.tsx", import.meta.url), "utf8");
 const detail = readFileSync(new URL("../app/snooker/players/player-detail-content.tsx", import.meta.url), "utf8");
