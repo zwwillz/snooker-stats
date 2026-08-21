@@ -20,9 +20,11 @@ test("phase 3a shares the expensive database view across requests", async () => 
     read("lib/snooker/database-public-v2.ts"),
     read("app/api/snooker/v1/dashboard/route.ts"),
   ]);
-  assert.match(loader, /unstable_cache/);
-  assert.match(loader, /snooker-database-view-v2/);
-  assert.match(loader, /tags: \["snooker-dashboard", "snooker-realtime"\]/);
+  assert.match(loader, /let cachedView:/);
+  assert.match(loader, /let inflightView:/);
+  assert.match(loader, /refreshSnookerDatabaseViewV2/);
+  assert.match(loader, /serving stale snapshot/);
+  assert.doesNotMatch(loader, /unstable_cache/);
   assert.match(route, /SNOOKER_DASHBOARD_CACHE_CONTROL/);
   assert.doesNotMatch(route, /no-store, no-cache, must-revalidate/);
 });
