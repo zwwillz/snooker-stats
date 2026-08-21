@@ -10,7 +10,6 @@ import type {
   SnookerSeasonStatistics,
 } from "./domain";
 import { getSnookerSupabasePublicConfig } from "./supabase-config";
-import { unstable_cache } from "next/cache";
 import { SNOOKER_CACHE_SECONDS } from "./cache-policy";
 
 const ID_FILTER_BATCH_SIZE = 32;
@@ -347,11 +346,46 @@ async function loadSnookerDatabaseViewV2Uncached(): Promise<SnookerDatabaseView>
   }
 }
 
-export const loadSnookerDatabaseViewV2 = unstable_cache(
-  loadSnookerDatabaseViewV2Uncached,
-  ["snooker-database-view-v2"],
-  {
-    revalidate: SNOOKER_CACHE_SECONDS.realtime,
-    tags: ["snooker-dashboard", "snooker-realtime"],
-  },
-);
+let cachedView: { value: SnookerDatabaseView; expiresAt: number; staleUntil: number } | null = null;
+let inflightView: Promise<SnookerDatabaseView> | null = null;
+
+function hasLiveMatch(view: SnookerDatabaseView) {
+  return view.eventDetails.some((event) => event.rounds.some((round) => round.matches.some(
+    (match) => match.status === "live" || match.status === "session-break",
+  )));
+}
+
+async function refreshSnookerDatabaseViewV2() {
+  const previous = cachedView;
+  try {
+    const value = await loadSnookerDatabaseViewV2Uncached();
+    if (!value.databaseOnline && previous && previous.staleUntil > Date.now()) return previous.value;
+    const ttlSeconds = hasLiveMatch(value) ? SNOOKER_CACHE_SECONDS.realtime : SNOOKER_CACHE_SECONDS.recent;
+    cachedView = {
+      value,
+      expiresAt: Date.now() + ttlSeconds * 1000,
+      staleUntil: Date.now() + SNOOKER_CACHE_SECONDS.history * 1000,
+    };
+    return value;
+  } catch (error) {
+    if (previous && previous.staleUntil > Date.now()) {
+      console.error("[snooker-db-v2] refresh failed, serving stale snapshot", error);
+      return previous.value;
+    }
+    throw error;
+  }
+}
+
+export async function loadSnookerDatabaseViewV2(): Promise<SnookerDatabaseView> {
+  const now = Date.now();
+  if (cachedView && cachedView.expiresAt > now) return cachedView.value;
+  if (cachedView && cachedView.staleUntil > now) {
+    if (!inflightView) {
+      inflightView = refreshSnookerDatabaseViewV2().finally(() => { inflightView = null; });
+    }
+    return cachedView.value;
+  }
+  if (inflightView) return inflightView;
+  inflightView = refreshSnookerDatabaseViewV2().finally(() => { inflightView = null; });
+  return inflightView;
+}
