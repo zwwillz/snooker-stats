@@ -12,6 +12,7 @@ import type {
 import { dashboardSnapshot } from "./foundation";
 import { compactEventTypeLabel, normalizeEventTaxonomy, normalizePlayerStatus } from "./taxonomy";
 import { getSnookerSupabasePublicConfig } from "./supabase-config";
+import { SNOOKER_CACHE_SECONDS } from "./cache-policy";
 
 const ID_FILTER_BATCH_SIZE = 32;
 
@@ -177,7 +178,7 @@ function chinaTimeLabel(value: string | null) {
   return `${Number(part("month"))}月${Number(part("day"))}日 ${part("hour")}:${part("minute")}`;
 }
 
-async function rest<T>(path: string, revalidate = 30): Promise<T> {
+async function rest<T>(path: string, revalidate: number = SNOOKER_CACHE_SECONDS.recent): Promise<T> {
   if (process.env.SNOOKER_BUILD_OFFLINE === "1") throw new Error("SNOOKER_BUILD_OFFLINE");
   const response = await fetch(`${REST_URL}/${path}`, {
     headers: {
@@ -222,10 +223,11 @@ async function restInBatchesBestEffort<T>(
   ids: string[],
   buildPath: (batch: string[]) => string,
   label: string,
+  revalidate: number = SNOOKER_CACHE_SECONDS.recent,
 ): Promise<T[]> {
   if (!ids.length) return [];
   const results = await Promise.allSettled(
-    idBatches(ids).map((batch) => rest<T[]>(buildPath(batch))),
+    idBatches(ids).map((batch) => rest<T[]>(buildPath(batch), revalidate)),
   );
   const rows: T[] = [];
   results.forEach((result, index) => {
@@ -396,9 +398,9 @@ export async function loadSnookerDatabaseView(): Promise<SnookerDatabaseView> {
   const loadedAt = new Date().toISOString();
   try {
     const [eventRows, playerRows, rankingRows] = await Promise.all([
-      rest<DbEvent[]>("snooker_events?select=id,slug,season,name_en,name_zh,sponsor_name,type_zh,event_type,event_stage,ranking_status,status,start_date,end_date,country_zh,city_zh,venue_zh,venue_en,winner_prize,runner_up_prize,currency,source_name,source_event_id,source_url,source_updated_at,referee_zh,data_ready&season=eq.2026%2F27&order=start_date.asc"),
-      rest<DbPlayer[]>("snooker_players?select=id,slug,name_en,name_zh,short_name_en,short_name_zh,nationality_zh,country_code,date_of_birth,turned_pro,current_rank,ranking_points,avatar_url,profile_source,is_current_tour,tour_status,player_status&order=current_rank.asc.nullslast,name_en.asc"),
-      rest<DbRanking[]>("snooker_ranking_snapshots?select=captured_at,player_id,rank,points&season=eq.2026%2F27&order=captured_at.desc,rank.asc&limit=200"),
+      rest<DbEvent[]>("snooker_events?select=id,slug,season,name_en,name_zh,sponsor_name,type_zh,event_type,event_stage,ranking_status,status,start_date,end_date,country_zh,city_zh,venue_zh,venue_en,winner_prize,runner_up_prize,currency,source_name,source_event_id,source_url,source_updated_at,referee_zh,data_ready&season=eq.2026%2F27&order=start_date.asc", SNOOKER_CACHE_SECONDS.recent),
+      rest<DbPlayer[]>("snooker_players?select=id,slug,name_en,name_zh,short_name_en,short_name_zh,nationality_zh,country_code,date_of_birth,turned_pro,current_rank,ranking_points,avatar_url,profile_source,is_current_tour,tour_status,player_status&order=current_rank.asc.nullslast,name_en.asc", SNOOKER_CACHE_SECONDS.player),
+      rest<DbRanking[]>("snooker_ranking_snapshots?select=captured_at,player_id,rank,points&season=eq.2026%2F27&order=captured_at.desc,rank.asc&limit=200", SNOOKER_CACHE_SECONDS.recent),
     ]);
 
     const { players, uuidToCanonical } = mapPlayers(playerRows);
@@ -418,6 +420,7 @@ export async function loadSnookerDatabaseView(): Promise<SnookerDatabaseView> {
         matchIds,
         (batch) => `snooker_frames?select=id,match_id,frame_no,score1,score2,break1,break2,note&match_id=in.${inFilter(batch)}&order=frame_no.asc`,
         "frame read",
+        SNOOKER_CACHE_SECONDS.realtime,
       );
     }
 

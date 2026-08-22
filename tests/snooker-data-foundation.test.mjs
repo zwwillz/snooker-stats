@@ -49,7 +49,7 @@ test("snooker frontend is database-first and only live matches poll every 30 sec
   assert.match(pageSource, /loadSnookerDatabaseView/);
   assert.match(pageSource, /initialDatabaseEvents=\{database\.eventDetails\}/);
   assert.doesNotMatch(pageSource, /getCachedDashboardWithLiveOverlay/);
-  assert.match(pageSource, /export const revalidate = 30/);
+  assert.match(pageSource, /export const revalidate = 300/);
   assert.doesNotMatch(pageSource, /dynamic = "force-dynamic"/);
   assert.match(dbSource, /getSnookerSupabasePublicConfig/);
   assert.match(dbSource, /snooker_events\?select=/);
@@ -64,6 +64,8 @@ test("snooker frontend is database-first and only live matches poll every 30 sec
   assert.match(uiSource, /setInterval\(\(\) => void refresh\(\), 30_000\)/);
   assert.doesNotMatch(uiSource, /15_000/);
   assert.match(uiSource, /30秒自动同步/);
+  assert.doesNotMatch(uiSource, /dashboard\?ts=/);
+  assert.doesNotMatch(uiSource, /cache: "no-store"/);
   assert.match(uiSource, /visibilitychange/);
   assert.match(uiSource, /label: "赛事"/);
   assert.match(uiSource, /近期赛事/);
@@ -111,7 +113,8 @@ test("home result card marks the winner and persists until the next event begins
   assert.match(uiSource, /const headlineMatch = activeEventCard/);
   assert.match(uiSource, /headlineMatch\.winnerId === headlineMatch\.player1Id/);
   assert.match(uiSource, /headlineMatch\.winnerId === headlineMatch\.player2Id/);
-  assert.match(uiSource, /headlineMatch\.status === "completed" \? "已冻结保存" : "30秒同步"/);
+  assert.match(uiSource, /headlineMatch\.status === "completed" \? `更新 \$\{formatUpdatedAt/);
+  assert.match(uiSource, /sourceHealth\?\.sourceLabel/);
 });
 
 test("player main view stays a directory and detail opens on click", async () => {

@@ -10,6 +10,7 @@ import type {
   SnookerSeasonStatistics,
 } from "./domain";
 import { getSnookerSupabasePublicConfig } from "./supabase-config";
+import { SNOOKER_CACHE_SECONDS } from "./cache-policy";
 
 const ID_FILTER_BATCH_SIZE = 32;
 const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = getSnookerSupabasePublicConfig();
@@ -89,7 +90,7 @@ type DbHeadToHead = {
   source_updated_at: string | null;
 };
 
-async function rest<T>(path: string, revalidate = 30): Promise<T> {
+async function rest<T>(path: string, revalidate: number = SNOOKER_CACHE_SECONDS.recent): Promise<T> {
   if (process.env.SNOOKER_BUILD_OFFLINE === "1") throw new Error("SNOOKER_BUILD_OFFLINE");
   const response = await fetch(`${REST_URL}/${path}`, {
     headers: { apikey: SUPABASE_KEY, Accept: "application/json" },
@@ -115,10 +116,11 @@ async function restInBatchesBestEffort<T>(
   ids: string[],
   buildPath: (batch: string[]) => string,
   label: string,
+  revalidate: number = SNOOKER_CACHE_SECONDS.recent,
 ): Promise<T[]> {
   if (!ids.length) return [];
   const results = await Promise.allSettled(
-    idBatches(ids).map((batch) => rest<T[]>(buildPath(batch))),
+    idBatches(ids).map((batch) => rest<T[]>(buildPath(batch), revalidate)),
   );
   const rows: T[] = [];
   results.forEach((result, index) => {
@@ -225,7 +227,7 @@ function enrichEvent(
   } satisfies SnookerEvent;
 }
 
-export async function loadSnookerDatabaseViewV2(): Promise<SnookerDatabaseView> {
+async function loadSnookerDatabaseViewV2Uncached(): Promise<SnookerDatabaseView> {
   const base = await loadSnookerDatabaseView();
   if (!base.databaseOnline || !base.eventDetails.length) return base;
 
@@ -244,11 +246,13 @@ export async function loadSnookerDatabaseViewV2(): Promise<SnookerDatabaseView> 
         matchUuids,
         (batch) => `snooker_match_statistics?select=match_id,player_id,total_points,average_shot_time_seconds,pot_rate,breaks_50_plus,breaks_100_plus,highest_break,average_break,shots_taken,time_on_table_pct&match_id=in.${inFilter(batch)}`,
         "match statistics",
+        SNOOKER_CACHE_SECONDS.realtime,
       ),
       restInBatchesBestEffort<DbHeadToHead>(
         matchUuids,
         (batch) => `snooker_match_head_to_head?select=match_id,meetings_before,player1_wins,player2_wins,player1_frames,player2_frames,recent_meetings,source_updated_at&match_id=in.${inFilter(batch)}`,
         "head-to-head",
+        SNOOKER_CACHE_SECONDS.realtime,
       ),
     ]);
 
@@ -340,4 +344,48 @@ export async function loadSnookerDatabaseViewV2(): Promise<SnookerDatabaseView> 
     console.error("[snooker-db-v2] enrichment failed", error);
     return base;
   }
+}
+
+let cachedView: { value: SnookerDatabaseView; expiresAt: number; staleUntil: number } | null = null;
+let inflightView: Promise<SnookerDatabaseView> | null = null;
+
+function hasLiveMatch(view: SnookerDatabaseView) {
+  return view.eventDetails.some((event) => event.rounds.some((round) => round.matches.some(
+    (match) => match.status === "live" || match.status === "session-break",
+  )));
+}
+
+async function refreshSnookerDatabaseViewV2() {
+  const previous = cachedView;
+  try {
+    const value = await loadSnookerDatabaseViewV2Uncached();
+    if (!value.databaseOnline && previous && previous.staleUntil > Date.now()) return previous.value;
+    const ttlSeconds = hasLiveMatch(value) ? SNOOKER_CACHE_SECONDS.realtime : SNOOKER_CACHE_SECONDS.recent;
+    cachedView = {
+      value,
+      expiresAt: Date.now() + ttlSeconds * 1000,
+      staleUntil: Date.now() + SNOOKER_CACHE_SECONDS.history * 1000,
+    };
+    return value;
+  } catch (error) {
+    if (previous && previous.staleUntil > Date.now()) {
+      console.error("[snooker-db-v2] refresh failed, serving stale snapshot", error);
+      return previous.value;
+    }
+    throw error;
+  }
+}
+
+export async function loadSnookerDatabaseViewV2(): Promise<SnookerDatabaseView> {
+  const now = Date.now();
+  if (cachedView && cachedView.expiresAt > now) return cachedView.value;
+  if (cachedView && cachedView.staleUntil > now) {
+    if (!inflightView) {
+      inflightView = refreshSnookerDatabaseViewV2().finally(() => { inflightView = null; });
+    }
+    return cachedView.value;
+  }
+  if (inflightView) return inflightView;
+  inflightView = refreshSnookerDatabaseViewV2().finally(() => { inflightView = null; });
+  return inflightView;
 }
