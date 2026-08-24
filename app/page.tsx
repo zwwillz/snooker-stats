@@ -47,6 +47,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
       <SnookerDataCenterV2
         initialSnapshot={database.snapshot}
         initialDatabaseEvents={database.eventDetails}
+        initialEventSeries={database.eventSeries}
+        initialCurrentSeason={database.currentSeason}
         initialRankingHub={rankingHub}
         initialSourceHealth={sourceHealth}
         buildMark={`${SNOOKER_BUILD_MARK}-DB10`}

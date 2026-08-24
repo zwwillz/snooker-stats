@@ -85,13 +85,13 @@ test("snooker event lifecycle keeps a finished event featured for one day then a
   assert.match(uiSource, /nextEventCard = featuredEventCard/);
 });
 
-test("recent events include season history and one upcoming event instead of only two cards", async () => {
+test("series-backed recent events include season history and one upcoming series", async () => {
   const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
-  assert.match(uiSource, /const recentEvents = seasonCalendar/);
-  assert.match(uiSource, /item\.endDate < today \|\| isActiveOn\(item, today\) \|\| item\.id === firstUpcomingAny\?\.id \|\| item\.id === featuredEventCard\?\.id/);
+  assert.match(uiSource, /const recentSeries = selectedSeasonSeries/);
+  assert.match(uiSource, /item\.endDate < today \|\| isActiveOn\(item, today\) \|\| item\.id === selectedFirstUpcomingAny\?\.id \|\| item\.id === selectedFeaturedSeries\?\.id/);
   assert.doesNotMatch(uiSource, /recentSecondaryEvents/);
-  assert.match(uiSource, /近期赛事展示本赛季已完成赛事、当前赛事和即将开始的一站/);
-  assert.match(uiSource, /recentEvents\.map/);
+  assert.match(uiSource, /多阶段赛事合并为一站/);
+  assert.match(uiSource, /recentSeries\.map/);
 });
 
 test("database-backed completed events can open their own schedules and matches", async () => {
@@ -102,7 +102,7 @@ test("database-backed completed events can open their own schedules and matches"
   assert.match(uiSource, /const full = eventBySlug\.get\(detail\.slug\)/);
   assert.match(uiSource, /full\.rounds\.map/);
   assert.match(uiSource, /openMatch\(match\.id, full\.slug\)/);
-  assert.match(uiSource, /该站详细赛程尚未入库/);
+  assert.match(uiSource, /该阶段详细赛程尚未入库/);
   assert.match(dbSource, /eventDetails/);
   assert.match(dbSource, /buildEventDetails/);
 });

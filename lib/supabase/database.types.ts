@@ -194,6 +194,51 @@ export type Database = {
           },
         ]
       }
+      snooker_event_series: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          event_type: string | null
+          id: string
+          name_en: string
+          name_zh: string
+          season: string
+          slug: string
+          source_name: string | null
+          source_series_id: string | null
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          event_type?: string | null
+          id?: string
+          name_en: string
+          name_zh: string
+          season: string
+          slug: string
+          source_name?: string | null
+          source_series_id?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          event_type?: string | null
+          id?: string
+          name_en?: string
+          name_zh?: string
+          season?: string
+          slug?: string
+          source_name?: string | null
+          source_series_id?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       snooker_events: {
         Row: {
           city_zh: string | null
@@ -216,12 +261,16 @@ export type Database = {
           referee_zh: string | null
           runner_up_prize: number | null
           season: string
+          series_id: string
           slug: string
           source_event_id: string | null
           source_name: string | null
           source_updated_at: string | null
           source_url: string | null
           sponsor_name: string | null
+          stage_name_en: string
+          stage_name_zh: string
+          stage_order: number
           start_date: string | null
           status: string
           type_zh: string | null
@@ -251,12 +300,16 @@ export type Database = {
           referee_zh?: string | null
           runner_up_prize?: number | null
           season: string
+          series_id: string
           slug: string
           source_event_id?: string | null
           source_name?: string | null
           source_updated_at?: string | null
           source_url?: string | null
           sponsor_name?: string | null
+          stage_name_en: string
+          stage_name_zh: string
+          stage_order: number
           start_date?: string | null
           status: string
           type_zh?: string | null
@@ -286,12 +339,16 @@ export type Database = {
           referee_zh?: string | null
           runner_up_prize?: number | null
           season?: string
+          series_id?: string
           slug?: string
           source_event_id?: string | null
           source_name?: string | null
           source_updated_at?: string | null
           source_url?: string | null
           sponsor_name?: string | null
+          stage_name_en?: string
+          stage_name_zh?: string
+          stage_order?: number
           start_date?: string | null
           status?: string
           type_zh?: string | null
@@ -306,6 +363,13 @@ export type Database = {
             columns: ["previous_champion_player_id"]
             isOneToOne: false
             referencedRelation: "snooker_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snooker_events_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "snooker_event_series"
             referencedColumns: ["id"]
           },
         ]

@@ -46,6 +46,8 @@ export async function GET(request: NextRequest) {
     dataMode: database.databaseOnline ? "snooker-database" : "verified-snapshot-fallback",
     snapshot: database.snapshot,
     databaseEvents: database.eventDetails,
+    eventSeries: database.eventSeries,
+    currentSeason: database.currentSeason,
     summary: eventSummary(database.snapshot.event),
     sourceHealth,
   }, { headers: { "Cache-Control": SNOOKER_DASHBOARD_CACHE_CONTROL } });

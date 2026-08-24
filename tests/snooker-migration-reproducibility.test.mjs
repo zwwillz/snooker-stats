@@ -11,9 +11,9 @@ test("production Supabase migration history is versioned in the repository", asy
     .filter((name) => name.endsWith(".sql"))
     .sort();
 
-  assert.equal(files.length, 59);
+  assert.equal(files.length, 62);
   assert.equal(files[0], "20260816151702_initialize_snooker_data_center.sql");
-  assert.equal(files.at(-1), "20260820192152_harden_public_access_and_sync_queue.sql");
+  assert.equal(files.at(-1), "20260824051859_add_event_series_rule_service_policy.sql");
 
   const [checksumSource, hardening] = await Promise.all([
     read("supabase/migration-checksums.json"),
@@ -22,7 +22,7 @@ test("production Supabase migration history is versioned in the repository", asy
   const checksums = JSON.parse(checksumSource).migrations;
   const productionFiles = files.slice(0, checksums.length);
   const sources = await Promise.all(productionFiles.map((name) => read("supabase/migrations/" + name)));
-  assert.equal(checksums.length, 58);
+  assert.equal(checksums.length, 62);
   productionFiles.forEach((name, index) => {
     const version = name.slice(0, 14);
     assert.equal(checksums[index].version, version);

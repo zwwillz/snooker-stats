@@ -292,6 +292,26 @@
       "version": "20260820154657",
       "name": "create_snooker_visit_logs",
       "md5": "2d3682f50b9c1cc1f601ea8a17a0a7e4"
+    },
+    {
+      "version": "20260820192152",
+      "name": "harden_public_access_and_sync_queue",
+      "md5": "330a14dc827f389773a80e03bb24ab17"
+    },
+    {
+      "version": "20260824044620",
+      "name": "add_event_series_layer",
+      "md5": "9ef7581c2b79ed4e5847a4d0a75ce251"
+    },
+    {
+      "version": "20260824051746",
+      "name": "add_event_series_and_season_catalog",
+      "md5": "fcf4ccab77253394303e721c6292cb4c"
+    },
+    {
+      "version": "20260824051859",
+      "name": "add_event_series_rule_service_policy",
+      "md5": "cdfdcb936e8b995df2a91079d5041103"
     }
   ]
 }

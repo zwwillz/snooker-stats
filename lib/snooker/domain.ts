@@ -205,6 +205,42 @@ export type SnookerCalendarEvent = {
   dataReady?: boolean;
 };
 
+export type SnookerEventSeriesStage = {
+  eventId: string;
+  slug: string;
+  nameEn: string;
+  nameZh: string;
+  stageNameEn: string;
+  stageNameZh: string;
+  stageOrder: number;
+  startDate: string;
+  endDate: string;
+  status: "upcoming" | "live" | "completed";
+  statusLabelZh: string;
+  dataReady: boolean;
+};
+
+export type SnookerEventSeries = {
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameZh: string;
+  season: string;
+  startDate: string;
+  endDate: string;
+  status: "upcoming" | "live" | "completed";
+  statusLabelZh: string;
+  typeZh: SnookerCalendarEvent["typeZh"];
+  eventType?: SnookerEventType;
+  eventStage?: SnookerEventStage;
+  rankingStatus?: SnookerRankingStatus;
+  countryZh: string;
+  cityZh: string;
+  venueZh?: string;
+  sourceName: string;
+  stages: SnookerEventSeriesStage[];
+};
+
 export type SnookerRankingRow = {
   rank: number;
   playerId: string;
