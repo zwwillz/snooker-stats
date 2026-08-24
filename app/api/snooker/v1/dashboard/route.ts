@@ -37,6 +37,8 @@ export async function GET(request: NextRequest) {
     message: database.databaseOnline ? "用户端从独立斯诺克数据库读取；官方数据源由中央任务统一同步。" : "独立数据库读取失败，已切回本地已验证快照。",
   };
 
+  const cacheControl = liveMatches.length > 0 ? "no-store, no-cache, must-revalidate, max-age=0" : SNOOKER_DASHBOARD_CACHE_CONTROL;
+
   return NextResponse.json({
     ok: true,
     product: "世界斯诺克数据中心",
@@ -50,5 +52,5 @@ export async function GET(request: NextRequest) {
     currentSeason: database.currentSeason,
     summary: eventSummary(database.snapshot.event),
     sourceHealth,
-  }, { headers: { "Cache-Control": SNOOKER_DASHBOARD_CACHE_CONTROL } });
+  }, { headers: { "Cache-Control": cacheControl } });
 }
