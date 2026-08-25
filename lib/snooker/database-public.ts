@@ -162,6 +162,12 @@ function playerId(slug: string) {
   return `p-${slug}`;
 }
 
+function chineseLabelOrFallback(value: string | null | undefined, fallback: string) {
+  const trimmed = value?.trim();
+  if (trimmed && /[\u3400-\u9fff]/.test(trimmed)) return trimmed;
+  return fallback;
+}
+
 function chinaTimeLabel(value: string | null) {
   if (!value) return undefined;
   const date = new Date(value);
@@ -328,7 +334,7 @@ function buildEventDetails(
             return {
               id: `db-${matchRow.id}`,
               roundKey: roundRow.round_key,
-              roundLabelZh: roundRow.label_zh || roundRow.label_en || roundRow.round_key,
+              roundLabelZh: chineseLabelOrFallback(roundRow.label_zh, "待确认轮次"),
               matchNo: matchRow.match_no ?? 0,
               bestOf: matchRow.best_of || roundRow.best_of || 0,
               player1Id: p1,
@@ -347,7 +353,7 @@ function buildEventDetails(
           });
         return {
           key: roundRow.round_key,
-          labelZh: roundRow.label_zh || roundRow.label_en || roundRow.round_key,
+          labelZh: chineseLabelOrFallback(roundRow.label_zh, "待确认轮次"),
           labelEn: roundRow.label_en || roundRow.round_key,
           bestOf: roundRow.best_of || matches[0]?.bestOf || 0,
           ...(roundRow.loser_prize !== null ? { loserPrize: roundRow.loser_prize } : {}),
