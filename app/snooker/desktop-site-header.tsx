@@ -1,4 +1,4 @@
-"use client";
+/* eslint-disable @next/next/no-html-link-for-pages */
 
 type DesktopView = "home" | "matches" | "players" | "data";
 
