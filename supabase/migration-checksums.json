@@ -314,6 +314,16 @@
       "md5": "cdfdcb936e8b995df2a91079d5041103"
     },
     {
+      "version": "20260825143757",
+      "name": "fix_2026_championship_league_wst_stages",
+      "md5": "18cd6c62230be57fdc8dccb5ba5d3c1b"
+    },
+    {
+      "version": "20260825144426",
+      "name": "finalize_2026_championship_league_repairs",
+      "md5": "293db52469f15d84d94be70118fa6add"
+    },
+    {
       "version": "20260825191000",
       "name": "harden_live_match_status_transitions",
       "md5": "7ac6983aeddc3903141a899a6897269a"
