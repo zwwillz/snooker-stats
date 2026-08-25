@@ -46,7 +46,9 @@
 
 ### 国家、地区、城市、场馆
 
-高置信度英文残留已补齐。历史赛事中仍有 **151 条 `city_zh` 为空**，这些主要是旧数据源未提供城市，而不是英文残留；暂不凭赛事名称猜城市。
+高置信度英文残留已补齐。历史赛事中仍有 **142 条 `city_zh` 为空**，这些主要是旧数据源未提供城市，而不是英文残留；暂不凭赛事名称猜城市。
+
+已从可信赛事资料继续回填 2022/23 赛季明确举办城市，包括：谢菲尔德、赫尔、莱斯特、伍尔弗汉普顿、兰迪德诺、柏林、切尔滕纳姆、伦敦。
 
 ### 球员主数据
 
@@ -79,6 +81,13 @@
 - Bai Langning → 白朗宁
 - Chen Feilong → 陈飞龙
 - James Wattana → 詹姆斯·瓦塔纳
+- John Astley → 约翰·阿斯特利
+- Barry Pinches → 巴里·平奇斯
+- Mink Nutcharut → 明克·努查鲁特
+- Fang Xiongman → 方雄慢
+- Mike Dunn → 迈克·邓恩
+- Robin Hull → 罗宾·赫尔
+- Rory McLeod → 罗里·麦克劳德
 
 另识别并处理了伪球员占位实体：
 
@@ -88,9 +97,9 @@
 
 | 审计项 | 初始问题数 | 当前问题数 |
 | --- | ---: | ---: |
-| `players.name_zh` | 965 | 900 |
-| `players.short_name_zh` | 990 | 900 |
-| `players.nationality_zh` | 968 | 678 |
+| `players.name_zh` | 965 | 893 |
+| `players.short_name_zh` | 990 | 893 |
+| `players.nationality_zh` | 968 | 661 |
 | `rounds.label_zh` | 579 | 0 |
 | `events.name_zh` | 29 | 0 |
 | `events.country_zh` | 47 | 0 |
@@ -98,13 +107,14 @@
 | `event_series.name_zh` | 24 | 0 |
 | `events.venue_zh` | 17 | 0 |
 | `event_agg.last_recorded_round_zh` | 9,038（后续扩展审计发现） | 0 |
-| `events.city_zh` | 189 | 151（均为历史空值） |
+| `events.city_zh` | 189 | 142（均为历史空值） |
 | `career_highlights.description_zh` | 917 | 917 |
 
 当前 `snooker_player_names`：
 
-- `zh-CN / verified`：110
-- `zh-CN / pending_review`：900
+- `zh-CN / verified`：117
+- `zh-CN / source_mapped`：95
+- `zh-CN / pending_review`：893
 
 当前线上核心数据校验：
 
@@ -113,7 +123,7 @@
 
 ## 3. 当前明确不做自动写入的内容
 
-### 900 条历史/长尾球员姓名
+### 893 条历史/长尾球员姓名
 
 剩余问题绝大多数是历史职业球员、业余球员和旧赛事参赛者。处理策略：
 
@@ -127,7 +137,7 @@
 
 `snooker_player_career_highlights.description_zh` 当前仍未批量翻译。该字段是完整自然语言资料，不适合直接机器翻译后作为已审核数据入库，应单独建立翻译批次和审核状态。
 
-### 151 条历史城市空值
+### 142 条历史城市空值
 
 不根据赛事名称或国家直接猜举办城市；后续应从原始赛事页、场馆或可信历史资料回填。
 
@@ -153,10 +163,17 @@
 
 这样数据库是翻译事实源，前端只做防御，不在组件里维护大规模英文→中文 if/else。
 
-## 6. 下一步
+## 6. Supabase 检查
+
+应用数据库护栏 migration 后已运行 Supabase Advisors：
+
+- Security：0 条告警。
+- Performance：仅有既存 `unused_index` 信息级提示，与本次翻译治理 DDL 无直接关系，本轮不删除索引。
+
+## 7. 下一步
 
 - 继续按比赛出现次数处理高曝光历史球员；
 - 核查现有中文值中的错误译名/多版本译名，而不仅仅检查英文残留；
 - 逐步调整 CueTracker 历史导入逻辑，使新记录从源头遵守审核规则；
-- 对 151 条历史城市建立可追溯的来源回填；
+- 对 142 条历史城市建立可追溯的来源回填；
 - 将长文本翻译作为独立、有审核状态的资料治理任务。
