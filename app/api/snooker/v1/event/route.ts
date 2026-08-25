@@ -2,19 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { eventSummary, getPlayerEventStats, SNOOKER_BUILD_MARK, SNOOKER_FOUNDATION_VERSION } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { loadSnookerEventDetail } from "@/lib/snooker/database-public";
+import { refreshSingleEventLive } from "@/lib/snooker/live-read-through";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   const database = await loadSnookerDatabaseViewV2();
   const snapshot = database.snapshot;
   const slug = request.nextUrl.searchParams.get("slug")?.trim() ?? snapshot.event.slug;
-  const event = database.eventDetails.find((item) => item.slug === slug)
+  const baseEvent = database.eventDetails.find((item) => item.slug === slug)
     ?? (snapshot.event.slug === slug ? snapshot.event : null)
     ?? await loadSnookerEventDetail(slug);
-  if (!event) return NextResponse.json({ ok: false, error: "EVENT_NOT_FOUND" }, { status: 404 });
+  if (!baseEvent) return NextResponse.json({ ok: false, error: "EVENT_NOT_FOUND" }, { status: 404 });
 
+  const event = await refreshSingleEventLive(baseEvent);
   const playerStats = snapshot.players
     .map((player) => getPlayerEventStats(player.id, event))
     .filter(Boolean);
+  const realtime = event.rounds.some((round) => round.matches.some((match) => match.status === "live" || match.status === "session-break"));
 
   return NextResponse.json({
     ok: true,
@@ -24,5 +30,9 @@ export async function GET(request: NextRequest) {
     event,
     summary: eventSummary(event),
     playerStats,
+  }, {
+    headers: {
+      "Cache-Control": realtime ? "no-store, no-cache, must-revalidate, max-age=0" : "public, max-age=60, s-maxage=300, stale-while-revalidate=3600",
+    },
   });
 }
