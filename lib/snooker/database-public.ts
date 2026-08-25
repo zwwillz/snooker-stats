@@ -452,6 +452,51 @@ function eventWinnerZh(event: SnookerEvent, playerById: Map<string, SnookerPlaye
   return final?.winnerId ? playerById.get(final.winnerId)?.nameZh : undefined;
 }
 
+function isChampionshipLeagueSeries(series: DbEventSeries, rows: DbSeriesEvent[]) {
+  return /championship league/i.test(series.name_en)
+    || rows.some((row) => /championship league/i.test(row.name_en));
+}
+
+function championshipLeagueStandaloneSeries(series: DbEventSeries, row: DbSeriesEvent, loadedAt: string): SnookerEventSeries {
+  const startDate = row.start_date || loadedAt.slice(0, 10);
+  const endDate = row.end_date || startDate;
+  const status = statusFromDates(startDate, endDate);
+  const taxonomy = normalizeEventTaxonomy(row.event_type, row.event_stage, row.ranking_status, row.type_zh);
+  return {
+    id: `db-series-event-${row.id}`,
+    slug: row.slug,
+    nameEn: row.name_en,
+    nameZh: row.name_zh,
+    season: series.season,
+    startDate,
+    endDate,
+    status,
+    statusLabelZh: statusLabel(status),
+    typeZh: compactEventTypeLabel(taxonomy),
+    eventType: taxonomy.eventType,
+    eventStage: taxonomy.eventStage,
+    rankingStatus: taxonomy.rankingStatus,
+    countryZh: row.country_zh || "待定",
+    cityZh: row.city_zh || "待定",
+    ...(row.venue_zh ? { venueZh: row.venue_zh } : {}),
+    sourceName: series.source_name || "Snooker DB",
+    stages: [{
+      eventId: `db-event-${row.id}`,
+      slug: row.slug,
+      nameEn: row.name_en,
+      nameZh: row.name_zh,
+      stageNameEn: row.stage_name_en,
+      stageNameZh: row.stage_name_zh,
+      stageOrder: 1,
+      startDate,
+      endDate,
+      status,
+      statusLabelZh: statusLabel(status),
+      dataReady: row.data_ready,
+    }],
+  };
+}
+
 function buildEventSeries(seriesRows: DbEventSeries[], eventRows: DbSeriesEvent[], loadedAt: string) {
   const eventsBySeries = new Map<string, DbSeriesEvent[]>();
   for (const row of eventRows) {
@@ -465,6 +510,9 @@ function buildEventSeries(seriesRows: DbEventSeries[], eventRows: DbSeriesEvent[
       .sort((a, b) => a.stage_order - b.stage_order || (a.start_date ?? "").localeCompare(b.start_date ?? ""));
     const representative = rows[0];
     if (!representative) return [];
+    if (isChampionshipLeagueSeries(series, rows)) {
+      return rows.map((row) => championshipLeagueStandaloneSeries(series, row, loadedAt));
+    }
     const startDate = series.start_date || representative.start_date || loadedAt.slice(0, 10);
     const endDate = series.end_date || rows.at(-1)?.end_date || startDate;
     const status = statusFromDates(startDate, endDate);
@@ -532,13 +580,13 @@ export async function loadSnookerDatabaseView(): Promise<SnookerDatabaseView> {
     let roundRows: DbRound[] = [];
     let matchRows: DbMatch[] = [];
     let frameRows: DbFrame[] = [];
+    const detailEventIds = focusedEventIds(eventRows, loadedAt.slice(0, 10));
 
     if (dataReadyIds.length) {
       [roundRows, matchRows] = await Promise.all([
         rest<DbRound[]>(`snooker_rounds?select=id,event_id,round_key,label_en,label_zh,sort_order,best_of,loser_prize&event_id=in.${inFilter(dataReadyIds)}&order=sort_order.asc`),
         rest<DbMatch[]>(`snooker_matches?select=id,event_id,round_id,source_match_id,match_no,player1_id,player2_id,score1,score2,best_of,status,scheduled_at,session_label_zh,winner_id,note,source_updated_at,source_status,source_status_meta,completed_detected_at&event_id=in.${inFilter(dataReadyIds)}&order=match_no.asc`),
       ]);
-      const detailEventIds = focusedEventIds(eventRows, loadedAt.slice(0, 10));
       const matchIds = matchRows.filter((row) => detailEventIds.has(row.event_id)).map((row) => row.id);
       frameRows = await restInBatchesBestEffort<DbFrame>(
         matchIds,
@@ -548,7 +596,15 @@ export async function loadSnookerDatabaseView(): Promise<SnookerDatabaseView> {
       );
     }
 
-    const eventDetails = buildEventDetails(eventRows, roundRows, matchRows, frameRows, uuidToCanonical, loadedAt);
+    const builtEventDetails = buildEventDetails(eventRows, roundRows, matchRows, frameRows, uuidToCanonical, loadedAt);
+    const eventDetails = builtEventDetails.filter((event) => {
+      const eventUuid = event.id.startsWith("db-event-") ? event.id.slice("db-event-".length) : null;
+      const historicalChampionshipLeague = /championship league/i.test(event.nameEn)
+        && event.status === "completed"
+        && eventUuid
+        && !detailEventIds.has(eventUuid);
+      return !historicalChampionshipLeague;
+    });
     const eventSeries = buildEventSeries(seriesRows, seriesEventRows, loadedAt)
       .filter((series) => Number(series.season.slice(0, 4)) >= 2019);
     const playerByCanonical = new Map(players.map((player) => [player.id, player]));
