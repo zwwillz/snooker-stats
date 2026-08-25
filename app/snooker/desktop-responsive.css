@@ -1,0 +1,214 @@
+/* Desktop-only responsive layer for the public snooker experience.
+   Mobile/tablet layouts below 1024px remain owned by the existing CSS modules. */
+
+@media (min-width: 1024px) {
+  main[data-theme] {
+    --desktop-content-max: 1560px;
+    --desktop-gutter: clamp(24px, 2.5vw, 44px);
+    --desktop-header-gutter: clamp(28px, 3.2vw, 64px);
+    --desktop-header-height: 76px;
+    --desktop-gap: clamp(18px, 1.35vw, 24px);
+  }
+
+  /* Full-width desktop shell + masthead. */
+  main[data-theme] > div:has(> nav) {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding-bottom: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  main[data-theme] > div:has(> nav) > header {
+    width: 100%;
+    height: var(--desktop-header-height);
+    padding: 0 var(--desktop-header-gutter);
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    border-bottom: 1px solid rgba(224, 230, 226, 0.92);
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 4px 22px rgba(25, 35, 31, 0.025);
+    backdrop-filter: blur(18px);
+  }
+
+  /* Desktop navigation reuses the existing nav state but behaves like a website masthead. */
+  main[data-theme] > div:has(> nav) > nav {
+    position: fixed;
+    top: 0;
+    bottom: auto;
+    left: 50%;
+    z-index: 90;
+    width: min(460px, 42vw);
+    height: var(--desktop-header-height);
+    padding: 0;
+    transform: translateX(-50%);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 0;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  main[data-theme] > div:has(> nav) > nav button {
+    min-width: 0;
+    padding: 0 18px;
+    flex-direction: row;
+    gap: 0;
+    border-radius: 0;
+    color: #7d8581;
+  }
+
+  main[data-theme] > div:has(> nav) > nav button > span {
+    display: none;
+  }
+
+  main[data-theme] > div:has(> nav) > nav button > b {
+    font-size: 14px;
+    letter-spacing: .01em;
+  }
+
+  /* Keep internal/public-debug labels out of the desktop public UI. */
+  main[data-theme] > div:has(> nav) > header span:nth-last-child(2):first-child,
+  main[data-theme] > div:has(> nav) > header + div > div:last-child:has(> i:first-child):has(> small:last-child) {
+    display: none !important;
+  }
+
+  /* Content is constrained independently from the full-width header. */
+  main[data-theme] > div:has(> nav) > header + div {
+    width: min(calc(100% - (var(--desktop-gutter) * 2)), var(--desktop-content-max));
+    margin: 0 auto;
+    padding: 34px 0 58px;
+    gap: var(--desktop-gap);
+  }
+
+  main[data-theme] > div:has(> nav) button:focus-visible,
+  main[data-theme] > div:has(> nav) a:focus-visible {
+    outline: 2px solid var(--accent, #0b7a55);
+    outline-offset: 3px;
+  }
+
+  /* ---------- Home desktop composition ----------
+     Home is detected by the large first section (the tournament hero).
+     The layout is intentionally structural and does not rely on CSS-module class names. */
+  main[data-theme] > div:has(> nav) > header + div:has(> section:first-child > div:nth-of-type(2)) {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(330px, 1fr);
+    grid-template-rows: 176px 206px auto;
+    align-items: stretch;
+    gap: var(--desktop-gap);
+  }
+
+  main[data-theme] > div:has(> nav) > header + div:has(> section:first-child > div:nth-of-type(2)) > section {
+    min-width: 0;
+    margin: 0;
+  }
+
+  /* Hero always anchors the left side and never inherits height from lower-page cards. */
+  main[data-theme] > div:has(> nav) > header + div:has(> section:first-child > div:nth-of-type(2)) > section:first-child {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    min-height: 0;
+    height: 100%;
+    padding: clamp(30px, 2.4vw, 42px);
+  }
+
+  main[data-theme] > div:has(> nav) > header + div:has(> section:first-child > div:nth-of-type(2)) > section:first-child h1 {
+    margin-top: 10px;
+    font-size: clamp(36px, 3vw, 50px);
+    line-height: 1.08;
+  }
+
+  /* CASE A: a live/headline-match card exists.
+     Its markup has three direct divs (header, score, source line). */
+  main[data-theme] > div:has(> nav) > header + div:has(> section:nth-child(2) > div:nth-of-type(3)) > section:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 0;
+  }
+
+  main[data-theme] > div:has(> nav) > header + div:has(> section:nth-child(2) > div:nth-of-type(3)) > section:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+  }
+
+  main[data-theme] > div:has(> nav) > header + div:has(> section:nth-child(2) > div:nth-of-type(3)) > section:nth-child(4) {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  main[data-theme] > div:has(> nav) > header + div:has(> section:nth-child(2) > div:nth-of-type(3)) > section:nth-child(5) {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  /* CASE B: no live/headline card.
+     The second section is the upcoming-event card, so ranking uses the second right-rail slot. */
+  main[data-theme] > div:has(> nav) > header + div:has(> section:nth-child(2)):not(:has(> section:nth-child(2) > div:nth-of-type(3))) > section:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 0;
+  }
+
+  main[data-theme] > div:has(> nav) > header + div:has(> section:nth-child(2)):not(:has(> section:nth-child(2) > div:nth-of-type(3))) > section:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+  }
+
+  main[data-theme] > div:has(> nav) > header + div:has(> section:nth-child(2)):not(:has(> section:nth-child(2) > div:nth-of-type(3))) > section:nth-child(4) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  /* Second-row data cards should read horizontally on desktop, never collapse into narrow strips. */
+  main[data-theme] > div:has(> nav) > header + div:has(> section:first-child > div:nth-of-type(2)) > section:nth-child(n + 4) {
+    min-height: 220px;
+  }
+
+  main[data-theme] > div:has(> nav) > header + div:has(> section:first-child > div:nth-of-type(2)) > section:nth-child(4) > div:last-child {
+    max-width: 100%;
+  }
+
+  /* Hide the global runtime/source diagnostic row on the public desktop home. */
+  main[data-theme] > div:has(> nav) > header + div:has(> section:first-child > div:nth-of-type(2)) > div:last-child {
+    display: none !important;
+  }
+
+  /* Desktop card treatment: less app-like, more editorial/data-product. */
+  main[data-theme] > div:has(> nav) > header + div > section:not(:first-child) {
+    border-radius: 18px;
+    box-shadow: 0 9px 28px rgba(35, 45, 41, 0.035);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    main[data-theme] > div:has(> nav) > nav button:not(:disabled):hover {
+      color: var(--accent, #0b7a55);
+      background: var(--accent-faint, #f5faf7);
+    }
+
+    main[data-theme] > div:has(> nav) > header + div button:not(:disabled):hover {
+      transform: translateY(-1px);
+    }
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  main[data-theme] {
+    --desktop-content-max: 1120px;
+    --desktop-gap: 16px;
+  }
+
+  main[data-theme] > div:has(> nav) > header + div:has(> section:first-child > div:nth-of-type(2)) {
+    grid-template-columns: minmax(0, 1.65fr) minmax(310px, 1fr);
+  }
+}
+
+@media (min-width: 1600px) {
+  main[data-theme] > div:has(> nav) > header + div {
+    padding-top: 38px;
+  }
+}
