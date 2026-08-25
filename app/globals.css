@@ -1,3 +1,5 @@
+@import "./snooker/desktop-responsive.css";
+
 :root {
   color-scheme: light;
   --page-background: #f3f5f4;
