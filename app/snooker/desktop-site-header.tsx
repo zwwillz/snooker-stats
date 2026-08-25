@@ -1,7 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
-
 type DesktopView = "home" | "matches" | "players" | "data";
 
 const navItems: Array<{ id: DesktopView; label: string; href: string }> = [
