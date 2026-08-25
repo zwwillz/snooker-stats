@@ -26,14 +26,14 @@ test("phase 3a shares the expensive database view across requests", async () => 
   assert.match(loader, /serving stale snapshot/);
   assert.doesNotMatch(loader, /unstable_cache/);
   assert.match(route, /SNOOKER_DASHBOARD_CACHE_CONTROL/);
-  assert.doesNotMatch(route, /no-store, no-cache, must-revalidate/);
+  assert.match(route, /no-store, no-cache, must-revalidate/);
 });
 
 test("phase 3a keeps live polling bounded and cache-aware", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
-  assert.match(ui, /if \(!hasLiveMatch\) return/);
+  assert.match(ui, /if \(!shouldPollDashboard\) return/);
   assert.match(ui, /setInterval\(\(\) => void refresh\(\), 30_000\)/);
-  assert.match(ui, /fetch\("\/api\/snooker\/v1\/dashboard", \{ headers: \{ Accept: "application\/json" \} \}\)/);
+  assert.match(ui, /fetch\("\/api\/snooker\/v1\/dashboard", \{ cache: "no-store", headers: \{ Accept: "application\/json" \} \}\)/);
   assert.doesNotMatch(ui, /Date\.now\(\).*dashboard/);
   assert.match(ui, /formatUpdatedAt\(sourceHealth\?\.fetchedAt\)/);
   assert.match(ui, /className=\{styles\.dataStatus\}/);

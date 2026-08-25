@@ -49,8 +49,8 @@ test("snooker frontend is database-first and only live matches poll every 30 sec
   assert.match(pageSource, /loadSnookerDatabaseView/);
   assert.match(pageSource, /initialDatabaseEvents=\{database\.eventDetails\}/);
   assert.doesNotMatch(pageSource, /getCachedDashboardWithLiveOverlay/);
-  assert.match(pageSource, /export const revalidate = 300/);
-  assert.doesNotMatch(pageSource, /dynamic = "force-dynamic"/);
+  assert.match(pageSource, /export const revalidate = 0/);
+  assert.match(pageSource, /dynamic = "force-dynamic"/);
   assert.match(dbSource, /getSnookerSupabasePublicConfig/);
   assert.match(dbSource, /snooker_events\?select=/);
   assert.match(dbSource, /snooker_matches\?select=/);
@@ -60,12 +60,12 @@ test("snooker frontend is database-first and only live matches poll every 30 sec
   assert.match(dashboardSource, /searchParams\.has\("monitor"\)/);
   assert.match(dashboardSource, /getCachedDashboardWithLiveOverlay/);
   assert.match(dashboardSource, /databaseEvents: database\.eventDetails/);
-  assert.match(uiSource, /if \(!hasLiveMatch\) return/);
+  assert.match(uiSource, /if \(!shouldPollDashboard\) return/);
   assert.match(uiSource, /setInterval\(\(\) => void refresh\(\), 30_000\)/);
   assert.doesNotMatch(uiSource, /15_000/);
   assert.match(uiSource, /30秒自动同步/);
   assert.doesNotMatch(uiSource, /dashboard\?ts=/);
-  assert.doesNotMatch(uiSource, /cache: "no-store"/);
+  assert.match(uiSource, /cache: "no-store"/);
   assert.match(uiSource, /visibilitychange/);
   assert.match(uiSource, /label: "赛事"/);
   assert.match(uiSource, /近期赛事/);
@@ -100,17 +100,17 @@ test("database-backed completed events can open their own schedules and matches"
     read("lib/snooker/database-public.ts"),
   ]);
   assert.match(uiSource, /const full = eventBySlug\.get\(detail\.slug\)/);
-  assert.match(uiSource, /full\.rounds\.map/);
-  assert.match(uiSource, /openMatch\(match\.id, full\.slug\)/);
-  assert.match(uiSource, /该阶段详细赛程尚未入库/);
+  assert.match(uiSource, /seriesDetail\.stages\.map/);
+  assert.match(uiSource, /openMatch\(match\.id, stageEvent\.slug, seriesDetail\.slug\)/);
+  assert.match(uiSource, /详细赛程尚未入库/);
   assert.match(dbSource, /eventDetails/);
   assert.match(dbSource, /buildEventDetails/);
 });
 
 test("home result card marks the winner and persists until the next event begins", async () => {
   const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
-  assert.match(uiSource, /const latestCompleted = \[\.\.\.databaseEvents\]/);
-  assert.match(uiSource, /const headlineMatch = activeEventCard/);
+  assert.match(uiSource, /selectHomepageHeadlineMatch\(databaseEvents, players\)/);
+  assert.match(uiSource, /const headlineMatch = headlineSelection\?\.match/);
   assert.match(uiSource, /headlineMatch\.winnerId === headlineMatch\.player1Id/);
   assert.match(uiSource, /headlineMatch\.winnerId === headlineMatch\.player2Id/);
   assert.match(uiSource, /headlineMatch\.status === "completed" \? `更新 \$\{formatUpdatedAt/);

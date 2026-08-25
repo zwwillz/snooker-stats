@@ -312,6 +312,11 @@
       "version": "20260824051859",
       "name": "add_event_series_rule_service_policy",
       "md5": "cdfdcb936e8b995df2a91079d5041103"
+    },
+    {
+      "version": "20260825191000",
+      "name": "harden_live_match_status_transitions",
+      "md5": "7ac6983aeddc3903141a899a6897269a"
     }
   ]
 }

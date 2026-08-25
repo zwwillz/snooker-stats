@@ -230,3 +230,21 @@
   .seasonArrow{height:36px}
   .seasonRail button{min-width:88px;height:36px;padding:0 10px}
 }
+
+
+.liveStatusPill{position:relative;padding-left:17px!important}
+.liveStatusPill::before{content:"";position:absolute;left:7px;top:50%;width:6px;height:6px;border-radius:50%;background:currentColor;transform:translateY(-50%);animation:snookerLivePulse 1.6s ease-in-out infinite}
+.breakStatusPill{position:relative;padding-left:17px!important}
+.breakStatusPill::before{content:"";position:absolute;left:7px;top:50%;width:6px;height:6px;border-radius:50%;background:currentColor;transform:translateY(-50%);opacity:.58}
+.liveSeparator{display:inline-block;font-style:normal;animation:snookerScorePulse 1.6s ease-in-out infinite}
+.liveScoreText{animation:snookerScorePulse 1.9s ease-in-out infinite}
+@keyframes snookerLivePulse{0%,100%{opacity:.45;box-shadow:0 0 0 0 currentColor}50%{opacity:1;box-shadow:0 0 0 4px transparent}}
+@keyframes snookerScorePulse{0%,100%{opacity:.45;transform:scale(.94)}50%{opacity:1;transform:scale(1.08)}}
+.seriesSchedule{display:flex;flex-direction:column;gap:18px}
+.seriesStageSection{display:flex;flex-direction:column;gap:10px}
+.seriesStageHeading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:4px 4px 0}
+.seriesStageHeading small{display:block;color:var(--accent);font-size:7px;font-weight:850;letter-spacing:.12em}
+.seriesStageHeading h2{margin:4px 0 0;font-size:18px;letter-spacing:-.03em}
+.seriesStageHeading>span{flex:none;color:var(--muted);font-size:8px;font-weight:750}
+.seriesStageEmpty{padding:22px 14px;border:1px dashed var(--line);border-radius:16px;background:#fff;color:var(--muted);font-size:9px;text-align:center}
+@media (prefers-reduced-motion:reduce){.liveStatusPill::before,.liveSeparator,.liveScoreText{animation:none!important}.liveStatusPill::before{opacity:1}}

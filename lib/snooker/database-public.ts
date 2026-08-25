@@ -142,6 +142,9 @@ type DbMatch = {
   winner_id: string | null;
   note: string | null;
   source_updated_at: string | null;
+  source_status?: string | null;
+  source_status_meta?: string | null;
+  completed_detected_at?: string | null;
 };
 
 type DbFrame = {
@@ -206,7 +209,7 @@ function matchStatus(value: string): SnookerMatchStatus {
 function matchStatusLabel(status: SnookerMatchStatus) {
   if (status === "completed") return "已结束";
   if (status === "walkover") return "退赛晋级";
-  if (status === "session-break") return "进行中 · 阶段休息";
+  if (status === "session-break") return "局间休息";
   if (status === "live") return "进行中";
   return "待开始";
 }
@@ -396,6 +399,8 @@ function buildEventDetails(
               ...(frames?.length ? { frames } : {}),
               ...(matchRow.note ? { note: matchRow.note } : {}),
               ...(winner ? { winnerId: winner } : {}),
+              ...(matchRow.source_updated_at ? { sourceUpdatedAt: matchRow.source_updated_at } : {}),
+              ...(matchRow.completed_detected_at ? { completedDetectedAt: matchRow.completed_detected_at } : {}),
             };
           });
         return {
@@ -531,7 +536,7 @@ export async function loadSnookerDatabaseView(): Promise<SnookerDatabaseView> {
     if (dataReadyIds.length) {
       [roundRows, matchRows] = await Promise.all([
         rest<DbRound[]>(`snooker_rounds?select=id,event_id,round_key,label_en,label_zh,sort_order,best_of,loser_prize&event_id=in.${inFilter(dataReadyIds)}&order=sort_order.asc`),
-        rest<DbMatch[]>(`snooker_matches?select=id,event_id,round_id,source_match_id,match_no,player1_id,player2_id,score1,score2,best_of,status,scheduled_at,session_label_zh,winner_id,note,source_updated_at&event_id=in.${inFilter(dataReadyIds)}&order=match_no.asc`),
+        rest<DbMatch[]>(`snooker_matches?select=id,event_id,round_id,source_match_id,match_no,player1_id,player2_id,score1,score2,best_of,status,scheduled_at,session_label_zh,winner_id,note,source_updated_at,source_status,source_status_meta,completed_detected_at&event_id=in.${inFilter(dataReadyIds)}&order=match_no.asc`),
       ]);
       const detailEventIds = focusedEventIds(eventRows, loadedAt.slice(0, 10));
       const matchIds = matchRows.filter((row) => detailEventIds.has(row.event_id)).map((row) => row.id);
@@ -665,7 +670,7 @@ export async function loadSnookerEventDetail(slug: string): Promise<SnookerEvent
 
   const [roundRows, matchRows] = await Promise.all([
     rest<DbRound[]>(`snooker_rounds?select=id,event_id,round_key,label_en,label_zh,sort_order,best_of,loser_prize&event_id=eq.${eventRow.id}&order=sort_order.asc`, SNOOKER_CACHE_SECONDS.history),
-    rest<DbMatch[]>(`snooker_matches?select=id,event_id,round_id,source_match_id,match_no,player1_id,player2_id,score1,score2,best_of,status,scheduled_at,session_label_zh,winner_id,note,source_updated_at&event_id=eq.${eventRow.id}&order=match_no.asc`, SNOOKER_CACHE_SECONDS.history),
+    rest<DbMatch[]>(`snooker_matches?select=id,event_id,round_id,source_match_id,match_no,player1_id,player2_id,score1,score2,best_of,status,scheduled_at,session_label_zh,winner_id,note,source_updated_at,source_status,source_status_meta,completed_detected_at&event_id=eq.${eventRow.id}&order=match_no.asc`, SNOOKER_CACHE_SECONDS.history),
   ]);
   const playerIds = [...new Set(matchRows.flatMap((row) => [row.player1_id, row.player2_id, row.winner_id].filter((id): id is string => Boolean(id))))];
   const matchIds = matchRows.map((row) => row.id);
