@@ -16,6 +16,7 @@ import type {
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import { CURRENT_RANKING_KEYS, type SnookerCurrentRankingKey, type SnookerRankingHub, type SnookerRankingSection } from "@/lib/snooker/ranking-hub";
 import { DataHubContent, RankingDetailContent } from "./data/data-ranking-content";
+import PlayerCompareTeaser from "./compare/player-compare-teaser";
 import { PlayerDirectoryContent, type PlayerFilter } from "./players/player-directory";
 import PlayerDetailInline from "./players/player-detail-inline";
 import { prefetchPlayerDetail, prefetchPlayerExperience } from "./players/player-detail-client";
@@ -969,6 +970,8 @@ export default function SnookerDataCenterV2({
           <button className={styles.fullButton} onClick={() => openMatch(headlineMatch.id, headlineEvent.slug)}>查看比赛详情</button>
           <div className={styles.sourceLine}><i className={sourceHealth?.accepted ? styles.liveOk : styles.liveWait} /><b>{sourceHealth?.sourceLabel ?? "官方比赛数据"}</b><small>{headlineMatch.status === "completed" ? `更新 ${formatUpdatedAt(sourceHealth?.fetchedAt)}` : `30秒同步 · ${formatUpdatedAt(sourceHealth?.fetchedAt)}`}</small></div>
         </section> : null}
+
+        <PlayerCompareTeaser players={directoryPlayers} />
 
         {nextEventCard ? <section className={styles.card}><SectionHeader eyebrow="NEXT EVENT" title="下一站" action={eventStatusLabel(nextEventCard)} actionClassName={`${polish.eventStatusText} ${eventStatusClass(nextEventCard.status)}`} /><button className={styles.nextEvent} onClick={() => openEvent(nextEventCard.slug)}><span>{nextEventCard.cityZh?.slice(0, 1) || "赛"}</span><div><strong>{nextEventCard.nameZh}</strong><small>{nextEventCard.nameEn}</small><p>{formatDateRange(nextEventCard.startDate, nextEventCard.endDate)} · {nextEventCard.cityZh}</p></div><em>›</em></button></section> : null}
         <section className={styles.card}><SectionHeader eyebrow="Official World Ranking" title="世界排名" action="TOP 3" /><div className={styles.rankingList}>{rankingRows.slice(0, 3).map((row) => <div className={polish.rankingStaticRow} key={row.rank}><strong>{row.rank}</strong><button className={polish.rankingAvatarButton} onClick={() => openPlayer(row.player.id)} aria-label={`查看${row.player.nameZh}球员详情`}><PlayerAvatar player={row.player} size="sm" /></button><span><b>{row.player.nameZh}</b><small>{row.player.nameEn}</small></span><em>{rankingMoney(row.points)}</em></div>)}</div><button className={styles.fullButton} onClick={() => changeView("data")}>查看完整世界排名</button></section>

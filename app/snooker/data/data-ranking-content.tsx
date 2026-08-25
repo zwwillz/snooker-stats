@@ -11,6 +11,7 @@ import { technicalMetricKey, type SnookerTechnicalHub, type SnookerTechnicalMetr
 import { honoursMetricKey, type SnookerHonoursHub, type SnookerHonoursMetricKey } from "@/lib/snooker/honours-hub";
 import { SeasonLeadersSection, TechnicalDetailOverlay } from "./data-technical-content";
 import { HonoursDetailOverlay, HonoursLeadersSection } from "./data-honours-content";
+import PlayerCompareTeaser from "../compare/player-compare-teaser";
 import styles from "./data.module.css";
 
 const currentKeyOrder: SnookerCurrentRankingKey[] = [
@@ -305,6 +306,8 @@ export function DataHubContent({
       <h1>数据</h1>
       <p>世界斯诺克排名、赛季表现与历史纪录的数据入口。排名、技术与荣誉数据按统一结构逐步扩展。</p>
     </section>
+
+    <PlayerCompareTeaser players={players} variant="data" />
 
     <section className={`${styles.card} ${styles.rankingCard}`}>
       <div className={styles.sectionHeader}>
