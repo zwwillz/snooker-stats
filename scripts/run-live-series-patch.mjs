@@ -17,14 +17,26 @@ await import(pathToFileURL(temp).href);
 
 const uiPath = "app/snooker/snooker-data-center-v2.tsx";
 let ui = await readFile(uiPath, "utf8");
-const impureBlock = `  const shouldPollDashboard = useMemo(() => {
-    const now = Date.now();`;
-const pureBlock = `  const sourceFetchedAt = sourceHealth?.fetchedAt;
-  const shouldPollDashboard = useMemo(() => {
-    const now = sourceFetchedAt ? Date.parse(sourceFetchedAt) : 0;`;
-if (!ui.includes(impureBlock)) throw new Error("Generated poll clock target missing");
-ui = ui.replace(impureBlock, pureBlock);
-const deps = "  }, [databaseEvents]);";
-if (!ui.includes(deps)) throw new Error("Generated poll dependency target missing");
-ui = ui.replace(deps, "  }, [databaseEvents, sourceFetchedAt]);");
+const generatedBlock = `  const shouldPollDashboard = useMemo(() => {
+    const now = Date.now();
+    return databaseEvents.some((event) => allMatches(event).some((match) => {
+      if (match.status === "live" || match.status === "session-break") return true;
+      const scheduled = match.scheduledAt ? Date.parse(match.scheduledAt) : 0;
+      if (match.status === "upcoming" && scheduled && scheduled >= now && scheduled - now <= 6 * 60 * 60 * 1000) return true;
+      const completed = match.completedDetectedAt || match.sourceUpdatedAt;
+      const completedAt = completed ? Date.parse(completed) : 0;
+      return (match.status === "completed" || match.status === "walkover") && completedAt > 0 && now - completedAt <= 60 * 60 * 1000;
+    }));
+  }, [databaseEvents]);`;
+const safeBlock = `  const pollReferenceTime = sourceHealth?.fetchedAt ? Date.parse(sourceHealth.fetchedAt) : 0;
+  const shouldPollDashboard = databaseEvents.some((event) => allMatches(event).some((match) => {
+    if (match.status === "live" || match.status === "session-break") return true;
+    const scheduled = match.scheduledAt ? Date.parse(match.scheduledAt) : 0;
+    if (match.status === "upcoming" && scheduled && scheduled >= pollReferenceTime && scheduled - pollReferenceTime <= 6 * 60 * 60 * 1000) return true;
+    const completed = match.completedDetectedAt || match.sourceUpdatedAt;
+    const completedAt = completed ? Date.parse(completed) : 0;
+    return (match.status === "completed" || match.status === "walkover") && completedAt > 0 && pollReferenceTime - completedAt <= 60 * 60 * 1000;
+  }));`;
+if (!ui.includes(generatedBlock)) throw new Error("Generated poll predicate target missing");
+ui = ui.replace(generatedBlock, safeBlock);
 await writeFile(uiPath, ui);
