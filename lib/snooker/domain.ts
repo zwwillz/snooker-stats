@@ -127,6 +127,8 @@ export type SnookerMatch = {
   headToHead?: SnookerHeadToHead;
   note?: string;
   winnerId?: string;
+  sourceUpdatedAt?: string;
+  completedDetectedAt?: string;
 };
 
 export type SnookerRound = {
