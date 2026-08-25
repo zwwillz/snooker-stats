@@ -14,3 +14,14 @@ source = before + block + after;
 const temp = "/tmp/apply-live-series-experience-fixed.mjs";
 await writeFile(temp, source);
 await import(pathToFileURL(temp).href);
+
+const uiPath = "app/snooker/snooker-data-center-v2.tsx";
+let ui = await readFile(uiPath, "utf8");
+const impure = "    const now = Date.now();";
+const pure = "    const now = sourceHealth?.fetchedAt ? Date.parse(sourceHealth.fetchedAt) : 0;";
+if (!ui.includes(impure)) throw new Error("Generated poll clock target missing");
+ui = ui.replace(impure, pure);
+const deps = "  }, [databaseEvents]);";
+if (!ui.includes(deps)) throw new Error("Generated poll dependency target missing");
+ui = ui.replace(deps, "  }, [databaseEvents, sourceHealth?.fetchedAt]);");
+await writeFile(uiPath, ui);
