@@ -2,6 +2,7 @@ import type {
   SnookerCalendarEvent,
   SnookerDashboardSnapshot,
   SnookerEvent,
+  SnookerEventSeries,
   SnookerFrame,
   SnookerMatch,
   SnookerMatchStatus,
@@ -22,6 +23,8 @@ const REST_URL = `${SUPABASE_URL}/rest/v1`;
 export type SnookerDatabaseView = {
   snapshot: SnookerDashboardSnapshot;
   eventDetails: SnookerEvent[];
+  eventSeries: SnookerEventSeries[];
+  currentSeason: string;
   loadedAt: string;
   databaseOnline: boolean;
 };
@@ -52,6 +55,42 @@ type DbEvent = {
   source_url: string | null;
   source_updated_at: string | null;
   referee_zh: string | null;
+  data_ready: boolean;
+  series_id?: string;
+  stage_name_en?: string;
+  stage_name_zh?: string;
+  stage_order?: number;
+};
+
+type DbEventSeries = {
+  id: string;
+  slug: string;
+  season: string;
+  name_en: string;
+  name_zh: string;
+  start_date: string | null;
+  end_date: string | null;
+  source_name: string | null;
+};
+
+type DbSeriesEvent = {
+  id: string;
+  series_id: string;
+  slug: string;
+  name_en: string;
+  name_zh: string;
+  stage_name_en: string;
+  stage_name_zh: string;
+  stage_order: number;
+  start_date: string | null;
+  end_date: string | null;
+  type_zh: string | null;
+  event_type: string | null;
+  event_stage: string | null;
+  ranking_status: string | null;
+  country_zh: string | null;
+  city_zh: string | null;
+  venue_zh: string | null;
   data_ready: boolean;
 };
 
@@ -103,6 +142,9 @@ type DbMatch = {
   winner_id: string | null;
   note: string | null;
   source_updated_at: string | null;
+  source_status?: string | null;
+  source_status_meta?: string | null;
+  completed_detected_at?: string | null;
 };
 
 type DbFrame = {
@@ -123,6 +165,8 @@ type DbRanking = {
   points: number;
 };
 
+type DbPlayerKey = { id: string; slug: string };
+
 function todayInChina() {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Shanghai",
@@ -130,6 +174,18 @@ function todayInChina() {
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
+}
+
+export function currentSnookerSeason(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(date);
+  const year = Number(parts.find((part) => part.type === "year")?.value ?? date.getUTCFullYear());
+  const month = Number(parts.find((part) => part.type === "month")?.value ?? date.getUTCMonth() + 1);
+  const start = month >= 5 ? year : year - 1;
+  return `${start}/${String((start + 1) % 100).padStart(2, "0")}`;
 }
 
 function statusFromDates(startDate: string, endDate: string): "upcoming" | "live" | "completed" {
@@ -153,7 +209,7 @@ function matchStatus(value: string): SnookerMatchStatus {
 function matchStatusLabel(status: SnookerMatchStatus) {
   if (status === "completed") return "已结束";
   if (status === "walkover") return "退赛晋级";
-  if (status === "session-break") return "进行中 · 阶段休息";
+  if (status === "session-break") return "局间休息";
   if (status === "live") return "进行中";
   return "待开始";
 }
@@ -343,6 +399,8 @@ function buildEventDetails(
               ...(frames?.length ? { frames } : {}),
               ...(matchRow.note ? { note: matchRow.note } : {}),
               ...(winner ? { winnerId: winner } : {}),
+              ...(matchRow.source_updated_at ? { sourceUpdatedAt: matchRow.source_updated_at } : {}),
+              ...(matchRow.completed_detected_at ? { completedDetectedAt: matchRow.completed_detected_at } : {}),
             };
           });
         return {
@@ -394,13 +452,127 @@ function eventWinnerZh(event: SnookerEvent, playerById: Map<string, SnookerPlaye
   return final?.winnerId ? playerById.get(final.winnerId)?.nameZh : undefined;
 }
 
+function isChampionshipLeagueSeries(series: DbEventSeries, rows: DbSeriesEvent[]) {
+  return /championship league/i.test(series.name_en)
+    || rows.some((row) => /championship league/i.test(row.name_en));
+}
+
+function championshipLeagueStandaloneSeries(series: DbEventSeries, row: DbSeriesEvent, loadedAt: string): SnookerEventSeries {
+  const startDate = row.start_date || loadedAt.slice(0, 10);
+  const endDate = row.end_date || startDate;
+  const status = statusFromDates(startDate, endDate);
+  const taxonomy = normalizeEventTaxonomy(row.event_type, row.event_stage, row.ranking_status, row.type_zh);
+  return {
+    id: `db-series-event-${row.id}`,
+    slug: row.slug,
+    nameEn: row.name_en,
+    nameZh: row.name_zh,
+    season: series.season,
+    startDate,
+    endDate,
+    status,
+    statusLabelZh: statusLabel(status),
+    typeZh: compactEventTypeLabel(taxonomy),
+    eventType: taxonomy.eventType,
+    eventStage: taxonomy.eventStage,
+    rankingStatus: taxonomy.rankingStatus,
+    countryZh: row.country_zh || "待定",
+    cityZh: row.city_zh || "待定",
+    ...(row.venue_zh ? { venueZh: row.venue_zh } : {}),
+    sourceName: series.source_name || "Snooker DB",
+    stages: [{
+      eventId: `db-event-${row.id}`,
+      slug: row.slug,
+      nameEn: row.name_en,
+      nameZh: row.name_zh,
+      stageNameEn: row.stage_name_en,
+      stageNameZh: row.stage_name_zh,
+      stageOrder: 1,
+      startDate,
+      endDate,
+      status,
+      statusLabelZh: statusLabel(status),
+      dataReady: row.data_ready,
+    }],
+  };
+}
+
+function buildEventSeries(seriesRows: DbEventSeries[], eventRows: DbSeriesEvent[], loadedAt: string) {
+  const eventsBySeries = new Map<string, DbSeriesEvent[]>();
+  for (const row of eventRows) {
+    const list = eventsBySeries.get(row.series_id) ?? [];
+    list.push(row);
+    eventsBySeries.set(row.series_id, list);
+  }
+
+  return seriesRows.flatMap((series): SnookerEventSeries[] => {
+    const rows = [...(eventsBySeries.get(series.id) ?? [])]
+      .sort((a, b) => a.stage_order - b.stage_order || (a.start_date ?? "").localeCompare(b.start_date ?? ""));
+    const representative = rows[0];
+    if (!representative) return [];
+    if (isChampionshipLeagueSeries(series, rows)) {
+      return rows.map((row) => championshipLeagueStandaloneSeries(series, row, loadedAt));
+    }
+    const startDate = series.start_date || representative.start_date || loadedAt.slice(0, 10);
+    const endDate = series.end_date || rows.at(-1)?.end_date || startDate;
+    const status = statusFromDates(startDate, endDate);
+    const taxonomy = normalizeEventTaxonomy(
+      representative.event_type,
+      representative.event_stage,
+      representative.ranking_status,
+      representative.type_zh,
+    );
+    return [{
+      id: `db-series-${series.id}`,
+      slug: series.slug,
+      nameEn: series.name_en,
+      nameZh: series.name_zh,
+      season: series.season,
+      startDate,
+      endDate,
+      status,
+      statusLabelZh: statusLabel(status),
+      typeZh: compactEventTypeLabel(taxonomy),
+      eventType: taxonomy.eventType,
+      eventStage: taxonomy.eventStage,
+      rankingStatus: taxonomy.rankingStatus,
+      countryZh: representative.country_zh || "待定",
+      cityZh: representative.city_zh || "待定",
+      ...(representative.venue_zh ? { venueZh: representative.venue_zh } : {}),
+      sourceName: series.source_name || "Snooker DB",
+      stages: rows.map((row) => {
+        const stageStart = row.start_date || startDate;
+        const stageEnd = row.end_date || stageStart;
+        const stageStatus = statusFromDates(stageStart, stageEnd);
+        return {
+          eventId: `db-event-${row.id}`,
+          slug: row.slug,
+          nameEn: row.name_en,
+          nameZh: row.name_zh,
+          stageNameEn: row.stage_name_en,
+          stageNameZh: row.stage_name_zh,
+          stageOrder: row.stage_order,
+          startDate: stageStart,
+          endDate: stageEnd,
+          status: stageStatus,
+          statusLabelZh: statusLabel(stageStatus),
+          dataReady: row.data_ready,
+        };
+      }),
+    }];
+  }).sort((a, b) => a.startDate.localeCompare(b.startDate));
+}
+
 export async function loadSnookerDatabaseView(): Promise<SnookerDatabaseView> {
   const loadedAt = new Date().toISOString();
+  const currentSeason = currentSnookerSeason();
   try {
-    const [eventRows, playerRows, rankingRows] = await Promise.all([
-      rest<DbEvent[]>("snooker_events?select=id,slug,season,name_en,name_zh,sponsor_name,type_zh,event_type,event_stage,ranking_status,status,start_date,end_date,country_zh,city_zh,venue_zh,venue_en,winner_prize,runner_up_prize,currency,source_name,source_event_id,source_url,source_updated_at,referee_zh,data_ready&season=eq.2026%2F27&order=start_date.asc", SNOOKER_CACHE_SECONDS.recent),
+    const [eventRows, playerRows, rankingRows, seriesRows, seriesEventRows] = await Promise.all([
+      rest<DbEvent[]>(`snooker_events?select=id,slug,season,name_en,name_zh,sponsor_name,type_zh,event_type,event_stage,ranking_status,status,start_date,end_date,country_zh,city_zh,venue_zh,venue_en,winner_prize,runner_up_prize,currency,source_name,source_event_id,source_url,source_updated_at,referee_zh,data_ready&season=eq.${encodeURIComponent(currentSeason)}&order=start_date.asc`, SNOOKER_CACHE_SECONDS.recent),
       rest<DbPlayer[]>("snooker_players?select=id,slug,name_en,name_zh,short_name_en,short_name_zh,nationality_zh,country_code,date_of_birth,turned_pro,current_rank,ranking_points,avatar_url,profile_source,is_current_tour,tour_status,player_status&order=current_rank.asc.nullslast,name_en.asc", SNOOKER_CACHE_SECONDS.player),
-      rest<DbRanking[]>("snooker_ranking_snapshots?select=captured_at,player_id,rank,points&season=eq.2026%2F27&order=captured_at.desc,rank.asc&limit=200", SNOOKER_CACHE_SECONDS.recent),
+      rest<DbRanking[]>(`snooker_ranking_snapshots?select=captured_at,player_id,rank,points&season=eq.${encodeURIComponent(currentSeason)}&order=captured_at.desc,rank.asc&limit=200`, SNOOKER_CACHE_SECONDS.recent),
+      rest<DbEventSeries[]>("snooker_event_series?select=id,slug,season,name_en,name_zh,start_date,end_date,source_name&order=start_date.asc", SNOOKER_CACHE_SECONDS.history),
+      rest<DbSeriesEvent[]>("snooker_events?select=id,series_id,slug,name_en,name_zh,stage_name_en,stage_name_zh,stage_order,start_date,end_date,type_zh,event_type,event_stage,ranking_status,country_zh,city_zh,venue_zh,data_ready&order=start_date.asc", SNOOKER_CACHE_SECONDS.history),
     ]);
 
     const { players, uuidToCanonical } = mapPlayers(playerRows);
@@ -408,13 +580,13 @@ export async function loadSnookerDatabaseView(): Promise<SnookerDatabaseView> {
     let roundRows: DbRound[] = [];
     let matchRows: DbMatch[] = [];
     let frameRows: DbFrame[] = [];
+    const detailEventIds = focusedEventIds(eventRows, loadedAt.slice(0, 10));
 
     if (dataReadyIds.length) {
       [roundRows, matchRows] = await Promise.all([
         rest<DbRound[]>(`snooker_rounds?select=id,event_id,round_key,label_en,label_zh,sort_order,best_of,loser_prize&event_id=in.${inFilter(dataReadyIds)}&order=sort_order.asc`),
-        rest<DbMatch[]>(`snooker_matches?select=id,event_id,round_id,source_match_id,match_no,player1_id,player2_id,score1,score2,best_of,status,scheduled_at,session_label_zh,winner_id,note,source_updated_at&event_id=in.${inFilter(dataReadyIds)}&order=match_no.asc`),
+        rest<DbMatch[]>(`snooker_matches?select=id,event_id,round_id,source_match_id,match_no,player1_id,player2_id,score1,score2,best_of,status,scheduled_at,session_label_zh,winner_id,note,source_updated_at,source_status,source_status_meta,completed_detected_at&event_id=in.${inFilter(dataReadyIds)}&order=match_no.asc`),
       ]);
-      const detailEventIds = focusedEventIds(eventRows, loadedAt.slice(0, 10));
       const matchIds = matchRows.filter((row) => detailEventIds.has(row.event_id)).map((row) => row.id);
       frameRows = await restInBatchesBestEffort<DbFrame>(
         matchIds,
@@ -424,7 +596,17 @@ export async function loadSnookerDatabaseView(): Promise<SnookerDatabaseView> {
       );
     }
 
-    const eventDetails = buildEventDetails(eventRows, roundRows, matchRows, frameRows, uuidToCanonical, loadedAt);
+    const builtEventDetails = buildEventDetails(eventRows, roundRows, matchRows, frameRows, uuidToCanonical, loadedAt);
+    const eventDetails = builtEventDetails.filter((event) => {
+      const eventUuid = event.id.startsWith("db-event-") ? event.id.slice("db-event-".length) : null;
+      const historicalChampionshipLeague = /championship league/i.test(event.nameEn)
+        && event.status === "completed"
+        && eventUuid
+        && !detailEventIds.has(eventUuid);
+      return !historicalChampionshipLeague;
+    });
+    const eventSeries = buildEventSeries(seriesRows, seriesEventRows, loadedAt)
+      .filter((series) => Number(series.season.slice(0, 4)) >= 2019);
     const playerByCanonical = new Map(players.map((player) => [player.id, player]));
     const detailsBySlug = new Map(eventDetails.map((event) => [event.slug, event]));
     const calendar: SnookerCalendarEvent[] = eventRows.map((row) => {
@@ -482,6 +664,8 @@ export async function loadSnookerDatabaseView(): Promise<SnookerDatabaseView> {
         rankings: rankings.length ? rankings : dashboardSnapshot.rankings,
       },
       eventDetails,
+      eventSeries,
+      currentSeason,
       loadedAt,
       databaseOnline: true,
     };
@@ -492,8 +676,74 @@ export async function loadSnookerDatabaseView(): Promise<SnookerDatabaseView> {
     return {
       snapshot: dashboardSnapshot,
       eventDetails: [dashboardSnapshot.event],
+      eventSeries: dashboardSnapshot.calendar.map((item) => ({
+        id: `fallback-series-${item.id}`,
+        slug: item.slug,
+        nameEn: item.nameEn,
+        nameZh: item.nameZh,
+        season: item.season,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        status: item.status,
+        statusLabelZh: item.statusLabelZh,
+        typeZh: item.typeZh,
+        eventType: item.eventType,
+        eventStage: item.eventStage,
+        rankingStatus: item.rankingStatus,
+        countryZh: item.countryZh,
+        cityZh: item.cityZh,
+        ...(item.venueZh ? { venueZh: item.venueZh } : {}),
+        sourceName: "Verified snapshot",
+        stages: [{
+          eventId: item.id,
+          slug: item.slug,
+          nameEn: item.nameEn,
+          nameZh: item.nameZh,
+          stageNameEn: item.nameEn,
+          stageNameZh: item.nameZh,
+          stageOrder: 1,
+          startDate: item.startDate,
+          endDate: item.endDate,
+          status: item.status,
+          statusLabelZh: item.statusLabelZh,
+          dataReady: item.dataReady ?? false,
+        }],
+      })),
+      currentSeason,
       loadedAt,
       databaseOnline: false,
     };
   }
+}
+
+export async function loadSnookerEventDetail(slug: string): Promise<SnookerEvent | null> {
+  const loadedAt = new Date().toISOString();
+  const [eventRow] = await rest<DbEvent[]>(
+    `snooker_events?select=id,slug,season,name_en,name_zh,sponsor_name,type_zh,event_type,event_stage,ranking_status,status,start_date,end_date,country_zh,city_zh,venue_zh,venue_en,winner_prize,runner_up_prize,currency,source_name,source_event_id,source_url,source_updated_at,referee_zh,data_ready&slug=eq.${encodeURIComponent(slug)}&limit=1`,
+    SNOOKER_CACHE_SECONDS.history,
+  );
+  if (!eventRow) return null;
+
+  const [roundRows, matchRows] = await Promise.all([
+    rest<DbRound[]>(`snooker_rounds?select=id,event_id,round_key,label_en,label_zh,sort_order,best_of,loser_prize&event_id=eq.${eventRow.id}&order=sort_order.asc`, SNOOKER_CACHE_SECONDS.history),
+    rest<DbMatch[]>(`snooker_matches?select=id,event_id,round_id,source_match_id,match_no,player1_id,player2_id,score1,score2,best_of,status,scheduled_at,session_label_zh,winner_id,note,source_updated_at,source_status,source_status_meta,completed_detected_at&event_id=eq.${eventRow.id}&order=match_no.asc`, SNOOKER_CACHE_SECONDS.history),
+  ]);
+  const playerIds = [...new Set(matchRows.flatMap((row) => [row.player1_id, row.player2_id, row.winner_id].filter((id): id is string => Boolean(id))))];
+  const matchIds = matchRows.map((row) => row.id);
+  const [playerRows, frameRows] = await Promise.all([
+    restInBatchesBestEffort<DbPlayerKey>(
+      playerIds,
+      (batch) => `snooker_players?select=id,slug&id=in.${inFilter(batch)}`,
+      "event player key read",
+      SNOOKER_CACHE_SECONDS.history,
+    ),
+    restInBatchesBestEffort<DbFrame>(
+      matchIds,
+      (batch) => `snooker_frames?select=id,match_id,frame_no,score1,score2,break1,break2,note&match_id=in.${inFilter(batch)}&order=frame_no.asc`,
+      "event frame read",
+      SNOOKER_CACHE_SECONDS.history,
+    ),
+  ]);
+  const uuidToCanonical = new Map(playerRows.map((row) => [row.id, playerId(row.slug)]));
+  return buildEventDetails([eventRow], roundRows, matchRows, frameRows, uuidToCanonical, loadedAt)[0] ?? null;
 }

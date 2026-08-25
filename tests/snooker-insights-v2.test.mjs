@@ -30,7 +30,7 @@ test("event overview renders current champion previous champion and prize table 
   assert.match(ui, /TOURNAMENT OVERVIEW/);
   assert.match(ui, /PRIZE MONEY/);
   assert.match(ui, /奖金分配/);
-  assert.match(ui, /full\?\.prizes\?\.length \?/);
+  assert.match(ui, /prizeEvent\?\.prizes\?\.length \?/);
   assert.match(ui, /总奖金/);
   assert.match(ui, /money\(totalPrize\.amount\)/);
 });

@@ -239,7 +239,7 @@ async function loadSnookerDatabaseViewV2Uncached(): Promise<SnookerDatabaseView>
     const [eventMeta, playerKeys, seasonStats, officialRanking, prizes, stats, h2h] = await Promise.all([
       rest<DbEventMeta[]>(`snooker_events?select=id,slug,previous_champion_name_zh,previous_champion_year,expected_match_count&id=in.${inFilter(eventUuids)}`),
       rest<DbPlayerKey[]>("snooker_players?select=id,slug"),
-      rest<DbSeasonStat[]>("snooker_player_season_stats?select=player_id,season_start_year,season_label,ranking,tournaments_won,points_scored,matches_played,matches_won,match_win_rate,average_shot_time,breaks_50_plus,breaks_100_plus,highest_break,season_147s,average_break&season_start_year=eq.2026"),
+      rest<DbSeasonStat[]>(`snooker_player_season_stats?select=player_id,season_start_year,season_label,ranking,tournaments_won,points_scored,matches_played,matches_won,match_win_rate,average_shot_time,breaks_50_plus,breaks_100_plus,highest_break,season_147s,average_break&season_start_year=eq.${Number(base.currentSeason.slice(0, 4))}`),
       rest<DbOfficialRanking[]>("snooker_latest_rankings?select=player_id,rank,points,ranking_money,list_key&list_key=eq.world_official&order=rank.asc&limit=256"),
       eventUuids.length ? rest<DbPrize[]>(`snooker_event_prizes?select=event_id,prize_key,label_zh,label_en,amount,currency,sort_order,is_total&event_id=in.${inFilter(eventUuids)}&order=sort_order.asc`) : Promise.resolve([]),
       restInBatchesBestEffort<DbMatchStat>(
