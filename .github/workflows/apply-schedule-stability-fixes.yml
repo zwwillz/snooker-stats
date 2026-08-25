@@ -24,7 +24,7 @@ jobs:
           node-version: 22.17.0
           cache: npm
       - name: Apply fixes
-        run: node scripts/apply-schedule-stability-fixes.mjs
+        run: node scripts/run-schedule-stability-fixes.mjs
       - name: Install
         run: npm ci
       - name: Typecheck
@@ -41,6 +41,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           rm -f .github/workflows/apply-schedule-stability-fixes.yml
           rm -f scripts/apply-schedule-stability-fixes.mjs
+          rm -f scripts/run-schedule-stability-fixes.mjs
           git add -A
           git diff --cached --quiet && exit 0
           git commit -m "fix: stabilize schedule ordering and event details"
