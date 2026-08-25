@@ -24,7 +24,7 @@ jobs:
           node-version: 22.17.0
           cache: npm
       - name: Apply one-shot patch
-        run: node scripts/apply-live-series-experience.mjs
+        run: node scripts/run-live-series-patch.mjs
       - name: Install
         run: npm ci
       - name: Typecheck
