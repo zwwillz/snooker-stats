@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { SnookerPlayer } from "@/lib/snooker/domain";
 import type { SnookerPlayerDetail, SnookerPlayerListItem } from "@/lib/snooker/player-data";
@@ -88,6 +89,7 @@ export default function PlayerDetailInline({
   return (
     <div className={styles.content}>
       {player ? <PlayerDetailContent player={player} /> : <section className={styles.card}><div className={styles.emptyState}>正在加载球员资料…</div></section>}
+      {player?.isCurrentTour ? <section className={styles.card}><Link className={styles.compareAction} href={`/snooker/compare?player1=${encodeURIComponent(player.slug)}`}><span><small>PLAYER COMPARE</small><strong>与其他球员比较</strong><em>将该球员固定在左侧，选择另一名职业球员开始对比</em></span><b>›</b></Link></section> : null}
       {loadFailed ? <section className={styles.card}><div className={styles.emptyState}>深度球员资料暂时未能加载，基础资料仍可正常查看。</div></section> : null}
     </div>
   );
