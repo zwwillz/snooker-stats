@@ -29,7 +29,7 @@ export function mergeLiveMatchMonotonic(current: SnookerMatch, incoming: Snooker
 
 export function mergeEventSnapshotsMonotonic(currentEvents: SnookerEvent[], incomingEvents: SnookerEvent[]) {
   const currentMatchById = new Map(currentEvents.flatMap((event) => event.rounds.flatMap((round) => round.matches)).map((match) => [match.id, match]));
-  return incomingEvents.map((event) => ({
+  const mergeEvent = (event: SnookerEvent) => ({
     ...event,
     rounds: event.rounds.map((round) => ({
       ...round,
@@ -38,7 +38,13 @@ export function mergeEventSnapshotsMonotonic(currentEvents: SnookerEvent[], inco
         return current ? mergeLiveMatchMonotonic(current, match) : match;
       }),
     })),
-  }));
+  });
+  const incomingById = new Map(incomingEvents.map((event) => [event.id, mergeEvent(event)]));
+  const currentIds = new Set(currentEvents.map((event) => event.id));
+  return [
+    ...currentEvents.map((event) => incomingById.get(event.id) ?? event),
+    ...incomingEvents.filter((event) => !currentIds.has(event.id)).map(mergeEvent),
+  ];
 }
 
 export function matchDisplayStatus(match: SnookerMatch) {

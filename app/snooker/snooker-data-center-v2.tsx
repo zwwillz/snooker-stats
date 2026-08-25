@@ -194,6 +194,43 @@ function allMatches(event: SnookerEvent) {
   return event.rounds.flatMap((round) => round.matches);
 }
 
+function scheduledTime(match: SnookerMatch) {
+  const parsed = match.scheduledAt ? Date.parse(match.scheduledAt) : NaN;
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function orderedScheduleRounds(event: SnookerEvent) {
+  const completedEvent = event.status === "completed" || allMatches(event).every((match) => match.status === "completed" || match.status === "walkover");
+  const rounds = event.rounds.map((round) => ({
+    ...round,
+    matches: [...round.matches].sort((a, b) => {
+      const aTime = scheduledTime(a);
+      const bTime = scheduledTime(b);
+      if (aTime !== null && bTime !== null && aTime !== bTime) return completedEvent ? bTime - aTime : aTime - bTime;
+      if (aTime !== null && bTime === null) return -1;
+      if (aTime === null && bTime !== null) return 1;
+      return a.matchNo - b.matchNo || a.id.localeCompare(b.id);
+    }),
+  }));
+
+  return rounds.sort((a, b) => {
+    if (completedEvent) {
+      if (a.key === "final" && b.key !== "final") return -1;
+      if (b.key === "final" && a.key !== "final") return 1;
+      const aTime = Math.max(...a.matches.map((match) => scheduledTime(match) ?? Number.NEGATIVE_INFINITY));
+      const bTime = Math.max(...b.matches.map((match) => scheduledTime(match) ?? Number.NEGATIVE_INFINITY));
+      if (aTime !== bTime) return bTime - aTime;
+    } else {
+      const aTimes = a.matches.map(scheduledTime).filter((value): value is number => value !== null);
+      const bTimes = b.matches.map(scheduledTime).filter((value): value is number => value !== null);
+      const aTime = aTimes.length ? Math.min(...aTimes) : Number.POSITIVE_INFINITY;
+      const bTime = bTimes.length ? Math.min(...bTimes) : Number.POSITIVE_INFINITY;
+      if (aTime !== bTime) return aTime - bTime;
+    }
+    return a.labelZh.localeCompare(b.labelZh, "zh-CN");
+  });
+}
+
 function finalOf(event?: SnookerEvent) {
   return event?.rounds.find((round) => round.key === "final")?.matches[0];
 }
@@ -893,16 +930,15 @@ export default function SnookerDataCenterV2({
         {seriesDetail.stages.map((stage) => {
           const stageEvent = eventBySlug.get(stage.slug);
           return <section className={priority.seriesStageSection} key={stage.eventId}>
-            <div className={priority.seriesStageHeading}><div><small>CHAMPIONSHIP LEAGUE STAGE</small><h2>{stage.stageNameZh}</h2></div><span>{formatDateRange(stage.startDate, stage.endDate)}</span></div>
             {stageEvent ? <div className={styles.roundStack}>
               {stageEvent.schedulePartial ? <div className={insight.partialNotice}><b>部分赛程</b><span className={polish.partialText}>官方当前已公布 {stageEvent.publishedMatchCount ?? allMatches(stageEvent).length} 场场地赛程，后续签表将随官方发布自动补齐。</span></div> : null}
-              {stageEvent.rounds.map((round) => <section className={styles.card} key={`${stage.eventId}-${round.key}`}><SectionHeader title={round.labelZh} action={bestOfLabel(round.bestOf)} /><div className={styles.matchList}>{round.matches.map((match) => <MatchListRow key={match.id} match={match} players={players} onOpen={() => openMatch(match.id, stageEvent.slug, seriesDetail.slug)} />)}</div></section>)}
+              {orderedScheduleRounds(stageEvent).map((round) => <section className={styles.card} key={`${stage.eventId}-${round.key}`}><SectionHeader title={`${stage.stageNameZh} · ${round.labelZh}`} action={`${formatDateRange(stage.startDate, stage.endDate)} · ${bestOfLabel(round.bestOf)}`} /><div className={styles.matchList}>{round.matches.map((match) => <MatchListRow key={match.id} match={match} players={players} onOpen={() => openMatch(match.id, stageEvent.slug, seriesDetail.slug)} />)}</div></section>)}
             </div> : <div className={priority.seriesStageEmpty}>{stage.dataReady ? "正在加载该阶段赛程…" : "该阶段赛程尚未发布。"}</div>}
           </section>;
         })}
       </div> : full ? <div className={styles.roundStack}>
         {full.schedulePartial ? <div className={insight.partialNotice}><b>部分赛程</b><span className={polish.partialText}>官方当前已公布 {full.publishedMatchCount ?? allMatches(full).length} 场场地赛程，后续签表将随官方发布自动补齐。</span></div> : null}
-        {full.rounds.map((round) => <section className={styles.card} key={round.key}><SectionHeader title={round.labelZh} action={bestOfLabel(round.bestOf)} /><div className={styles.matchList}>{round.matches.map((match) => <MatchListRow key={match.id} match={match} players={players} onOpen={() => openMatch(match.id, full.slug)} />)}</div></section>)}
+        {orderedScheduleRounds(full).map((round) => <section className={styles.card} key={round.key}><SectionHeader title={round.labelZh} action={bestOfLabel(round.bestOf)} /><div className={styles.matchList}>{round.matches.map((match) => <MatchListRow key={match.id} match={match} players={players} onOpen={() => openMatch(match.id, full.slug)} />)}</div></section>)}
       </div> : <section className={styles.card}><div className={styles.emptyState}>{loadingEventSlug === detail.slug ? "正在加载赛程…" : "详细赛程尚未入库。"}</div></section> : null}
 
       {detail.tab === "data" ? eventStats ? <>
