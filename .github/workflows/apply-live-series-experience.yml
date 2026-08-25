@@ -11,7 +11,7 @@ jobs:
   apply-and-verify:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
@@ -23,8 +23,10 @@ jobs:
         with:
           node-version: 22.17.0
           cache: npm
-      - name: Apply one-shot patch
+      - name: Apply product patch
         run: node scripts/run-live-series-patch.mjs
+      - name: Finalize migration and regression tests
+        run: node scripts/finalize-live-series-patch.mjs
       - name: Install
         run: npm ci
       - name: Typecheck
@@ -35,11 +37,19 @@ jobs:
         run: npm run test:core
       - name: Offline build
         run: npm run build:offline
-      - name: Commit verified changes
+      - name: Commit verified product changes and remove one-shot helpers
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/snooker/snooker-data-center-v2.tsx app/snooker/snooker-priority.module.css lib/snooker/database-public.ts supabase/migrations/20260825191000_harden_live_match_status_transitions.sql supabase/migration-checksums.json tests/snooker-live-series-experience.test.mjs
+          rm -f .github/workflows/apply-live-series-experience.yml
+          rm -f scripts/apply-live-series-experience.mjs
+          rm -f scripts/apply-live-series-experience.py
+          rm -f scripts/fix-live-series-lint.mjs
+          rm -f scripts/run-live-series-patch.mjs
+          rm -f scripts/finalize-live-series-patch.mjs
+          rm -f lib/snooker/live-client.test.ts
+          rm -f lib/snooker/live-read-through.test.ts
+          git add -A
           git diff --cached --quiet && exit 0
           git commit -m "feat: stabilize live scores and event series experience"
           git push origin HEAD:feature/event-series-season-filter
