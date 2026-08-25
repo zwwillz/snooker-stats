@@ -17,11 +17,14 @@ await import(pathToFileURL(temp).href);
 
 const uiPath = "app/snooker/snooker-data-center-v2.tsx";
 let ui = await readFile(uiPath, "utf8");
-const impure = "    const now = Date.now();";
-const pure = "    const now = sourceHealth?.fetchedAt ? Date.parse(sourceHealth.fetchedAt) : 0;";
-if (!ui.includes(impure)) throw new Error("Generated poll clock target missing");
-ui = ui.replace(impure, pure);
+const impureBlock = `  const shouldPollDashboard = useMemo(() => {
+    const now = Date.now();`;
+const pureBlock = `  const sourceFetchedAt = sourceHealth?.fetchedAt;
+  const shouldPollDashboard = useMemo(() => {
+    const now = sourceFetchedAt ? Date.parse(sourceFetchedAt) : 0;`;
+if (!ui.includes(impureBlock)) throw new Error("Generated poll clock target missing");
+ui = ui.replace(impureBlock, pureBlock);
 const deps = "  }, [databaseEvents]);";
 if (!ui.includes(deps)) throw new Error("Generated poll dependency target missing");
-ui = ui.replace(deps, "  }, [databaseEvents, sourceHealth?.fetchedAt]);");
+ui = ui.replace(deps, "  }, [databaseEvents, sourceFetchedAt]);");
 await writeFile(uiPath, ui);
