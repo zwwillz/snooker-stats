@@ -21,8 +21,8 @@ await replaceOnce(
 
 await replaceOnce(
   "app/snooker/snooker-data-center-v2.tsx",
-  '          </section> : null}\n\n          {nextEventCard ? <section className={styles.card}>',
-  '          </section> : null}\n\n          <PlayerCompareTeaser players={directoryPlayers} />\n\n          {nextEventCard ? <section className={styles.card}>',
+  '        {nextEventCard ? <section className={styles.card}>',
+  '        <PlayerCompareTeaser players={directoryPlayers} />\n\n        {nextEventCard ? <section className={styles.card}>',
 );
 
 await replaceOnce(
