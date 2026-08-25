@@ -2,7 +2,13 @@ import { readFile, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 const sourcePath = "scripts/apply-schedule-stability-fixes.mjs";
-const source = await readFile(sourcePath, "utf8");
+let source = await readFile(sourcePath, "utf8");
+const stageStart = source.indexOf('ui = once(ui,\n`          return <section className={priority.seriesStageSection}');
+const stageEnd = source.indexOf('"merge stage heading into round cards"', stageStart);
+if (stageStart < 0 || stageEnd < 0) throw new Error("Unable to locate stage replacement block");
+const stageBlock = source.slice(stageStart, stageEnd).replace(/(?<!\\)\$\{/g, "\\${");
+source = source.slice(0, stageStart) + stageBlock + source.slice(stageEnd);
+
 const marker = 'const testPath = "tests/snooker-schedule-stability.test.mjs";';
 const index = source.indexOf(marker);
 if (index < 0) throw new Error("Unable to locate test generation block");
