@@ -13,66 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Compare WST and deployed data
+      - uses: actions/checkout@v4
+      - name: Compare WST and Supabase data
         env:
-          PREVIEW: https://snooker-stats-dp0hkkusgeug.edgeone.dev
-        run: |
-          node <<'NODE'
-          const sources = [
-            ['Stage One/WK1','221af158-c0f2-48cc-94a8-47b45a4a9c2d',72],
-            ['Stage One/WK2','130ef3b6-ef10-481f-b01b-541debd7e591',72],
-            ['Stage One/WK3','f377387b-3079-457f-8489-6f4629eb051d',48],
-            ['Stage Two/WK1','79bcd402-fe9a-4d16-930e-ce8f7eae2599',24],
-            ['Stage Two/WK2','24b1a5d3-bfe3-41df-b998-eacb7d83ce24',24],
-            ['Stage Three & Final','a9c7a8a2-fc65-4ee5-9f15-752cdc8f2364',13],
-          ];
-          async function getJson(url) {
-            const res = await fetch(url, { headers: { accept: 'application/json' }, cache: 'no-store' });
-            const text = await res.text();
-            if (!res.ok) throw new Error(`${res.status} ${url}: ${text.slice(0,300)}`);
-            return JSON.parse(text);
-          }
-          console.log('=== WST SOURCES ===');
-          const wstMatchOwners = new Map();
-          for (const [label,id,expected] of sources) {
-            const body = await getJson(`https://tournaments.snooker.web.gc.wstservices.co.uk/v2/${id}`);
-            const a = body?.data?.attributes ?? {};
-            const matches = Array.isArray(a.matches) ? a.matches : [];
-            const rounds = [...new Set(matches.map(m => m.round).filter(Boolean))];
-            const dates = matches.map(m => m.startDateTime).filter(Boolean).sort();
-            let dup = 0;
-            for (const m of matches) {
-              const mid = m.matchID;
-              if (mid && wstMatchOwners.has(mid)) dup++;
-              if (mid) wstMatchOwners.set(mid,label);
-            }
-            console.log(JSON.stringify({label,id,name:a.name,startDate:a.startDate,endDate:a.endDate,matchCount:matches.length,expected,rounds,first:dates[0],last:dates.at(-1),duplicateMatchIds:dup}));
-          }
-          console.log('WST total unique', wstMatchOwners.size);
-
-          console.log('=== DEPLOYED DASHBOARD ===');
-          const dash = await getJson(`${process.env.PREVIEW}/api/snooker/v1/dashboard`);
-          const calendar = dash?.snapshot?.calendar ?? dash?.calendar ?? [];
-          const series = dash?.eventSeries ?? [];
-          const clCalendar = calendar.filter(e => /championship league/i.test(`${e.nameEn||''} ${e.nameZh||''}`));
-          const clSeries = series.filter(e => /championship league/i.test(`${e.nameEn||''} ${e.nameZh||''}`));
-          console.log('calendar', JSON.stringify(clCalendar.map(e => ({slug:e.slug,nameEn:e.nameEn,nameZh:e.nameZh,startDate:e.startDate,endDate:e.endDate,status:e.status,dataReady:e.dataReady})),null,2));
-          console.log('series', JSON.stringify(clSeries.map(e => ({slug:e.slug,nameEn:e.nameEn,nameZh:e.nameZh,startDate:e.startDate,endDate:e.endDate,stages:e.stages?.map(s=>({slug:s.slug,nameEn:s.nameEn,nameZh:s.nameZh,stageNameZh:s.stageNameZh,dataReady:s.dataReady}))})),null,2));
-
-          console.log('=== DEPLOYED EVENT DETAILS ===');
-          const slugs = [...new Set([...clCalendar.map(e=>e.slug), ...clSeries.flatMap(s=>(s.stages||[]).map(x=>x.slug))])];
-          for (const slug of slugs) {
-            try {
-              const data = await getJson(`${process.env.PREVIEW}/api/snooker/v1/event?slug=${encodeURIComponent(slug)}`);
-              const e = data.event;
-              if (!e) continue;
-              const matches = (e.rounds||[]).flatMap(r => (r.matches||[]).map(m => ({...m,_round:r.key,_roundLabel:r.labelZh})));
-              const finals = matches.filter(m => m._round === 'final' || /决赛|final/i.test(m._roundLabel||''));
-              const withFrames = matches.filter(m => Array.isArray(m.frames) && m.frames.length);
-              const frameRows = withFrames.reduce((n,m)=>n+m.frames.length,0);
-              console.log(JSON.stringify({slug:e.slug,nameEn:e.nameEn,nameZh:e.nameZh,startDate:e.startDate,endDate:e.endDate,status:e.status,matchCount:matches.length,rounds:(e.rounds||[]).map(r=>({key:r.key,labelZh:r.labelZh,count:r.matches?.length||0})),finals:finals.map(m=>({id:m.id,score1:m.score1,score2:m.score2,winnerId:m.winnerId,scheduledAt:m.scheduledAt})),matchesWithFrames:withFrames.length,frameRows}));
-            } catch (err) {
-              console.log(JSON.stringify({slug,error:String(err)}));
-            }
-          }
-          NODE
+          PUBLIC_KEY: ${{ secrets.SNOOKER_SUPABASE_PUBLISHABLE_KEY }}
+          SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: node scripts/diagnose-championship-league-2026.mjs
