@@ -2,13 +2,11 @@
 
 > Production project: `rtlvncsmbueatdzqvhbn` (`snooker-stats`)
 >
-> 原则：保留英文源数据；只对高置信度中文字段直接补齐；有争议的人名、历史城市和长文本不机器猜译。
+> 原则：英文源数据永久保留；高置信度中文直接补齐；有争议的人名、历史城市不猜测。
 
-## 1. 本轮已完成
+## 1. 结构化赛事数据
 
-### 结构化赛事数据
-
-以下字段的“空值 / 与英文相同 / 纯英文残留”已清到 0：
+以下中文字段的“空值 / 与英文相同 / 纯英文残留”已清到 0：
 
 - `snooker_events.name_zh`
 - `snooker_events.country_zh`
@@ -18,162 +16,125 @@
 - `snooker_rounds.label_zh`
 - `snooker_player_event_aggregates.last_recorded_round_zh`
 
-同时修正了“已有中文但语义错误”的典型数据：
+已修正上海大师赛、里加大师赛、德国大师赛等历史错误译名，并统一 Round / Last N / Quarter Final / Semi Final / Final / Round Robin / League Phase / Held Over 等标准轮次中文。
 
-- `2017/2018/2019 Shanghai Masters`：由泛化的“斯诺克大师赛”修正为“上海大师赛”
-- `2017/2018/2019 Riga Masters`：由泛化的“斯诺克大师赛”修正为“里加大师赛”
-- `Machineseeker German Masters 2026`：修正为“2026 Machineseeker德国大师赛”
+## 2. 球员职业生涯中文恢复
 
-### 标准轮次
+### 故障根因
 
-统一了：
+2026-08-23 的 `player_profiles` WST 同步任务处理了 127 名球员。生产函数 `snooker_internal.sync_wst_player_profiles_batch(integer,integer)` 原实现会：
 
-- Round 1–6 → 第一轮–第六轮
-- Last N → N强
-- Quarter Final(s) → 四分之一决赛
-- Semi Final(s) → 半决赛
-- Final → 决赛
-- Round Robin → 循环赛
-- League Phase → 联赛阶段
-- Group Final / Group Semi-Finals → 小组决赛 / 小组半决赛
-- Stage One/Two/Three → 第一/二/三阶段
-- Held Over → “延期至正赛场馆进行”语义
+1. `delete from snooker_player_career_highlights where player_id=...`；
+2. 再从 WST 插入只有 `description_en` 的 Career Highlights。
 
-生产库已新增 `20260825144527_guard_translation_ingest_and_queue_reviews`：
+因此此前中文页面已使用 `description_zh` 的前端逻辑没有回退，但数据库中的中文职业生涯被同步任务删除，页面随后通过英文 fallback 显示英文。
 
-- `snooker_round_translation_guard`：未来增量轮次如果写入标准英文，会自动规范到统一中文；未知特殊阶段不猜译。
-- `snooker_player_translation_review_queue`：未来新增且没有可信中文名的球员会自动进入 `zh-CN / pending_review`，不会再把英文姓名当成已翻译中文。
+### 恢复结果
 
-### 国家、地区、城市、场馆
+当前可访问的 GitHub、生产库历史表、翻译缓存和 `snooker_manual_overrides` 中均未发现可直接恢复的旧 917 条中文副本，因此基于保留的 WST 英文原文重新翻译并回写：
 
-高置信度英文残留已补齐。历史赛事中仍有 **142 条 `city_zh` 为空**，这些主要是旧数据源未提供城市，而不是英文残留；暂不凭赛事名称猜城市。
+- `snooker_player_career_highlights` 总数：917
+- `description_zh` 空值：0
+- `description_zh = description_en`：0
+- 中文字段不含汉字：0
+- `translation_updated_at` 已设置：917
 
-已从可信赛事资料继续回填 2022/23 赛季明确举办城市，包括：谢菲尔德、赫尔、莱斯特、伍尔弗汉普顿、兰迪德诺、柏林、切尔滕纳姆、伦敦。
+英文 `description_en` 全部保留，未覆盖。
 
-### 球员主数据
+### 防再次覆盖
 
-本轮先处理可验证的中国/中国香港球员与高曝光历史球员，并同步写入 `snooker_player_names(locale='zh-CN', status='verified')`。
+生产库新增两层保护，并同步进入本 PR：
 
-示例：
+- `20260825152608_preserve_player_career_highlight_translation_updates`
+  - BEFORE UPDATE trigger：新 payload 的 `description_zh` 为空时自动保留旧中文；`translation_updated_at` 同样保留。
+- `20260825153442_preserve_player_career_highlight_translations_during_wst_sync`
+  - WST Career Highlights 同步取消 `DELETE + INSERT`；
+  - 改为 `(player_id, sequence_no)` UPSERT；
+  - 只刷新 `highlight_year / description_en / source_*`；
+  - 不写 `description_zh / translation_updated_at`。
 
-- Cao Yupeng → 曹宇鹏
-- Ma Hailong → 马海龙
-- Tian Pengfei → 田鹏飞
-- Xing Zihao → 邢子豪
-- Yu Kiu Chang → 郑宇乔
-- Shaun Liu → 廖予生
-- Joe Perry → 乔·佩里
-- Graeme Dott → 格雷厄姆·多特
-- Mark Davis → 马克·戴维斯
-- Yan Bingtao → 颜丙涛
-- Liang Wenbo → 梁文博
-- Lu Ning → 鲁宁
-- Li Hang → 李行
-- Chen Zifan → 陈子凡
-- Luo Honghao → 罗弘昊
-- Peifan Lei → 雷佩凡
-- Mei Xiwen → 梅希文
-- Jianbo Zhao → 赵剑波
-- Peter Ebdon → 彼得·艾伯顿
-- Thor Chuan Leong → 涂振龙
-- Zhang Jiankang → 张健康
-- Zhang Yong → 张永
-- Bai Langning → 白朗宁
-- Chen Feilong → 陈飞龙
-- James Wattana → 詹姆斯·瓦塔纳
-- John Astley → 约翰·阿斯特利
-- Barry Pinches → 巴里·平奇斯
-- Mink Nutcharut → 明克·努查鲁特
-- Fang Xiongman → 方雄慢
-- Mike Dunn → 迈克·邓恩
-- Robin Hull → 罗宾·赫尔
-- Rory McLeod → 罗里·麦克劳德
+事务回归验证：将一条已有记录的 `description_zh` 与 `translation_updated_at` 更新为 NULL 后，trigger 实际保留了原中文和翻译时间；测试事务已 rollback。
 
-另识别并处理了伪球员占位实体：
+## 3. 其它球员中文资料
 
-- `Winner of Match 14` → `第14场胜者`
+当前生产库：
 
-## 2. 数量变化
+- 中文简介：127 / 127 有英文简介的球员均已中文化，问题数 0。
+- 最近一次赛事冠军：43 / 43 有英文值的记录均有中文，问题数 0。
+- 昵称：54 条有值；仅 `KO`、`F1` 两个被英文规则命中，它们是专用昵称缩写，保留原样。
+- 引语：当前英文和中文均无有效内容，不存在待翻译英文。
+
+球员主数据当前仍有：
+
+- `players.name_zh`：893 条历史/长尾记录待审核。
+- `players.short_name_zh`：893 条待审核。
+- `players.nationality_zh`：661 条缺失；这 661 条的 `country_code` 也全部为空，不能安全按代码映射补齐。
+
+这些记录以历史职业球员、业余球员、旧赛事参赛者为主。没有可靠身份来源时保持 `pending_review`，不机器猜译人名或国籍。
+
+## 4. 国家、地区、城市、场馆
+
+高置信度英文残留已补齐。历史赛事仍有 142 条 `city_zh` 为空，主要因旧数据源没有城市源字段；不根据赛事名或国家猜举办城市。
+
+已从可信赛事资料回填包括谢菲尔德、赫尔、莱斯特、伍尔弗汉普顿、兰迪德诺、柏林、切尔滕纳姆、伦敦等历史举办城市。
+
+## 5. 翻译治理护栏
+
+生产库已应用：
+
+- `20260825144527_guard_translation_ingest_and_queue_reviews`
+  - 标准英文轮次自动规范为统一中文；
+  - 新增无可信中文名球员自动进入 `zh-CN / pending_review`。
+- `20260825152608_preserve_player_career_highlight_translation_updates`
+- `20260825153442_preserve_player_career_highlight_translations_during_wst_sync`
+
+另已确认 CueTracker 历史导入器曾存在 `name_zh = name_en` 与未知阶段 `label_zh = stage` 的污染逻辑；数据库级 guard 已阻止其把标准轮次和未审核球员伪装成有效中文。
+
+## 6. 数量变化
 
 | 审计项 | 初始问题数 | 当前问题数 |
 | --- | ---: | ---: |
 | `players.name_zh` | 965 | 893 |
 | `players.short_name_zh` | 990 | 893 |
 | `players.nationality_zh` | 968 | 661 |
+| `career_highlights.description_zh` | 917 | **0** |
 | `rounds.label_zh` | 579 | 0 |
 | `events.name_zh` | 29 | 0 |
 | `events.country_zh` | 47 | 0 |
 | `events.stage_name_zh` | 25 | 0 |
 | `event_series.name_zh` | 24 | 0 |
 | `events.venue_zh` | 17 | 0 |
-| `event_agg.last_recorded_round_zh` | 9,038（后续扩展审计发现） | 0 |
+| `event_agg.last_recorded_round_zh` | 9,038 | 0 |
 | `events.city_zh` | 189 | 142（均为历史空值） |
-| `career_highlights.description_zh` | 917 | 917 |
+| `profile biography zh` | — | 0 问题 |
+| `career last_tournament_win_zh` | — | 0 问题 |
 
-当前 `snooker_player_names`：
+当前 `snooker_player_names`：已确认/来源映射继续保留；剩余历史长尾使用 `pending_review`，不为追求覆盖率强行音译。
 
-- `zh-CN / verified`：117
-- `zh-CN / source_mapped`：95
-- `zh-CN / pending_review`：893
+## 7. 线上核心校验
 
-当前线上核心数据校验：
+- 2026/27 赛季赛事：赛事名 / 国家 / 城市 / 场馆结构化中文问题为 0。
+- 现役巡回球员：中文姓名 / 中文国籍问题为 0。
+- 球员职业生涯：917 / 917 已有中文。
+- 球员中文简介：有效英文简介对应中文缺失为 0。
+- 最近一次赛事冠军：有效英文值对应中文缺失为 0。
+- Supabase Security Advisors：0 条安全告警。
 
-- 2026/27 赛季 43 个赛事：赛事名 / 国家 / 城市 / 场馆问题均为 0。
-- 127 名现役巡回球员：中文姓名 / 中文国籍问题均为 0。
+## 8. 前端与回归测试
 
-## 3. 当前明确不做自动写入的内容
+`lib/snooker/database-public.ts` 已禁止中文轮次直接 fallback 到英文 `label_en`，缺失时显示 `待确认轮次`。
 
-### 893 条历史/长尾球员姓名
+新增 `tests/snooker-player-translation-preservation.test.mjs`：
 
-剩余问题绝大多数是历史职业球员、业余球员和旧赛事参赛者。处理策略：
+- 检查 Career Highlights 中文保护 trigger migration；
+- 检查 WST 同步使用非破坏性 UPSERT；
+- 禁止新同步逻辑再次删除职业生涯后重建；
+- 禁止新同步逻辑写 `description_zh`。
 
-1. 按数据库实际比赛出现次数排序；
-2. 优先处理高曝光球员；
-3. 中国/华人球员必须尽量确认真实汉字姓名；
-4. 外籍球员采用国内媒体通行译名；
-5. 存在两个以上常用译名时保持 `pending_review`，不直接覆盖。
+## 9. 仍需人工确认的数据
 
-### 917 条职业生涯亮点长文本
+- 893 条历史/长尾球员姓名与简称：需结合 WST、WPBSA、中文体育媒体或球员官方资料逐批确认。
+- 661 条历史球员国籍：源数据同时缺失 `country_code`，不推测。
+- 142 条历史赛事城市：源数据缺失举办城市，不从赛事品牌名猜测。
 
-`snooker_player_career_highlights.description_zh` 当前仍未批量翻译。该字段是完整自然语言资料，不适合直接机器翻译后作为已审核数据入库，应单独建立翻译批次和审核状态。
-
-### 142 条历史城市空值
-
-不根据赛事名称或国家直接猜举办城市；后续应从原始赛事页、场馆或可信历史资料回填。
-
-## 4. 根因与长期防护
-
-已确认 CueTracker 历史导入器原逻辑在创建新球员时会写入 `name_zh = name_en`，对无法识别的阶段会写入 `label_zh = stage`。这会持续制造英文“中文字段”。
-
-当前治理方式：
-
-- 数据库负责翻译事实与审核状态；
-- 标准轮次由数据库级 guard 兜底；
-- 新增未翻译球员自动进入审核队列；
-- 未知特殊阶段不自动猜译；
-- 英文源字段始终保留。
-
-## 5. 前端防御修复
-
-`lib/snooker/database-public.ts` 已移除中文轮次向 `label_en` 的直接回退：
-
-- 中文值必须实际包含中文字符才用于中文 UI；
-- 不合格时显示 `待确认轮次`；
-- `labelEn` 仍单独保留，英文源数据没有被删除。
-
-这样数据库是翻译事实源，前端只做防御，不在组件里维护大规模英文→中文 if/else。
-
-## 6. Supabase 检查
-
-应用数据库护栏 migration 后已运行 Supabase Advisors：
-
-- Security：0 条告警。
-- Performance：仅有既存 `unused_index` 信息级提示，与本次翻译治理 DDL 无直接关系，本轮不删除索引。
-
-## 7. 下一步
-
-- 继续按比赛出现次数处理高曝光历史球员；
-- 核查现有中文值中的错误译名/多版本译名，而不仅仅检查英文残留；
-- 逐步调整 CueTracker 历史导入逻辑，使新记录从源头遵守审核规则；
-- 对 142 条历史城市建立可追溯的来源回填；
-- 将长文本翻译作为独立、有审核状态的资料治理任务。
+以上三类保持可见的待审核状态，不用错误中文换取表面覆盖率。
