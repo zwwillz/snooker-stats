@@ -74,7 +74,7 @@ test("match detail presents compact divided Match Season and H2H rows inside one
   assert.match(ui, /localizedTournamentLabel\(item\.tournament, snapshot\.calendar\)/);
   assert.doesNotMatch(ui, /styles\.detailInfoCard/);
   assert.match(dbV2, /snooker_player_season_stats\?select=/);
-  assert.match(dbV2, /season_start_year=eq\.2026/);
+  assert.match(dbV2, /season_start_year=eq\.\$\{Number\(base\.currentSeason\.slice\(0, 4\)\)\}/);
 });
 
 test("official world ranking is explicit, top three on home, euro-prefixed and avatar-only clickable", async () => {
@@ -123,8 +123,8 @@ test("recent events keep original type/status positions and semantic colors", as
     read("app/snooker/snooker-ui-polish.module.css"),
   ]);
 
-  assert.match(ui, /item\.id === featuredEventCard\?\.id/);
-  assert.doesNotMatch(ui, /item\.id !== featuredEventCard\?\.id/);
+  assert.match(ui, /item\.id === selectedFeaturedSeries\?\.id/);
+  assert.doesNotMatch(ui, /item\.id !== selectedFeaturedSeries\?\.id/);
   assert.match(ui, /eventStatusText.*eventStatusClass\(item\.status\).*eventStatusLabel\(item\)/s);
   assert.match(ui, /<StatusPill status="type" label=\{item\.typeZh\} \/>/);
   assert.match(ui, /eyebrow="RECENT TOURNAMENTS" title="近期赛事"/);
@@ -187,7 +187,8 @@ test("bottom navigation keeps all four main tabs local while the root owns playe
   assert.match(page, /<SnookerViewUrlSync \/>/);
   assert.match(page, /initialPlayerSlug=\{requestedPlayer\}/);
   assert.match(db, /next: \{ revalidate \}/);
-  assert.match(page, /export const revalidate = 300/);
-  assert.doesNotMatch(page, /force-dynamic/);
+  assert.match(page, /export const dynamic = "force-dynamic"/);
+  assert.match(page, /export const revalidate = 0/);
+  assert.match(page, /refreshSnookerDatabaseViewLive/);
   assert.doesNotMatch(ui, /behavior: "smooth"/);
 });
