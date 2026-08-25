@@ -1,5 +1,6 @@
 import SnookerDataCenterV2 from "./snooker/snooker-data-center-v2";
 import SnookerViewUrlSync from "./snooker/snooker-view-url-sync";
+import DesktopSiteHeader from "./snooker/desktop-site-header";
 import { SNOOKER_BUILD_MARK } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { refreshSnookerDatabaseViewLive } from "@/lib/snooker/live-read-through";
@@ -46,6 +47,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
 
   return (
     <>
+      <DesktopSiteHeader activeView={initialView} />
       <SnookerViewUrlSync />
       <SnookerDataCenterV2
         initialSnapshot={database.snapshot}
