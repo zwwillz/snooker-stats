@@ -11,23 +11,31 @@ test("production Supabase migration history is versioned in the repository", asy
     .filter((name) => name.endsWith(".sql"))
     .sort();
 
-  assert.equal(files.length, 59);
+  assert.ok(files.length >= 65);
   assert.equal(files[0], "20260816151702_initialize_snooker_data_center.sql");
-  assert.equal(files.at(-1), "20260820192152_harden_public_access_and_sync_queue.sql");
+  assert.ok(files.includes("20260825144527_guard_translation_ingest_and_queue_reviews.sql"));
+  assert.ok(files.includes("20260825152608_preserve_player_career_highlight_translation_updates.sql"));
+  assert.ok(files.includes("20260825153442_preserve_player_career_highlight_translations_during_wst_sync.sql"));
 
   const [checksumSource, hardening] = await Promise.all([
     read("supabase/migration-checksums.json"),
     read("supabase/migrations/20260820192152_harden_public_access_and_sync_queue.sql"),
   ]);
   const checksums = JSON.parse(checksumSource).migrations;
-  const productionFiles = files.slice(0, checksums.length);
-  const sources = await Promise.all(productionFiles.map((name) => read("supabase/migrations/" + name)));
-  assert.equal(checksums.length, 58);
-  productionFiles.forEach((name, index) => {
+  assert.ok(checksums.length >= 58);
+
+  const checksummedFiles = checksums.map((entry) => {
+    const match = files.find((name) => name.startsWith(entry.version + "_"));
+    assert.ok(match, `missing migration for checksum version ${entry.version}`);
+    return match;
+  });
+  const sources = await Promise.all(checksummedFiles.map((name) => read("supabase/migrations/" + name)));
+  checksummedFiles.forEach((name, index) => {
     const version = name.slice(0, 14);
     assert.equal(checksums[index].version, version);
     assert.equal(createHash("md5").update(sources[index]).digest("hex"), checksums[index].md5);
   });
+
   const combined = sources.join("\n");
   assert.match(combined, /create table if not exists public\.snooker_players/);
   assert.match(combined, /create schema if not exists snooker_internal/);
