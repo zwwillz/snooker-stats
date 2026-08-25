@@ -30,7 +30,7 @@ test("public loader separates lightweight all-season series from current-season 
   assert.doesNotMatch(database, /season=eq\.2026%2F27/);
 });
 
-test("event UI exposes swipeable seasons and multi-stage drill-down", async () => {
+test("event UI exposes swipeable seasons and continuous multi-stage schedules", async () => {
   const [ui, css, page, dashboard] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-priority.module.css"),
@@ -42,9 +42,12 @@ test("event UI exposes swipeable seasons and multi-stage drill-down", async () =
   assert.match(ui, /function SeriesCard/);
   assert.match(ui, /preferredSeriesStage/);
   assert.match(ui, /seriesDetail\.stages\.map/);
+  assert.match(ui, /seriesStageSection/);
+  assert.match(ui, /overviewStart = seriesDetail\?\.startDate/);
+  assert.doesNotMatch(ui, /className=\{priority\.stageSelector\}/);
   assert.match(ui, /api\/snooker\/v1\/event\?slug=/);
   assert.match(css, /\.seasonRail\{[^}]*overflow-x:auto/s);
-  assert.match(css, /\.stageSelector\{[^}]*overflow-x:auto/s);
+  assert.match(css, /\.seriesStageSection\{/);
   assert.match(page, /initialEventSeries=\{database\.eventSeries\}/);
   assert.match(dashboard, /eventSeries: database\.eventSeries/);
 });
