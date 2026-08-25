@@ -25,6 +25,10 @@ jobs:
           cache: npm
       - name: Apply fixes
         run: node scripts/run-schedule-stability-fixes.mjs
+      - name: Remove one-shot helpers before verification
+        run: |
+          rm -f scripts/apply-schedule-stability-fixes.mjs
+          rm -f scripts/run-schedule-stability-fixes.mjs
       - name: Install
         run: npm ci
       - name: Typecheck
@@ -35,13 +39,11 @@ jobs:
         run: npm run test:core
       - name: Offline build
         run: npm run build:offline
-      - name: Commit verified changes and remove one-shot helpers
+      - name: Commit verified changes and remove one-shot workflow
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           rm -f .github/workflows/apply-schedule-stability-fixes.yml
-          rm -f scripts/apply-schedule-stability-fixes.mjs
-          rm -f scripts/run-schedule-stability-fixes.mjs
           git add -A
           git diff --cached --quiet && exit 0
           git commit -m "fix: stabilize schedule ordering and event details"
