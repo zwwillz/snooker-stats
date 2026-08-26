@@ -70,7 +70,6 @@ export default function PlayerCompareTeaser({
   if (pair.length < 2) return null;
   const [left, right] = pair;
   const [leftStats, rightStats] = data?.seasonStats ?? [null, null];
-  const href = `/snooker/compare?player1=${encodeURIComponent(left.slug)}&player2=${encodeURIComponent(right.slug)}${data?.season ? `&season=${encodeURIComponent(data.season)}` : ""}`;
   const rememberReturn = () => {
     try {
       window.sessionStorage.setItem("snooker-compare-return", window.location.href);
