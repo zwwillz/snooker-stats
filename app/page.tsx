@@ -4,6 +4,7 @@ import { SNOOKER_BUILD_MARK } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { refreshSnookerDatabaseViewLive } from "@/lib/snooker/live-read-through";
 import { CURRENT_RANKING_KEYS, loadSnookerRankingHub, type SnookerCurrentRankingKey, type SnookerRankingSection } from "@/lib/snooker/ranking-hub";
+import { loadPlayerCompare } from "@/lib/snooker/player-compare";
 import { snookerCacheLabel, SNOOKER_CACHE_SECONDS } from "@/lib/snooker/cache-policy";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,13 @@ function rankingSection(value?: string): SnookerRankingSection {
 export default async function Home({ searchParams }: { searchParams: Promise<{ view?: string; player?: string; section?: string; list?: string; group?: string }> }) {
   const [cachedDatabase, rankingHub, query] = await Promise.all([loadSnookerDatabaseViewV2(), loadSnookerRankingHub(), searchParams]);
   const database = await refreshSnookerDatabaseViewLive(cachedDatabase);
+  const teaserPlayers = [...database.snapshot.players]
+    .filter((player) => player.isCurrentTour ?? player.currentRank !== null)
+    .sort((a, b) => (a.currentRank ?? 9999) - (b.currentRank ?? 9999) || a.nameEn.localeCompare(b.nameEn))
+    .slice(0, 2);
+  const initialPlayerCompare = teaserPlayers.length === 2
+    ? await loadPlayerCompare(teaserPlayers[0].slug, teaserPlayers[1].slug).catch(() => null)
+    : null;
   const requestedPlayer = query.player?.trim() || null;
   const initialDataSection = query.view === "data" && query.section === "rankings" ? "rankings" as const : null;
   const initialView: SnookerRootView = requestedPlayer
@@ -60,6 +68,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
         initialDataSection={initialDataSection}
         initialRankingKey={initialDataSection ? rankingKey(query.list) : null}
         initialRankingSection={initialDataSection ? rankingSection(query.group) : "current"}
+        initialPlayerCompare={initialPlayerCompare}
       />
     </>
   );

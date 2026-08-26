@@ -14,6 +14,7 @@ import type {
   SnookerSeasonStatistics,
 } from "@/lib/snooker/domain";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
+import type { PlayerCompareSnapshot } from "@/lib/snooker/player-compare";
 import { CURRENT_RANKING_KEYS, type SnookerCurrentRankingKey, type SnookerRankingHub, type SnookerRankingSection } from "@/lib/snooker/ranking-hub";
 import { DataHubContent, RankingDetailContent } from "./data/data-ranking-content";
 import PlayerCompareTeaser from "./compare/player-compare-teaser";
@@ -404,6 +405,7 @@ export default function SnookerDataCenterV2({
   initialDataSection,
   initialRankingKey,
   initialRankingSection = "current",
+  initialPlayerCompare,
 }: {
   initialSnapshot: SnookerDashboardSnapshot;
   initialDatabaseEvents: SnookerEvent[];
@@ -417,6 +419,7 @@ export default function SnookerDataCenterV2({
   initialDataSection?: "rankings" | null;
   initialRankingKey?: SnookerCurrentRankingKey | null;
   initialRankingSection?: SnookerRankingSection;
+  initialPlayerCompare?: PlayerCompareSnapshot | null;
 }) {
   const initialKey = initialRankingKey ?? "world_official";
   const initialDetail: DetailState | null = initialPlayerSlug
@@ -443,6 +446,26 @@ export default function SnookerDataCenterV2({
   const [rankingSection, setRankingSection] = useState<SnookerRankingSection>(initialRankingSection);
   const signatures = useRef(new Map(initialDatabaseEvents.flatMap((event) => allMatches(event)).map((match) => [match.id, matchSignature(match)])));
   const playerDirectoryScrollY = useRef(0);
+
+  useEffect(() => {
+    let frame = 0;
+    try {
+      const stored = window.localStorage.getItem("snooker-theme");
+      if (stored === "green" || stored === "red") frame = window.requestAnimationFrame(() => setTheme(stored));
+    } catch {
+      // Keep the default theme when storage is unavailable.
+    }
+    return () => { if (frame) window.cancelAnimationFrame(frame); };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.snookerTheme = theme;
+    try {
+      window.localStorage.setItem("snooker-theme", theme);
+    } catch {
+      // Theme still applies for the current document.
+    }
+  }, [theme]);
 
   const players = useMemo(() => playerMap(snapshot), [snapshot]);
   const directoryPlayers = useMemo<SnookerPlayerListItem[]>(() => snapshot.players
@@ -971,7 +994,7 @@ export default function SnookerDataCenterV2({
           <div className={styles.sourceLine}><i className={sourceHealth?.accepted ? styles.liveOk : styles.liveWait} /><b>{sourceHealth?.sourceLabel ?? "官方比赛数据"}</b><small>{headlineMatch.status === "completed" ? `更新 ${formatUpdatedAt(sourceHealth?.fetchedAt)}` : `30秒同步 · ${formatUpdatedAt(sourceHealth?.fetchedAt)}`}</small></div>
         </section> : null}
 
-        <PlayerCompareTeaser players={directoryPlayers} />
+        <PlayerCompareTeaser players={directoryPlayers} initialData={initialPlayerCompare} actionClassName={styles.fullButton} />
 
         {nextEventCard ? <section className={styles.card}><SectionHeader eyebrow="NEXT EVENT" title="下一站" action={eventStatusLabel(nextEventCard)} actionClassName={`${polish.eventStatusText} ${eventStatusClass(nextEventCard.status)}`} /><button className={styles.nextEvent} onClick={() => openEvent(nextEventCard.slug)}><span>{nextEventCard.cityZh?.slice(0, 1) || "赛"}</span><div><strong>{nextEventCard.nameZh}</strong><small>{nextEventCard.nameEn}</small><p>{formatDateRange(nextEventCard.startDate, nextEventCard.endDate)} · {nextEventCard.cityZh}</p></div><em>›</em></button></section> : null}
         <section className={styles.card}><SectionHeader eyebrow="Official World Ranking" title="世界排名" action="TOP 3" /><div className={styles.rankingList}>{rankingRows.slice(0, 3).map((row) => <div className={polish.rankingStaticRow} key={row.rank}><strong>{row.rank}</strong><button className={polish.rankingAvatarButton} onClick={() => openPlayer(row.player.id)} aria-label={`查看${row.player.nameZh}球员详情`}><PlayerAvatar player={row.player} size="sm" /></button><span><b>{row.player.nameZh}</b><small>{row.player.nameEn}</small></span><em>{rankingMoney(row.points)}</em></div>)}</div><button className={styles.fullButton} onClick={() => changeView("data")}>查看完整世界排名</button></section>
@@ -990,7 +1013,7 @@ export default function SnookerDataCenterV2({
 
       {activeView === "players" ? <PlayerDirectoryContent players={directoryPlayers} query={playerQuery} filter={playerFilter} onQueryChange={setPlayerQuery} onFilterChange={setPlayerFilter} onOpenPlayer={(player) => openPlayer(player.id)} onPrefetchPlayer={(player) => prefetchPlayerDetail(player.slug)} /> : null}
 
-      {activeView === "data" ? <DataHubContent hub={initialRankingHub} players={directoryPlayers} selectedKey={selectedRankingKey} onSelectKey={setSelectedRankingKey} onOpenRankings={openRankings} onOpenPlayer={openPlayerBySlug} /> : null}
+      {activeView === "data" ? <DataHubContent hub={initialRankingHub} players={directoryPlayers} selectedKey={selectedRankingKey} onSelectKey={setSelectedRankingKey} onOpenRankings={openRankings} onOpenPlayer={openPlayerBySlug} initialPlayerCompare={initialPlayerCompare} /> : null}
       <div className={styles.dataStatus} role="status">
         <i className={sourceHealth?.accepted ? styles.liveOk : styles.liveWait} />
         <span>{sourceHealth?.sourceLabel ?? (sourceHealth?.online ? "Snooker Supabase" : "数据服务降级")}</span>

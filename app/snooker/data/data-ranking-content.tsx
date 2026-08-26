@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
+import type { PlayerCompareSnapshot } from "@/lib/snooker/player-compare";
 import type {
   SnookerCurrentRankingKey,
   SnookerRankingHub,
@@ -170,6 +171,7 @@ export function DataHubContent({
   onSelectKey,
   onOpenRankings,
   onOpenPlayer,
+  initialPlayerCompare,
 }: {
   hub: SnookerRankingHub;
   players: SnookerPlayerListItem[];
@@ -177,6 +179,7 @@ export function DataHubContent({
   onSelectKey: (key: SnookerCurrentRankingKey) => void;
   onOpenRankings: (key: SnookerCurrentRankingKey) => void;
   onOpenPlayer: (slug: string) => void;
+  initialPlayerCompare?: PlayerCompareSnapshot | null;
 }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const [technicalHub, setTechnicalHub] = useState<SnookerTechnicalHub | null>(() => technicalCache);
@@ -307,7 +310,7 @@ export function DataHubContent({
       <p>世界斯诺克排名、赛季表现与历史纪录的数据入口。排名、技术与荣誉数据按统一结构逐步扩展。</p>
     </section>
 
-    <PlayerCompareTeaser players={players} variant="data" />
+    <PlayerCompareTeaser players={players} variant="data" initialData={initialPlayerCompare} actionClassName={styles.primaryAction} />
 
     <section className={`${styles.card} ${styles.rankingCard}`}>
       <div className={styles.sectionHeader}>

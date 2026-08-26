@@ -1086,3 +1086,62 @@
     padding: 10px;
   }
 }
+
+/* PLAYER_COMPARE_POLISH_V1 */
+.page {
+  --accent:#0b7a55;
+  --accent-strong:#075b40;
+  --accent-dark:#063d2d;
+  --accent-soft:#eaf6f1;
+  --accent-faint:#f5faf7;
+  --accent-shadow:rgba(6,61,45,.16);
+  --green:var(--accent);
+  --green-strong:var(--accent-strong);
+  --green-soft:var(--accent-soft);
+}
+:global(html[data-snooker-theme="red"]) .page {
+  --accent:#d81336;
+  --accent-strong:#b80e2b;
+  --accent-dark:#7b071d;
+  --accent-soft:#fff0f3;
+  --accent-faint:#fff7f8;
+  --accent-shadow:rgba(123,7,29,.14);
+  background:linear-gradient(180deg,#f9ecef 0,#f8f7f7 180px,#f6f6f5 100%);
+}
+.hero { padding-top:32px; padding-bottom:22px; }
+.heroTitle small,.sectionHeader small,.summaryHead small { font-size:8px; letter-spacing:.14em; }
+.heroTitle h1 { margin:6px 0 7px; font-size:clamp(30px,4vw,40px); }
+.heroTitle p { font-size:11px; }
+.playerHero > div strong { font-size:20px; }
+.playerHero > div small,.playerHero > div span { font-size:11px; }
+.summaryHead h2,.sectionHeader h2 { font-size:19px; }
+.metricRow > strong { font-size:18px; }
+.metricRow > span b { font-size:11px; }
+.metricRow > span small { font-size:8px; }
+.summaryText,.h2hNote { font-size:10px; }
+.tabs button { min-height:54px; }
+.tabs button span { font-size:11px; }
+.tabs button small { font-size:7px; }
+.h2hHero { background:linear-gradient(135deg,var(--accent-dark),var(--accent)); box-shadow:0 14px 30px var(--accent-shadow); }
+.h2hHero > div > strong { font-size:44px; }
+.vsControl { display:flex; align-items:center; justify-content:center; flex-direction:column; gap:7px; }
+.vsControl > small { max-width:96px; color:#87928c; font-size:8px; line-height:1.35; text-align:center; white-space:nowrap; }
+.seasonToolbar { display:flex; align-items:center; justify-content:space-between; gap:16px; max-width:1124px; margin:10px auto 0; padding:10px 14px; border:1px solid var(--line); border-radius:13px; background:rgba(255,255,255,.9); }
+.seasonToolbar label { display:flex; align-items:center; gap:9px; color:var(--muted); font-size:10px; }
+.seasonToolbar select { min-width:112px; padding:7px 30px 7px 11px; border:1px solid #d7e0db; border-radius:10px; color:var(--ink); background:#fff; font-size:10px; font-weight:800; }
+.seasonToolbar small { color:#98a09c; font-size:8px; }
+.backLink { padding:7px 6px; }
+.topbar > button.backLink { justify-self:start; }
+@media (max-width:620px) {
+  .hero { padding-top:26px; padding-bottom:18px; }
+  .heroTitle h1 { font-size:30px; }
+  .heroTitle p { font-size:10px; }
+  .playerHero > div strong { font-size:17px; }
+  .playerHero > div small,.playerHero > div span { font-size:10px; }
+  .summaryHead h2,.sectionHeader h2 { font-size:18px; }
+  .metricRow > strong { font-size:17px; }
+  .metricRow > span b { font-size:10px; }
+  .seasonToolbar { margin:8px 12px 0; padding:9px 11px; }
+  .seasonToolbar small { display:none; }
+  .vsControl > small { max-width:72px; font-size:7px; }
+}

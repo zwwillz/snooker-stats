@@ -194,3 +194,9 @@
     padding: 0 16px;
   }
 }
+
+.header small { color: var(--accent, #0b7a55); }
+.header > span { color: var(--accent-strong, #075b40); background: var(--accent-soft, #eaf6f1); }
+.action { color: var(--accent-strong, #075b40); }
+.actionReset { display:flex; align-items:center; justify-content:center; gap:5px; text-decoration:none; }
+.actionReset span { font-size:16px; line-height:1; }

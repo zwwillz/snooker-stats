@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type {
-  PlayerCompareCareer,
   PlayerCompareH2H,
   PlayerComparePlayer,
   PlayerCompareSeason,
@@ -91,10 +89,17 @@ function Section({ eyebrow, title, children }: { eyebrow: string; title: string;
   </section>;
 }
 
-function leadCount(left: PlayerCompareSeason | null, right: PlayerCompareSeason | null, players: [PlayerComparePlayer, PlayerComparePlayer]) {
+function seasonRanking(data: PlayerCompareSnapshot, stat: PlayerCompareSeason | null, player: PlayerComparePlayer) {
+  const currentSeason = data.availableSeasons[0] ?? data.season;
+  return data.season === currentSeason ? player.currentRank : stat?.ranking ?? null;
+}
+
+function leadCount(data: PlayerCompareSnapshot) {
+  const [left, right] = data.seasonStats;
+  const players = data.players;
   if (!left || !right) return { left: 0, right: 0, ties: 0 };
   const values: Array<[number | null | undefined, number | null | undefined, Trend]> = [
-    [left.ranking ?? players[0].currentRank, right.ranking ?? players[1].currentRank, "lower"],
+    [seasonRanking(data, left, players[0]), seasonRanking(data, right, players[1]), "lower"],
     [left.matchWinRate, right.matchWinRate, "higher"],
     [left.frameWinRate, right.frameWinRate, "higher"],
     [left.breaks50Plus, right.breaks50Plus, "higher"],
@@ -115,14 +120,14 @@ function leadCount(left: PlayerCompareSeason | null, right: PlayerCompareSeason 
 function SeasonSummary({ data }: { data: PlayerCompareSnapshot }) {
   const [left, right] = data.seasonStats;
   const [leftPlayer, rightPlayer] = data.players;
-  const leads = leadCount(left, right, data.players);
+  const leads = leadCount(data);
   return <section className={styles.summaryCard}>
     <div className={styles.summaryHead}>
       <div><small>SEASON SNAPSHOT</small><h2>{data.season} 赛季表现</h2></div>
       <div className={styles.leadBadge}><span>{leftPlayer.shortNameZh || leftPlayer.nameZh} {leads.left}项</span><i>领先指标</i><span>{rightPlayer.shortNameZh || rightPlayer.nameZh} {leads.right}项</span></div>
     </div>
     <div className={styles.summaryMetrics}>
-      <MetricRow label="世界排名" left={left?.ranking ?? leftPlayer.currentRank} right={right?.ranking ?? rightPlayer.currentRank} format={fmtRank} trend="lower" />
+      <MetricRow label="世界排名" left={seasonRanking(data, left, leftPlayer)} right={seasonRanking(data, right, rightPlayer)} format={fmtRank} trend="lower" />
       <MetricRow label="比赛胜率" left={left?.matchWinRate} right={right?.matchWinRate} format={fmtPercent} />
       <MetricRow label="局胜率" left={left?.frameWinRate} right={right?.frameWinRate} format={fmtPercent} />
       <MetricRow label="破百" left={left?.breaks100Plus} right={right?.breaks100Plus} />
@@ -345,6 +350,15 @@ export default function PlayerCompareClient({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("snooker-theme");
+      if (stored === "green" || stored === "red") document.documentElement.dataset.snookerTheme = stored;
+    } catch {
+      // Keep the default compare theme when storage is unavailable.
+    }
+  }, []);
+
   const load = async (nextPlayers: [string, string], season?: string) => {
     if (!nextPlayers[0] || !nextPlayers[1] || nextPlayers[0] === nextPlayers[1]) return;
     setLoading(true);
@@ -378,6 +392,20 @@ export default function PlayerCompareClient({
     void load(next, data?.season);
   };
 
+  const goBack = () => {
+    try {
+      const returnUrl = window.sessionStorage.getItem("snooker-compare-return");
+      if (returnUrl && new URL(returnUrl).origin === window.location.origin && window.history.length > 1) {
+        window.sessionStorage.removeItem("snooker-compare-return");
+        window.history.back();
+        return;
+      }
+    } catch {
+      // Fall through to the lightweight data-center route.
+    }
+    router.replace("/?view=data", { scroll: false });
+  };
+
   const share = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -392,7 +420,7 @@ export default function PlayerCompareClient({
 
   return <main className={styles.page}>
     <header className={styles.topbar}>
-      <Link href="/?view=data" className={styles.backLink}>‹ <span>返回数据中心</span></Link>
+      <button type="button" className={styles.backLink} onClick={goBack}>‹ <span>返回</span></button>
       <div><strong>147数据局</strong><small>PLAYER COMPARE</small></div>
       <button type="button" onClick={share}>{copied ? "已复制" : "分享"}</button>
     </header>
@@ -405,7 +433,7 @@ export default function PlayerCompareClient({
           <div><strong>{leftPlayer?.nameZh ?? "选择球员"}</strong><small>{leftPlayer?.nameEn ?? ""}</small><span>{leftPlayer?.currentRank ? `世界 #${leftPlayer.currentRank}` : "排名待同步"} · {leftPlayer?.nationalityZh ?? ""}</span></div>
           <em>更换球员</em>
         </button>
-        <button className={styles.swapButton} type="button" onClick={swapPlayers} aria-label="交换球员">⇄<span>VS</span></button>
+        <div className={styles.vsControl}><button className={styles.swapButton} type="button" onClick={swapPlayers} aria-label="交换球员">⇄<span>VS</span></button><small>{loading ? "同步中…" : data ? `更新 ${displayUpdated(data.updatedAt)}` : "数据加载中"}</small></div>
         <button type="button" className={`${styles.playerHero} ${styles.playerHeroRight}`} onClick={() => setSelectorSide("right")}>
           {rightPlayer ? <PlayerAvatar player={rightPlayer} large /> : null}
           <div><strong>{rightPlayer?.nameZh ?? "选择球员"}</strong><small>{rightPlayer?.nameEn ?? ""}</small><span>{rightPlayer?.currentRank ? `世界 #${rightPlayer.currentRank}` : "排名待同步"} · {rightPlayer?.nationalityZh ?? ""}</span></div>
@@ -413,15 +441,13 @@ export default function PlayerCompareClient({
         </button>
       </div>
 
-      <div className={styles.heroControls}>
-        <label>赛季<select value={data?.season ?? ""} disabled={!data || loading} onChange={(event) => void load(selected, event.target.value)}>{data?.availableSeasons.map((season) => <option value={season} key={season}>{season}</option>)}</select></label>
-        <span>{loading ? "正在更新对比…" : data ? `数据更新 ${displayUpdated(data.updatedAt)}` : "数据加载中"}</span>
-      </div>
     </section>
 
     <nav className={styles.tabs} aria-label="球员对比维度">
       {([['season', '赛季表现', 'SEASON'], ['career', '职业生涯', 'CAREER'], ['h2h', '交手记录', 'H2H'], ['honours', '荣誉对比', 'HONOURS']] as Array<[CompareTab, string, string]>).map(([key, label, en]) => <button type="button" className={tab === key ? styles.tabActive : ""} onClick={() => setTab(key)} key={key}><span>{label}</span><small>{en}</small></button>)}
     </nav>
+
+    {tab === "season" ? <div className={styles.seasonToolbar}><label><span>赛季</span><select value={data?.season ?? ""} disabled={!data || loading} onChange={(event) => void load(selected, event.target.value)}>{data?.availableSeasons.map((season) => <option value={season} key={season}>{season}</option>)}</select></label><small>仅影响赛季表现数据</small></div> : null}
 
     {error ? <div className={styles.errorBox}>{error}<button type="button" onClick={() => void load(selected, data?.season)}>重试</button></div> : null}
     {!data ? <div className={styles.emptyState}>暂无可用的球员对比数据。</div> : <>

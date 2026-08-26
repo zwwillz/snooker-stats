@@ -47,3 +47,31 @@ test("player compare API has bounded caching and does not cache errors", async (
   assert.match(route, /stale-while-revalidate=120/);
   assert.match(route, /Cache-Control.*no-store/s);
 });
+
+test("player compare polish keeps historical rankings honest", async () => {
+  const client = await read("app/snooker/compare/player-compare-client.tsx");
+  assert.match(client, /data\.season === currentSeason \? player\.currentRank : stat\?\.ranking \?\? null/);
+  assert.doesNotMatch(client, /left\?\.ranking \?\? leftPlayer\.currentRank/);
+});
+
+test("player compare polish moves season selection below the season tab and keeps update time near VS", async () => {
+  const client = await read("app/snooker/compare/player-compare-client.tsx");
+  assert.match(client, /tab === "season" \? <div className={styles\.seasonToolbar}/);
+  assert.match(client, /className={styles\.vsControl}/);
+  assert.doesNotMatch(client, /className={styles\.heroControls}/);
+});
+
+test("player compare entry cards can render from server-preloaded data and inherit page buttons", async () => {
+  const teaser = await read("app/snooker/compare/player-compare-teaser.tsx");
+  const rootPage = await read("app/page.tsx");
+  assert.match(teaser, /initialData\?: PlayerCompareSnapshot/);
+  assert.match(teaser, /actionClassName\?: string/);
+  assert.match(rootPage, /initialPlayerCompare={initialPlayerCompare}/);
+});
+
+test("player compare follows the main green-red theme selection", async () => {
+  const shell = await read("app/snooker/snooker-data-center-v2.tsx");
+  const css = await read("app/snooker/compare/player-compare.module.css");
+  assert.match(shell, /localStorage\.setItem\("snooker-theme", theme\)/);
+  assert.match(css, /html\[data-snooker-theme="red"\]/);
+});
