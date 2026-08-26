@@ -19,8 +19,9 @@ test("player compare route is proactively prefetched before shared-button naviga
   const teaser = await read("app/snooker/compare/player-compare-teaser.tsx");
   assert.match(teaser, /router\.prefetch\(compareHref\)/);
   assert.match(teaser, /onPointerDown=.*router\.prefetch\(compareHref\)/s);
-  assert.match(teaser, /router\.push\(compareHref\)/);
-  assert.doesNotMatch(teaser, /import Link from "next\/link"/);
+  assert.match(teaser, /import Link from "next\/link"/);
+  assert.match(teaser, /href=\{compareHref\}/);
+  assert.doesNotMatch(teaser, /router\.push\(compareHref\)/);
 });
 
 test("player compare mobile typography and VS control follow the site theme", async () => {
