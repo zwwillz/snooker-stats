@@ -2,7 +2,8 @@ import SnookerDataCenterV2 from "./snooker/snooker-data-center-v2";
 import SnookerViewUrlSync from "./snooker/snooker-view-url-sync";
 import { SNOOKER_BUILD_MARK } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
-import { refreshSnookerDatabaseViewLive } from "@/lib/snooker/live-read-through";
+import { loadSnookerEventDetailComplete } from "@/lib/snooker/event-detail-complete";
+import { refreshSingleEventLive, refreshSnookerDatabaseViewLive } from "@/lib/snooker/live-read-through";
 import { CURRENT_RANKING_KEYS, loadSnookerRankingHub, type SnookerCurrentRankingKey, type SnookerRankingSection } from "@/lib/snooker/ranking-hub";
 import { loadPlayerCompare } from "@/lib/snooker/player-compare";
 import { snookerCacheLabel, SNOOKER_CACHE_SECONDS } from "@/lib/snooker/cache-policy";
@@ -23,7 +24,11 @@ function rankingSection(value?: string): SnookerRankingSection {
 export default async function Home({ searchParams }: { searchParams: Promise<{ view?: string; player?: string; section?: string; list?: string; group?: string }> }) {
   const [cachedDatabase, rankingHub, query] = await Promise.all([loadSnookerDatabaseViewV2(), loadSnookerRankingHub(), searchParams]);
   const database = await refreshSnookerDatabaseViewLive(cachedDatabase);
-  const teaserPlayers = [...database.snapshot.players]
+  const focusedBase = await loadSnookerEventDetailComplete(database.snapshot.event.slug).catch(() => null);
+  const focusedEvent = focusedBase ? await refreshSingleEventLive(focusedBase) : database.snapshot.event;
+  const focusedEvents = [focusedEvent];
+  const snapshot = { ...database.snapshot, event: focusedEvent };
+  const teaserPlayers = [...snapshot.players]
     .filter((player) => player.isCurrentTour ?? player.currentRank !== null)
     .sort((a, b) => (a.currentRank ?? 9999) - (b.currentRank ?? 9999) || a.nameEn.localeCompare(b.nameEn))
     .slice(0, 2);
@@ -39,7 +44,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
       : query.view === "matches" || query.view === "players" || query.view === "data"
         ? query.view
         : "home";
-  const hasLiveMatch = database.eventDetails.some((event) => event.rounds.some((round) => round.matches.some((match) => match.status === "live" || match.status === "session-break")));
+  const hasLiveMatch = focusedEvents.some((event) => event.rounds.some((round) => round.matches.some((match) => match.status === "live" || match.status === "session-break")));
 
   const sourceHealth = {
     online: database.databaseOnline,
@@ -48,7 +53,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
     sourceLabel: hasLiveMatch ? "Supabase · 实时直读" : snookerCacheLabel(database.databaseOnline),
     cacheSeconds: hasLiveMatch ? 0 : database.databaseOnline ? SNOOKER_CACHE_SECONDS.recent : SNOOKER_CACHE_SECONDS.history,
     message: database.databaseOnline
-      ? "前端读取独立斯诺克数据库；直播比分使用 no-store 实时直读。"
+      ? "前端读取独立斯诺克数据库；赛事详情按站完整读取，直播比分使用 no-store 实时直读。"
       : "独立数据库暂不可用，当前使用本地已验证快照兜底。",
   };
 
@@ -56,13 +61,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
     <>
       <SnookerViewUrlSync />
       <SnookerDataCenterV2
-        initialSnapshot={database.snapshot}
-        initialDatabaseEvents={database.eventDetails}
+        initialSnapshot={snapshot}
+        initialDatabaseEvents={focusedEvents}
         initialEventSeries={database.eventSeries}
         initialCurrentSeason={database.currentSeason}
         initialRankingHub={rankingHub}
         initialSourceHealth={sourceHealth}
-        buildMark={`${SNOOKER_BUILD_MARK}-DB11`}
+        buildMark={`${SNOOKER_BUILD_MARK}-DB12`}
         initialView={initialView}
         initialPlayerSlug={requestedPlayer}
         initialDataSection={initialDataSection}

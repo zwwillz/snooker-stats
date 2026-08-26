@@ -4,16 +4,25 @@ import test from "node:test";
 
 const helper = fs.readFileSync(new URL("../lib/snooker/event-detail-complete.ts", import.meta.url), "utf8");
 const route = fs.readFileSync(new URL("../app/api/snooker/v1/event/route.ts", import.meta.url), "utf8");
+const page = fs.readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+const dashboard = fs.readFileSync(new URL("../app/api/snooker/v1/dashboard/route.ts", import.meta.url), "utf8");
 
-test("historical event helper loads frames through base detail and enriches match statistics", () => {
+test("event helper loads frames through base detail and enriches match statistics", () => {
   assert.match(helper, /loadSnookerEventDetail\(slug\)/);
   assert.match(helper, /snooker_match_statistics\?/);
   assert.match(helper, /snooker_match_head_to_head\?/);
   assert.match(helper, /statistics: statsByMatch\.get/);
 });
 
-test("event route upgrades completed cached events to complete event detail", () => {
-  assert.match(route, /loadSnookerEventDetailComplete/);
-  assert.match(route, /cachedEvent\.status === "completed"/);
+test("event route upgrades every event open to complete event detail", () => {
+  assert.match(route, /detailedEvent = await loadSnookerEventDetailComplete\(slug\)/);
+  assert.doesNotMatch(route, /cachedEvent\.status === "completed"/);
   assert.match(route, /const baseEvent = detailedEvent/);
+});
+
+test("root and dashboard keep only a complete focused event and lazy-load historical events", () => {
+  assert.match(page, /loadSnookerEventDetailComplete\(database\.snapshot\.event\.slug\)/);
+  assert.match(page, /initialDatabaseEvents=\{focusedEvents\}/);
+  assert.match(dashboard, /const databaseEvents = \[focusedEvent\]/);
+  assert.match(dashboard, /历史赛事在打开时按站完整加载/);
 });
