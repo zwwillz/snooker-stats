@@ -15,12 +15,17 @@ test('compare teaser keeps link navigation and proactively prefetches the route'
 test('compare return restores the exact source route including player/data SPA state', () => {
   const compare = read('app/snooker/compare/player-compare-client.tsx');
   const player = read('app/snooker/players/player-detail-inline.tsx');
+  const root = read('app/snooker/snooker-data-center-v2.tsx');
   assert.equal(compare.includes('target.pathname'), true);
   assert.equal(compare.includes('target.search'), true);
   assert.equal(compare.includes('target.hash'), true);
   assert.equal(compare.includes('window.history.back()'), true);
+  assert.equal(compare.includes('sessionStorage.setItem("snooker-compare-restore", target.href)'), true);
   assert.equal(player.includes('sessionStorage.setItem("snooker-compare-return", window.location.href)'), true);
   assert.equal(player.includes('router.prefetch(compareHref)'), true);
+  assert.equal(root.includes('sessionStorage.getItem("snooker-compare-restore")'), true);
+  assert.equal(root.includes('setDetail({ type: "player", slug: playerSlug'), true);
+  assert.equal(root.includes('setActiveView(restoredView)'), true);
 });
 
 test('homepage exposes up to four priority live matches and keeps only user-facing update copy', () => {

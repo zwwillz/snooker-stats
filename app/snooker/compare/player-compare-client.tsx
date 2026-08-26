@@ -399,6 +399,7 @@ export default function PlayerCompareClient({
         const target = new URL(returnUrl);
         if (target.origin === window.location.origin) {
           window.sessionStorage.removeItem("snooker-compare-return");
+          window.sessionStorage.setItem("snooker-compare-restore", target.href);
           if (window.history.length > 1) {
             window.history.back();
             return;

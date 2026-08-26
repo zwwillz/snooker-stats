@@ -467,6 +467,38 @@ export default function SnookerDataCenterV2({
     }
   }, [theme]);
 
+  useEffect(() => {
+    let frame = 0;
+    try {
+      const restoreUrl = window.sessionStorage.getItem("snooker-compare-restore");
+      if (!restoreUrl) return;
+      window.sessionStorage.removeItem("snooker-compare-restore");
+      const target = new URL(restoreUrl);
+      if (target.origin !== window.location.origin) return;
+
+      const playerSlug = target.searchParams.get("player")?.trim();
+      const viewParam = target.searchParams.get("view");
+      const returnState = window.history.state as { snookerReturnView?: MainView } | null;
+      if (playerSlug) {
+        const returnView = returnState?.snookerReturnView ?? "players";
+        frame = window.requestAnimationFrame(() => {
+          setActiveView("players");
+          setDetail({ type: "player", slug: playerSlug, returnView });
+          window.scrollTo({ top: 0, behavior: "auto" });
+        });
+      } else {
+        const restoredView: MainView = viewParam === "matches" || viewParam === "players" || viewParam === "data" ? viewParam : "home";
+        frame = window.requestAnimationFrame(() => {
+          setDetail(null);
+          setActiveView(restoredView);
+        });
+      }
+    } catch {
+      // Keep the restored root state when the saved compare source is invalid.
+    }
+    return () => { if (frame) window.cancelAnimationFrame(frame); };
+  }, []);
+
   const players = useMemo(() => playerMap(snapshot), [snapshot]);
   const directoryPlayers = useMemo<SnookerPlayerListItem[]>(() => snapshot.players
     .map((player) => ({
