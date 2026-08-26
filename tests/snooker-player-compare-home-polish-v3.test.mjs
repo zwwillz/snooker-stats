@@ -13,6 +13,11 @@ test('compare teaser keeps link navigation and proactively prefetches the route'
   assert.equal(source.includes('if (variant === "data") returnUrl.searchParams.set("view", "data")'), true);
 });
 
+test('home and data compare actions inherit the neighboring button font size', () => {
+  const css = read('app/snooker/compare/player-compare-teaser.module.css');
+  assert.match(css, /\.actionFrame \.actionReset\s*\{[^}]*font-size:\s*inherit;/);
+});
+
 test('compare return restores the exact source route including player/data SPA state', () => {
   const compare = read('app/snooker/compare/player-compare-client.tsx');
   const player = read('app/snooker/players/player-detail-inline.tsx');
