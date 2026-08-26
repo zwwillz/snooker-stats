@@ -1,0 +1,47 @@
+name: Verify Player Compare Polish V1
+
+on:
+  push:
+    branches:
+      - fix/player-compare-polish-v1
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-commit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: fix/player-compare-polish-v1
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+          cache: npm
+      - name: Apply polish
+        run: node scripts/apply-player-compare-polish-v1.mjs
+      - name: Install
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Core regression tests
+        run: npm run test:core
+      - name: Offline build
+        run: npm run build:offline
+      - name: Remove temporary patch tooling
+        run: rm -f scripts/apply-player-compare-polish-v1.mjs .github/workflows/apply-player-compare-polish-v1.yml
+      - name: Commit verified polish
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/page.tsx app/snooker/snooker-data-center-v2.tsx app/snooker/data/data-ranking-content.tsx app/snooker/compare/player-compare-client.tsx app/snooker/compare/player-compare-teaser.tsx app/snooker/compare/player-compare.module.css app/snooker/compare/player-compare-teaser.module.css tests/snooker-player-compare.test.mjs scripts/apply-player-compare-polish-v1.mjs .github/workflows/apply-player-compare-polish-v1.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: polish player compare experience"
+          git push origin HEAD:fix/player-compare-polish-v1
