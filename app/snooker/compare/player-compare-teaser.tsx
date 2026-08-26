@@ -72,7 +72,10 @@ export default function PlayerCompareTeaser({
   const [leftStats, rightStats] = data?.seasonStats ?? [null, null];
   const rememberReturn = () => {
     try {
-      window.sessionStorage.setItem("snooker-compare-return", window.location.href);
+      const returnUrl = new URL(window.location.href);
+      if (variant === "data") returnUrl.searchParams.set("view", "data");
+      else returnUrl.searchParams.delete("view");
+      window.sessionStorage.setItem("snooker-compare-return", returnUrl.href);
     } catch {
       // Browser history remains the fallback.
     }
