@@ -198,4 +198,5 @@
 .actionFrame .actionReset {
   width: 100%;
   font-size: inherit;
+  font-weight: inherit;
 }
