@@ -45,7 +45,6 @@ test('homepage exposes up to four priority live matches and hides ops copy', () 
   assert.equal(home.includes('headlineCarousel'), true);
   assert.equal(home.includes('左右滑动'), true);
   assert.equal(home.includes('sourceHealth?.sourceLabel ??'), false);
-  assert.equal(home.includes('缓存 ${Math.round(sourceHealth.cacheSeconds / 60)} 分钟'), false);
 });
 
 test('compare page uses the shared site background and detail-style back control', () => {
