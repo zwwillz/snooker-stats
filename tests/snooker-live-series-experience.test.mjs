@@ -44,7 +44,7 @@ test("homepage headline selection is deterministic and retains recent results un
   assert.match(liveClient, /roundPriority/);
   assert.match(liveClient, /chinaPriority/);
   assert.match(liveClient, /liveExists/);
-  assert.match(ui, /selectHomepageHeadlineMatch\(databaseEvents, players\)/);
+  assert.match(ui, /selectHomepageHeadlineMatches\(databaseEvents, players\)/);
 });
 
 test("event series presents a continuous schedule without a stage selector", async () => {

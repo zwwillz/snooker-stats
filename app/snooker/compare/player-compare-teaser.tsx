@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
@@ -97,17 +96,16 @@ export default function PlayerCompareTeaser({
       <div><strong>{data ? integer(data.h2h.leftWins) : "…"}</strong><span>历史交手胜场</span><strong>{data ? integer(data.h2h.rightWins) : "…"}</strong></div>
     </div>
     <div className={styles.actionFrame}>
-      <Link
+      <button
+        type="button"
         className={actionClassName ? `${styles.actionReset} ${actionClassName}` : styles.action}
-        href={compareHref}
-        prefetch={true}
         onPointerEnter={() => router.prefetch(compareHref)}
         onPointerDown={() => router.prefetch(compareHref)}
         onFocus={() => router.prefetch(compareHref)}
-        onClick={rememberReturn}
+        onClick={() => { rememberReturn(); router.push(compareHref); }}
       >
         {variant === "data" ? <>开始球员对比 <span>›</span></> : "查看完整球员对比"}
-      </Link>
+      </button>
     </div>
   </section>;
 }

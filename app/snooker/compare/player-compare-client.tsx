@@ -395,10 +395,13 @@ export default function PlayerCompareClient({
   const goBack = () => {
     try {
       const returnUrl = window.sessionStorage.getItem("snooker-compare-return");
-      if (returnUrl && new URL(returnUrl).origin === window.location.origin && window.history.length > 1) {
-        window.sessionStorage.removeItem("snooker-compare-return");
-        window.history.back();
-        return;
+      if (returnUrl) {
+        const target = new URL(returnUrl);
+        if (target.origin === window.location.origin) {
+          window.sessionStorage.removeItem("snooker-compare-return");
+          router.replace(`${target.pathname}${target.search}${target.hash}`, { scroll: false });
+          return;
+        }
       }
     } catch {
       // Fall through to the lightweight data-center route.
@@ -420,7 +423,7 @@ export default function PlayerCompareClient({
 
   return <main className={styles.page}>
     <header className={styles.topbar}>
-      <button type="button" className={styles.backLink} onClick={goBack}>‹ <span>返回</span></button>
+      <button type="button" className={styles.backLink} onClick={goBack} aria-label="返回上一页">‹</button>
       <div><strong>147数据局</strong><small>PLAYER COMPARE</small></div>
       <button type="button" onClick={share}>{copied ? "已复制" : "分享"}</button>
     </header>
