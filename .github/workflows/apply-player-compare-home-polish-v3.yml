@@ -24,6 +24,8 @@ jobs:
           cache: npm
       - name: Apply polish patch
         run: node scripts/run-player-compare-home-polish-v3.mjs
+      - name: Remove temporary patch tooling
+        run: rm -f scripts/apply-player-compare-home-polish-v3.mjs scripts/run-player-compare-home-polish-v3.mjs scripts/.apply-player-compare-home-polish-v3.runtime.mjs .github/workflows/apply-player-compare-home-polish-v3.yml
       - name: Install
         run: npm ci
       - name: Typecheck
@@ -34,8 +36,6 @@ jobs:
         run: npm run test:core
       - name: Offline build
         run: npm run build:offline
-      - name: Remove temporary patch tooling
-        run: rm -f scripts/apply-player-compare-home-polish-v3.mjs scripts/run-player-compare-home-polish-v3.mjs scripts/.apply-player-compare-home-polish-v3.runtime.mjs .github/workflows/apply-player-compare-home-polish-v3.yml
       - name: Commit verified product changes
         run: |
           git config user.name "github-actions[bot]"
