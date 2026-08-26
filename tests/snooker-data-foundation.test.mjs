@@ -109,12 +109,13 @@ test("database-backed completed events can open their own schedules and matches"
 
 test("home result card marks the winner and persists until the next event begins", async () => {
   const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
-  assert.match(uiSource, /selectHomepageHeadlineMatch\(databaseEvents, players\)/);
-  assert.match(uiSource, /const headlineMatch = headlineSelection\?\.match/);
+  assert.match(uiSource, /selectHomepageHeadlineMatches\(databaseEvents, players\)/);
+  assert.match(uiSource, /headlineSelections\.map\(\(\{ match: headlineMatch, event: headlineEvent \}, index\)/);
   assert.match(uiSource, /headlineMatch\.winnerId === headlineMatch\.player1Id/);
   assert.match(uiSource, /headlineMatch\.winnerId === headlineMatch\.player2Id/);
-  assert.match(uiSource, /headlineMatch\.status === "completed" \? `更新 \$\{formatUpdatedAt/);
-  assert.match(uiSource, /sourceHealth\?\.sourceLabel/);
+  assert.match(uiSource, /className=\{priority\.scoreUpdated\}/);
+  assert.match(uiSource, /更新 \{formatUpdatedAt\(sourceHealth\?\.fetchedAt\)\}/);
+  assert.doesNotMatch(uiSource, /sourceHealth\?\.sourceLabel/);
 });
 
 test("player main view stays a directory and detail opens on click", async () => {
