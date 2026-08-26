@@ -4,10 +4,11 @@ import fs from 'node:fs';
 
 const read = (path) => fs.readFileSync(path, 'utf8');
 
-test('compare teaser reuses neighboring button semantics and prefetches route', () => {
+test('compare teaser keeps link navigation and proactively prefetches the route', () => {
   const source = read('app/snooker/compare/player-compare-teaser.tsx');
-  assert.equal(source.includes('import Link from "next/link"'), false);
-  assert.equal(source.includes('router.push(compareHref)'), true);
+  assert.equal(source.includes('import Link from "next/link"'), true);
+  assert.equal(source.includes('href={compareHref}'), true);
+  assert.equal(source.includes('router.push(compareHref)'), false);
   assert.equal(source.includes('router.prefetch(compareHref)'), true);
 });
 
@@ -17,8 +18,9 @@ test('compare return restores the exact source route including player/data SPA s
   assert.equal(compare.includes('target.pathname'), true);
   assert.equal(compare.includes('target.search'), true);
   assert.equal(compare.includes('target.hash'), true);
-  assert.equal(compare.includes('window.history.back()'), false);
+  assert.equal(compare.includes('window.history.back()'), true);
   assert.equal(player.includes('sessionStorage.setItem("snooker-compare-return", window.location.href)'), true);
+  assert.equal(player.includes('router.prefetch(compareHref)'), true);
 });
 
 test('homepage exposes up to four priority live matches and keeps only user-facing update copy', () => {
