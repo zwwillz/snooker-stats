@@ -15,11 +15,12 @@ test("player compare teaser reuses page section headers and action buttons", asy
   assert.match(teaser, /variant === "data" \? <>开始球员对比 <span>›<\/span><\/> : "查看完整球员对比"/);
 });
 
-test("player compare route is proactively prefetched before first click", async () => {
+test("player compare route is proactively prefetched before shared-button navigation", async () => {
   const teaser = await read("app/snooker/compare/player-compare-teaser.tsx");
   assert.match(teaser, /router\.prefetch\(compareHref\)/);
-  assert.match(teaser, /prefetch={true}/);
   assert.match(teaser, /onPointerDown=.*router\.prefetch\(compareHref\)/s);
+  assert.match(teaser, /router\.push\(compareHref\)/);
+  assert.doesNotMatch(teaser, /import Link from "next\/link"/);
 });
 
 test("player compare mobile typography and VS control follow the site theme", async () => {
