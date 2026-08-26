@@ -17,6 +17,7 @@ test('home and data compare actions inherit neighboring button typography', () =
   const css = read('app/snooker/compare/player-compare-teaser.module.css');
   assert.match(css, /\.actionFrame \.actionReset\s*\{[^}]*font-size:\s*inherit;/);
   assert.match(css, /\.actionFrame \.actionReset\s*\{[^}]*font-weight:\s*inherit;/);
+  assert.doesNotMatch(css, /\.actionFrame \.actionReset\s*\{[^}]*font-weight:\s*850/);
 });
 
 test('compare return restores the exact source route including player/data SPA state', () => {
