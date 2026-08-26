@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eventSummary, getPlayerEventStats, SNOOKER_BUILD_MARK, SNOOKER_FOUNDATION_VERSION } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { loadSnookerEventDetail } from "@/lib/snooker/database-public";
+import { loadSnookerEventDetailComplete } from "@/lib/snooker/event-detail-complete";
 import { refreshSingleEventLive } from "@/lib/snooker/live-read-through";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +12,13 @@ export async function GET(request: NextRequest) {
   const database = await loadSnookerDatabaseViewV2();
   const snapshot = database.snapshot;
   const slug = request.nextUrl.searchParams.get("slug")?.trim() ?? snapshot.event.slug;
-  const baseEvent = database.eventDetails.find((item) => item.slug === slug)
-    ?? (snapshot.event.slug === slug ? snapshot.event : null)
+  const cachedEvent = database.eventDetails.find((item) => item.slug === slug)
+    ?? (snapshot.event.slug === slug ? snapshot.event : null);
+  const detailedEvent = !cachedEvent || cachedEvent.status === "completed"
+    ? await loadSnookerEventDetailComplete(slug)
+    : null;
+  const baseEvent = detailedEvent
+    ?? cachedEvent
     ?? await loadSnookerEventDetail(slug);
   if (!baseEvent) return NextResponse.json({ ok: false, error: "EVENT_NOT_FOUND" }, { status: 404 });
 
