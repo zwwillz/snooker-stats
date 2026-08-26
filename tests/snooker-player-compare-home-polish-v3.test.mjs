@@ -10,6 +10,7 @@ test('compare teaser keeps link navigation and proactively prefetches the route'
   assert.equal(source.includes('href={compareHref}'), true);
   assert.equal(source.includes('router.push(compareHref)'), false);
   assert.equal(source.includes('router.prefetch(compareHref)'), true);
+  assert.equal(source.includes('if (variant === "data") returnUrl.searchParams.set("view", "data")'), true);
 });
 
 test('compare return restores the exact source route including player/data SPA state', () => {
