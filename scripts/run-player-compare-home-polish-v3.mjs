@@ -37,14 +37,16 @@ test('compare return restores the exact source route including player/data SPA s
   assert.equal(player.includes('sessionStorage.setItem("snooker-compare-return", window.location.href)'), true);
 });
 
-test('homepage exposes up to four priority live matches and hides ops copy', () => {
+test('homepage exposes up to four priority live matches and keeps only user-facing update copy', () => {
   const live = read('lib/snooker/live-client.ts');
   const home = read('app/snooker/snooker-data-center-v2.tsx');
   assert.equal(live.includes('selectHomepageHeadlineMatches'), true);
   assert.equal(live.includes('Math.min(4, limit)'), true);
   assert.equal(home.includes('headlineCarousel'), true);
   assert.equal(home.includes('左右滑动'), true);
-  assert.equal(home.includes('sourceHealth?.sourceLabel ??'), false);
+  assert.equal(home.includes('className={priority.scoreUpdated}'), true);
+  assert.equal(home.includes('<span>更新 {formatUpdatedAt(sourceHealth?.fetchedAt)}</span>'), true);
+  assert.equal(home.includes('30秒同步 ·'), false);
 });
 
 test('compare page uses the shared site background and detail-style back control', () => {
