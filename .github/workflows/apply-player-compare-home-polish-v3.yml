@@ -23,7 +23,7 @@ jobs:
           node-version: 22.17.0
           cache: npm
       - name: Apply polish patch
-        run: node scripts/apply-player-compare-home-polish-v3.mjs
+        run: node scripts/run-player-compare-home-polish-v3.mjs
       - name: Install
         run: npm ci
       - name: Typecheck
@@ -35,7 +35,7 @@ jobs:
       - name: Offline build
         run: npm run build:offline
       - name: Remove temporary patch tooling
-        run: rm -f scripts/apply-player-compare-home-polish-v3.mjs .github/workflows/apply-player-compare-home-polish-v3.yml
+        run: rm -f scripts/apply-player-compare-home-polish-v3.mjs scripts/run-player-compare-home-polish-v3.mjs scripts/.apply-player-compare-home-polish-v3.runtime.mjs .github/workflows/apply-player-compare-home-polish-v3.yml
       - name: Commit verified product changes
         run: |
           git config user.name "github-actions[bot]"
@@ -50,6 +50,7 @@ jobs:
                   lib/snooker/live-client.ts \
                   tests/snooker-player-compare-home-polish-v3.test.mjs \
                   scripts/apply-player-compare-home-polish-v3.mjs \
+                  scripts/run-player-compare-home-polish-v3.mjs \
                   .github/workflows/apply-player-compare-home-polish-v3.yml
           if git diff --cached --quiet; then
             echo "No changes to commit"
