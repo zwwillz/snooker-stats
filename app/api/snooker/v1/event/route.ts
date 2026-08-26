@@ -16,12 +16,10 @@ export async function GET(request: NextRequest) {
     ?? (snapshot.event.slug === slug ? snapshot.event : null);
 
   let detailedEvent = null;
-  if (!cachedEvent || cachedEvent.status === "completed") {
-    try {
-      detailedEvent = await loadSnookerEventDetailComplete(slug);
-    } catch (error) {
-      console.error("[snooker-event] complete historical detail failed; falling back to cached/base detail", error);
-    }
+  try {
+    detailedEvent = await loadSnookerEventDetailComplete(slug);
+  } catch (error) {
+    console.error("[snooker-event] complete event detail failed; falling back to cached/base detail", error);
   }
 
   const baseEvent = detailedEvent
