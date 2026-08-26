@@ -47,7 +47,8 @@ test("snooker frontend is database-first and only live matches poll every 30 sec
     read("app/snooker/snooker-priority.module.css"),
   ]);
   assert.match(pageSource, /loadSnookerDatabaseView/);
-  assert.match(pageSource, /initialDatabaseEvents=\{database\.eventDetails\}/);
+  assert.match(pageSource, /loadSnookerEventDetailComplete\(database\.snapshot\.event\.slug\)/);
+  assert.match(pageSource, /initialDatabaseEvents=\{focusedEvents\}/);
   assert.doesNotMatch(pageSource, /getCachedDashboardWithLiveOverlay/);
   assert.match(pageSource, /export const revalidate = 0/);
   assert.match(pageSource, /dynamic = "force-dynamic"/);
@@ -59,7 +60,7 @@ test("snooker frontend is database-first and only live matches poll every 30 sec
   assert.match(dashboardSource, /loadSnookerDatabaseView/);
   assert.match(dashboardSource, /searchParams\.has\("monitor"\)/);
   assert.match(dashboardSource, /getCachedDashboardWithLiveOverlay/);
-  assert.match(dashboardSource, /databaseEvents: database\.eventDetails/);
+  assert.match(dashboardSource, /const databaseEvents = \[focusedEvent\]/);
   assert.match(uiSource, /if \(!shouldPollDashboard\) return/);
   assert.match(uiSource, /setInterval\(\(\) => void refresh\(\), 30_000\)/);
   assert.doesNotMatch(uiSource, /15_000/);
