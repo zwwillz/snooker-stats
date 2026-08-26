@@ -1204,3 +1204,9 @@
     font-size: 16px;
   }
 }
+
+/* PLAYER_COMPARE_NAV_BACKGROUND_V3 */
+.page{background:linear-gradient(180deg,#edf4f1 0,#f7f8f7 180px,#f5f6f5 100%)}
+.topbar>button.backLink{justify-self:start;display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:50%;color:#202522;background:#f2f4f3;font-size:30px;line-height:1;box-shadow:none}
+.topbar>button.backLink:hover{background:#eaeeec}
+@media(max-width:620px){.topbar>button.backLink{width:34px;height:34px;padding:0;font-size:28px}}

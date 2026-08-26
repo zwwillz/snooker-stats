@@ -1,20 +1,4 @@
-import fs from 'node:fs';
-import { pathToFileURL } from 'node:url';
-
-const sourcePath = 'scripts/apply-player-compare-home-polish-v3.mjs';
-const tempPath = 'scripts/.apply-player-compare-home-polish-v3.runtime.mjs';
-const source = fs.readFileSync(sourcePath, 'utf8');
-const marker = '// 7) Regression coverage for this polish pass.';
-const cutoff = source.indexOf(marker);
-if (cutoff < 0) throw new Error('Unable to sanitize polish patch script');
-fs.writeFileSync(tempPath, source.slice(0, cutoff));
-try {
-  await import(`${pathToFileURL(process.cwd() + '/' + tempPath).href}?v=${Date.now()}`);
-} finally {
-  if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-}
-
-const test = `import test from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
@@ -55,5 +39,3 @@ test('compare page uses the shared site background and detail-style back control
   assert.equal(css.includes('topbar>button.backLink'), true);
   assert.equal(css.includes('linear-gradient(180deg,#edf4f1'), true);
 });
-`;
-fs.writeFileSync('tests/snooker-player-compare-home-polish-v3.test.mjs', test);

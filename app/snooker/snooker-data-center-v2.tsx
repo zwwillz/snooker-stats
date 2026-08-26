@@ -22,7 +22,7 @@ import { PlayerDirectoryContent, type PlayerFilter } from "./players/player-dire
 import PlayerDetailInline from "./players/player-detail-inline";
 import { prefetchPlayerDetail, prefetchPlayerExperience } from "./players/player-detail-client";
 import { eventDetailTypeLabel } from "@/lib/snooker/taxonomy";
-import { matchDisplayStatus, mergeEventSnapshotsMonotonic, selectHomepageHeadlineMatch } from "@/lib/snooker/live-client";
+import { matchDisplayStatus, mergeEventSnapshotsMonotonic, selectHomepageHeadlineMatches } from "@/lib/snooker/live-client";
 import styles from "./snooker-data-center.module.css";
 import priority from "./snooker-priority.module.css";
 import insight from "./snooker-insights.module.css";
@@ -973,9 +973,7 @@ export default function SnookerDataCenterV2({
   }
 
   const featuredDetail = featuredEventCard ? eventBySlug.get(featuredEventCard.slug) : undefined;
-  const headlineSelection = selectHomepageHeadlineMatch(databaseEvents, players);
-  const headlineMatch = headlineSelection?.match;
-  const headlineEvent = headlineSelection?.event;
+  const headlineSelections = selectHomepageHeadlineMatches(databaseEvents, players);
 
   return <main className={styles.appRoot} data-theme={theme}><div className={styles.shell}>
     <header className={styles.header}><button className={styles.brand} onClick={() => changeView("home")}><span>S</span><div><strong>世界斯诺克数据中心</strong><small>WORLD SNOOKER DATA</small></div></button><div className={styles.headerRight}><span className={styles.versionBadge}>DATA v0.9</span><div className={styles.themeSwitch}><button className={theme === "green" ? styles.themeActive : ""} onClick={() => setTheme("green")}>绿</button><button className={theme === "red" ? styles.themeActive : ""} onClick={() => setTheme("red")}>红</button></div></div></header>
@@ -983,16 +981,23 @@ export default function SnookerDataCenterV2({
       {activeView === "home" ? <>
         {featuredEventCard ? <section className={styles.hero}><div className={styles.heroTop}><span className={eventStatusClass(featuredEventCard.status)}><StatusPill status={featuredEventCard.status} label={activeEventCard ? "当前赛事" : graceEventCard ? "刚刚结束" : "下一站"} /></span><span>{featuredEventCard.typeZh}</span></div><small>{activeEventCard ? "CURRENT TOURNAMENT" : graceEventCard ? "JUST FINISHED" : "NEXT TOURNAMENT"}</small><h1>{featuredEventCard.nameZh}</h1><p>{formatDateRange(featuredEventCard.startDate, featuredEventCard.endDate)} · {featuredEventCard.countryZh} {featuredEventCard.cityZh}</p><div className={styles.heroActions}><button onClick={() => openEvent(featuredEventCard.slug, featuredDetail?.rounds.length ? "schedule" : "overview")}>查看赛事</button><button className={styles.secondaryButton} onClick={() => changeView("matches")}>赛事列表</button></div></section> : null}
 
-        {headlineMatch && headlineEvent && players.get(headlineMatch.player1Id) && players.get(headlineMatch.player2Id) ? <section className={styles.card}>
-          <div className={styles.liveHeader}><div><small>{headlineMatch.roundLabelZh} · {headlineMatch.timeLabelZh ?? ""}</small><h2>{headlineEvent.nameZh} · {headlineMatch.roundLabelZh}</h2></div><StatusPill status={headlineMatch.status} label={matchDisplayStatus(headlineMatch)} /></div>
-          <div className={styles.homeScore}>
-            <button onClick={() => openPlayer(headlineMatch.player1Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={players.get(headlineMatch.player1Id)!} size="lg" />{headlineMatch.winnerId === headlineMatch.player1Id ? <em className={polish.winBadge}>胜</em> : null}</div><span className={polish.homePlayerName}>{players.get(headlineMatch.player1Id)!.shortNameZh}</span></button>
-            <div><strong>{headlineMatch.score1 ?? "-"} <i className={headlineMatch.status === "live" ? priority.liveSeparator : ""}>:</i> {headlineMatch.score2 ?? "-"}</strong><small>{bestOfLabel(headlineMatch.bestOf)}</small></div>
-            <button onClick={() => openPlayer(headlineMatch.player2Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={players.get(headlineMatch.player2Id)!} size="lg" />{headlineMatch.winnerId === headlineMatch.player2Id ? <em className={polish.winBadge}>胜</em> : null}</div><span className={polish.homePlayerName}>{players.get(headlineMatch.player2Id)!.shortNameZh}</span></button>
-          </div>
-          <button className={styles.fullButton} onClick={() => openMatch(headlineMatch.id, headlineEvent.slug)}>查看比赛详情</button>
-          <div className={styles.sourceLine}><i className={sourceHealth?.accepted ? styles.liveOk : styles.liveWait} /><b>{sourceHealth?.sourceLabel ?? "官方比赛数据"}</b><small>{headlineMatch.status === "completed" ? `更新 ${formatUpdatedAt(sourceHealth?.fetchedAt)}` : `30秒同步 · ${formatUpdatedAt(sourceHealth?.fetchedAt)}`}</small></div>
-        </section> : null}
+        {headlineSelections.length ? <div className={priority.headlineCarousel} aria-label="焦点比赛">
+          {headlineSelections.map(({ match: headlineMatch, event: headlineEvent }, index) => {
+            const player1 = players.get(headlineMatch.player1Id);
+            const player2 = players.get(headlineMatch.player2Id);
+            if (!player1 || !player2) return null;
+            return <section className={`${styles.card} ${priority.headlineSlide}`} key={`${headlineEvent.id}-${headlineMatch.id}`}>
+              <div className={styles.liveHeader}><div><small>{headlineMatch.roundLabelZh} · {headlineMatch.timeLabelZh ?? ""}</small><h2>{headlineEvent.nameZh} · {headlineMatch.roundLabelZh}</h2></div><StatusPill status={headlineMatch.status} label={matchDisplayStatus(headlineMatch)} /></div>
+              <div className={styles.homeScore}>
+                <button onClick={() => openPlayer(headlineMatch.player1Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={player1} size="lg" />{headlineMatch.winnerId === headlineMatch.player1Id ? <em className={polish.winBadge}>胜</em> : null}</div><span className={polish.homePlayerName}>{player1.shortNameZh}</span></button>
+                <div><strong>{headlineMatch.score1 ?? "-"} <i className={headlineMatch.status === "live" ? priority.liveSeparator : ""}>:</i> {headlineMatch.score2 ?? "-"}</strong><small>{bestOfLabel(headlineMatch.bestOf)}</small><span className={priority.scoreUpdated}><i />更新 {formatUpdatedAt(sourceHealth?.fetchedAt)}</span></div>
+                <button onClick={() => openPlayer(headlineMatch.player2Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={player2} size="lg" />{headlineMatch.winnerId === headlineMatch.player2Id ? <em className={polish.winBadge}>胜</em> : null}</div><span className={polish.homePlayerName}>{player2.shortNameZh}</span></button>
+              </div>
+              <button className={styles.fullButton} onClick={() => openMatch(headlineMatch.id, headlineEvent.slug)}>查看比赛详情</button>
+              {headlineSelections.length > 1 ? <div className={priority.headlineSwipeHint}>左右滑动 · {index + 1}/{headlineSelections.length}</div> : null}
+            </section>;
+          })}
+        </div> : null}
 
         <PlayerCompareTeaser players={directoryPlayers} initialData={initialPlayerCompare} actionClassName={styles.fullButton} headerClassName={styles.sectionHeader} />
 
@@ -1015,9 +1020,8 @@ export default function SnookerDataCenterV2({
 
       {activeView === "data" ? <DataHubContent hub={initialRankingHub} players={directoryPlayers} selectedKey={selectedRankingKey} onSelectKey={setSelectedRankingKey} onOpenRankings={openRankings} onOpenPlayer={openPlayerBySlug} initialPlayerCompare={initialPlayerCompare} /> : null}
       <div className={styles.dataStatus} role="status">
-        <i className={sourceHealth?.accepted ? styles.liveOk : styles.liveWait} />
-        <span>{sourceHealth?.sourceLabel ?? (sourceHealth?.online ? "Snooker Supabase" : "数据服务降级")}</span>
-        <small>更新 {formatUpdatedAt(sourceHealth?.fetchedAt)}{sourceHealth?.cacheSeconds ? ` · 缓存 ${Math.round(sourceHealth.cacheSeconds / 60)} 分钟` : ""}</small>
+        <i className={styles.liveOk} />
+        <span>更新 {formatUpdatedAt(sourceHealth?.fetchedAt)}</span>
       </div>
     </div>
     <nav className={`${styles.bottomNav} ${polish.fastNav}`}>{navItems.map((item) => <button key={item.id} className={item.id === activeView ? styles.activeNav : ""} onClick={() => changeView(item.id)}><span>{item.icon}</span><b>{item.label}</b></button>)}</nav>

@@ -248,3 +248,6 @@
 .seriesStageHeading>span{flex:none;color:var(--muted);font-size:8px;font-weight:750}
 .seriesStageEmpty{padding:22px 14px;border:1px dashed var(--line);border-radius:16px;background:#fff;color:var(--muted);font-size:9px;text-align:center}
 @media (prefers-reduced-motion:reduce){.liveStatusPill::before,.liveSeparator,.liveScoreText{animation:none!important}.liveStatusPill::before{opacity:1}}
+
+/* HOME_HEADLINE_CAROUSEL_V3 */
+.headlineCarousel{display:grid;grid-auto-flow:column;grid-auto-columns:100%;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-inline:contain;scrollbar-width:none}.headlineCarousel::-webkit-scrollbar{display:none}.headlineSlide{min-width:0;scroll-snap-align:start;scroll-snap-stop:always}.scoreUpdated{display:flex!important;align-items:center;justify-content:center;gap:5px;margin-top:4px!important;color:#929b96!important;font-size:7px!important;font-weight:650}.scoreUpdated>i{width:5px;height:5px;border-radius:50%;background:#4db58a;box-shadow:0 0 0 3px rgba(77,181,138,.10)}.headlineSwipeHint{margin-top:7px;color:#9aa19d;font-size:7px;text-align:center;letter-spacing:.02em}

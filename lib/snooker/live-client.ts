@@ -81,27 +81,10 @@ function statePriority(match: SnookerMatch, now: number) {
   return 0;
 }
 
-export type HeadlineSelection = { event: SnookerEvent; match: SnookerMatch } | null;
+export type HeadlineSelection = { event: SnookerEvent; match: SnookerMatch };
 
-export function selectHomepageHeadlineMatch(events: SnookerEvent[], players: Map<string, SnookerPlayer>, now = Date.now()): HeadlineSelection {
-  const candidates = events.flatMap((event) => event.rounds.flatMap((round) => round.matches.map((match) => ({ event, match }))));
-  const liveExists = candidates.some(({ match }) => match.status === "live" || match.status === "session-break");
-  const eligible = candidates.filter(({ match }) => {
-    if (match.status === "live" || match.status === "session-break") return true;
-    if (FINAL_STATUSES.has(match.status)) {
-      if (liveExists) return false;
-      const completedAt = time(match.completedDetectedAt || match.sourceUpdatedAt);
-      return completedAt > 0 && now - completedAt <= 60 * 60 * 1000;
-    }
-    if (match.status === "upcoming") {
-      const scheduled = time(match.scheduledAt);
-      return !liveExists && scheduled > 0 && scheduled >= now && scheduled - now <= 6 * 60 * 60 * 1000;
-    }
-    return false;
-  });
-  if (!eligible.length) return null;
-
-  eligible.sort((a, b) => {
+function sortHeadlineCandidates(candidates: HeadlineSelection[], players: Map<string, SnookerPlayer>, now: number) {
+  return candidates.sort((a, b) => {
     const state = statePriority(b.match, now) - statePriority(a.match, now);
     if (state) return state;
     const round = roundPriority(b.match) - roundPriority(a.match);
@@ -112,5 +95,35 @@ export function selectHomepageHeadlineMatch(events: SnookerEvent[], players: Map
     if (scheduled) return scheduled;
     return a.match.matchNo - b.match.matchNo || a.match.id.localeCompare(b.match.id);
   });
-  return eligible[0];
+}
+
+export function selectHomepageHeadlineMatches(
+  events: SnookerEvent[],
+  players: Map<string, SnookerPlayer>,
+  now = Date.now(),
+  limit = 4,
+): HeadlineSelection[] {
+  const candidates: HeadlineSelection[] = events.flatMap((event) => event.rounds.flatMap((round) => round.matches.map((match) => ({ event, match }))));
+  const liveExists = candidates.some(({ match }) => match.status === "live" || match.status === "session-break");
+  const eligible = candidates.filter(({ match }) => {
+    if (match.status === "live" || match.status === "session-break") return true;
+    if (liveExists) return false;
+    if (FINAL_STATUSES.has(match.status)) {
+      const completedAt = time(match.completedDetectedAt || match.sourceUpdatedAt);
+      return completedAt > 0 && now - completedAt <= 60 * 60 * 1000;
+    }
+    if (match.status === "upcoming") {
+      const scheduled = time(match.scheduledAt);
+      return scheduled > 0 && scheduled >= now && scheduled - now <= 6 * 60 * 60 * 1000;
+    }
+    return false;
+  });
+  if (!eligible.length) return [];
+  sortHeadlineCandidates(eligible, players, now);
+  const cap = liveExists ? Math.max(1, Math.min(4, limit)) : 1;
+  return eligible.slice(0, cap);
+}
+
+export function selectHomepageHeadlineMatch(events: SnookerEvent[], players: Map<string, SnookerPlayer>, now = Date.now()): HeadlineSelection | null {
+  return selectHomepageHeadlineMatches(events, players, now, 1)[0] ?? null;
 }
