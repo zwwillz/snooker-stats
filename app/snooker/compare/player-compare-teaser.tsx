@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { PlayerCompareSnapshot } from "@/lib/snooker/player-compare";
@@ -27,15 +28,25 @@ export default function PlayerCompareTeaser({
   variant = "home",
   initialData = null,
   actionClassName,
+  headerClassName,
 }: {
   players: SnookerPlayerListItem[];
   variant?: "home" | "data";
   initialData?: PlayerCompareSnapshot | null;
   actionClassName?: string;
+  headerClassName: string;
 }) {
+  const router = useRouter();
   const pair = useMemo(() => players.filter((player) => player.isCurrentTour).slice(0, 2), [players]);
   const initialMatchesPair = Boolean(initialData && pair.length === 2 && initialData.players[0].slug === pair[0].slug && initialData.players[1].slug === pair[1].slug);
   const [data, setData] = useState<PlayerCompareSnapshot | null>(() => initialMatchesPair ? initialData : null);
+  const compareHref = pair.length === 2
+    ? `/snooker/compare?player1=${encodeURIComponent(pair[0].slug)}&player2=${encodeURIComponent(pair[1].slug)}${data?.season ? `&season=${encodeURIComponent(data.season)}` : ""}`
+    : "/snooker/compare";
+
+  useEffect(() => {
+    if (pair.length === 2) router.prefetch(compareHref);
+  }, [compareHref, pair.length, router]);
 
   useEffect(() => {
     if (pair.length < 2) return;
@@ -59,7 +70,6 @@ export default function PlayerCompareTeaser({
   if (pair.length < 2) return null;
   const [left, right] = pair;
   const [leftStats, rightStats] = data?.seasonStats ?? [null, null];
-  const href = `/snooker/compare?player1=${encodeURIComponent(left.slug)}&player2=${encodeURIComponent(right.slug)}${data?.season ? `&season=${encodeURIComponent(data.season)}` : ""}`;
   const rememberReturn = () => {
     try {
       window.sessionStorage.setItem("snooker-compare-return", window.location.href);
@@ -69,10 +79,12 @@ export default function PlayerCompareTeaser({
   };
 
   return <section className={`${styles.card} ${variant === "data" ? styles.dataVariant : ""}`}>
-    <header className={styles.header}>
-      <div><small>PLAYER COMPARE</small><h2>球员对比</h2><p>{variant === "data" ? "赛季表现、职业生涯、直接交手与荣誉，一页比较。" : "谁的赛季表现更强？"}</p></div>
-      <span>{data?.season ?? "当前赛季"}</span>
-    </header>
+    <div className={styles.headerFrame}>
+      <header className={`${styles.header} ${headerClassName}`}>
+        <div><small>PLAYER COMPARE</small><h2>球员对比</h2><p>{variant === "data" ? "赛季表现、职业生涯、直接交手与荣誉，一页比较。" : "谁的赛季表现更强？"}</p></div>
+        <span>{data?.season ?? "当前赛季"}</span>
+      </header>
+    </div>
     <div className={styles.players}>
       <div><Avatar player={left} /><strong>{left.nameZh}</strong><small>世界 #{left.currentRank ?? "—"}</small></div>
       <b>VS</b>
@@ -84,6 +96,18 @@ export default function PlayerCompareTeaser({
       <div><strong>{data ? integer(leftStats?.breaks100Plus) : "…"}</strong><span>破百</span><strong>{data ? integer(rightStats?.breaks100Plus) : "…"}</strong></div>
       <div><strong>{data ? integer(data.h2h.leftWins) : "…"}</strong><span>历史交手胜场</span><strong>{data ? integer(data.h2h.rightWins) : "…"}</strong></div>
     </div>
-    <Link className={actionClassName ? `${styles.actionReset} ${actionClassName}` : styles.action} href={href} onClick={rememberReturn}>{variant === "data" ? "开始球员对比" : "查看完整球员对比"}<span>›</span></Link>
+    <div className={styles.actionFrame}>
+      <Link
+        className={actionClassName ? `${styles.actionReset} ${actionClassName}` : styles.action}
+        href={compareHref}
+        prefetch={true}
+        onPointerEnter={() => router.prefetch(compareHref)}
+        onPointerDown={() => router.prefetch(compareHref)}
+        onFocus={() => router.prefetch(compareHref)}
+        onClick={rememberReturn}
+      >
+        {variant === "data" ? <>开始球员对比 <span>›</span></> : "查看完整球员对比"}
+      </Link>
+    </div>
   </section>;
 }

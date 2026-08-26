@@ -310,7 +310,7 @@ export function DataHubContent({
       <p>世界斯诺克排名、赛季表现与历史纪录的数据入口。排名、技术与荣誉数据按统一结构逐步扩展。</p>
     </section>
 
-    <PlayerCompareTeaser players={players} variant="data" initialData={initialPlayerCompare} actionClassName={styles.primaryAction} />
+    <PlayerCompareTeaser players={players} variant="data" initialData={initialPlayerCompare} actionClassName={styles.primaryAction} headerClassName={styles.sectionHeader} />
 
     <section className={`${styles.card} ${styles.rankingCard}`}>
       <div className={styles.sectionHeader}>
