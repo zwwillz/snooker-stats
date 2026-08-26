@@ -1145,3 +1145,62 @@
   .seasonToolbar small { display:none; }
   .vsControl > small { max-width:72px; font-size:7px; }
 }
+
+/* PLAYER_COMPARE_UI_CONSISTENCY_V2 */
+.summaryCard {
+  padding: 18px;
+}
+.summaryHead {
+  align-items: flex-end;
+  padding-bottom: 14px;
+}
+.summaryHead small,
+.sectionHeader small {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 8px;
+  letter-spacing: .13em;
+}
+.summaryHead h2,
+.sectionHeader h2 {
+  margin: 0;
+  font-size: 19px;
+  letter-spacing: -.035em;
+}
+.sectionCard {
+  padding: 18px;
+}
+.sectionHeader {
+  padding-bottom: 14px;
+}
+.playerHero > div strong {
+  font-size: 19px;
+}
+.metricRow > strong {
+  font-size: 17px;
+}
+.swapButton {
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
+  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent-soft) 72%, #fff);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent-shadow) 42%, transparent);
+}
+.swapButton span {
+  color: color-mix(in srgb, var(--accent) 72%, #6c7973);
+}
+.swapButton:hover {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+  background: var(--accent-soft);
+}
+@media (max-width: 620px) {
+  .summaryCard,
+  .sectionCard {
+    padding: 18px;
+  }
+  .playerHero > div strong {
+    font-size: 16px;
+  }
+  .metricRow > strong {
+    font-size: 16px;
+  }
+}

@@ -10,25 +10,16 @@
   margin-bottom: 18px;
 }
 
+.headerFrame {
+  padding: 18px 18px 0;
+}
+
 .header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 20px 22px 15px;
+  min-width: 0;
 }
 
-.header small {
-  color: #0f6a4a;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: .15em;
-}
-
-.header h2 {
-  margin: 4px 0 4px;
-  color: #18241e;
-  font-size: 21px;
+.header > div {
+  min-width: 0;
 }
 
 .header p {
@@ -170,10 +161,6 @@
 }
 
 @media (max-width: 560px) {
-  .header {
-    padding: 17px 16px 12px;
-  }
-
   .players {
     padding: 2px 16px 13px;
   }
@@ -200,3 +187,14 @@
 .action { color: var(--accent-strong, #075b40); }
 .actionReset { display:flex; align-items:center; justify-content:center; gap:5px; text-decoration:none; }
 .actionReset span { font-size:16px; line-height:1; }
+
+/* PLAYER_COMPARE_SHARED_CARD_RULES_V2 */
+.header p {
+  margin-top: 4px;
+}
+.actionFrame {
+  padding: 0 18px 18px;
+}
+.actionFrame .actionReset {
+  width: 100%;
+}
