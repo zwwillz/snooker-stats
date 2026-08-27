@@ -1,6 +1,5 @@
 .scoreAnchor{
   position:relative;
-  display:inline-block;
 }
 
 .strikerDot{
@@ -14,15 +13,16 @@
   box-shadow:0 0 0 0 rgba(22,163,106,.12);
   transform:translateY(-50%);
   pointer-events:none;
+  z-index:2;
   animation:strikerPulse 1.8s ease-in-out infinite;
 }
 
 .strikerDot[data-side="home"]{
-  right:-9px;
+  left:calc(50% + 10px);
 }
 
 .strikerDot[data-side="away"]{
-  left:-9px;
+  right:calc(50% + 10px);
 }
 
 @keyframes strikerPulse{
