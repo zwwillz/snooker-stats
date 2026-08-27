@@ -2,7 +2,7 @@ export const SNOOKER_CACHE_SECONDS = {
   realtime: 30,
   recent: 300,
   player: 3600,
-  history: 60,
+  history: 86400,
 } as const;
 
 export const SNOOKER_DASHBOARD_CACHE_CONTROL = [
