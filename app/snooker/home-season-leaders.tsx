@@ -134,8 +134,8 @@ export default function HomeSeasonLeaders() {
     const node = sentinelRef.current;
     if (!node) return;
     if (!("IntersectionObserver" in window)) {
-      setShouldLoad(true);
-      return;
+      const frame = window.requestAnimationFrame(() => setShouldLoad(true));
+      return () => window.cancelAnimationFrame(frame);
     }
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) {
