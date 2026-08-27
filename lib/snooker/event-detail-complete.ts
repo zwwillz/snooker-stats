@@ -1,4 +1,5 @@
 import { loadSnookerEventDetailFresh } from "./event-detail-fresh";
+import { currentSnookerSeason } from "./database-public";
 import type {
   SnookerEvent,
   SnookerHeadToHead,
@@ -123,6 +124,7 @@ export async function loadSnookerEventDetailComplete(slug: string): Promise<Snoo
     .filter((id): id is string => Boolean(id));
   if (!eventUuid || !matchUuids.length) return event;
 
+  const includeHeadToHead = event.season === currentSnookerSeason();
   const [metaRows, prizeRows, playerRows, statRows, h2hRows] = await Promise.all([
     rest<DbEventMeta[]>(`snooker_events?select=id,previous_champion_name_zh,previous_champion_year,expected_match_count&id=eq.${eventUuid}&limit=1`),
     rest<DbPrize[]>(`snooker_event_prizes?select=event_id,prize_key,label_zh,label_en,amount,currency,sort_order,is_total&event_id=eq.${eventUuid}&order=sort_order.asc`),
@@ -132,11 +134,13 @@ export async function loadSnookerEventDetailComplete(slug: string): Promise<Snoo
       (batch) => `snooker_match_statistics?select=match_id,player_id,total_points,average_shot_time_seconds,pot_rate,breaks_50_plus,breaks_100_plus,highest_break,average_break,shots_taken,time_on_table_pct&match_id=in.${inFilter(batch)}`,
       "match statistics",
     ),
-    restInBatches<DbHeadToHead>(
-      matchUuids,
-      (batch) => `snooker_match_head_to_head?select=match_id,meetings_before,player1_wins,player2_wins,player1_frames,player2_frames,recent_meetings,source_updated_at&match_id=in.${inFilter(batch)}`,
-      "head-to-head",
-    ),
+    includeHeadToHead
+      ? restInBatches<DbHeadToHead>(
+        matchUuids,
+        (batch) => `snooker_match_head_to_head?select=match_id,meetings_before,player1_wins,player2_wins,player1_frames,player2_frames,recent_meetings,source_updated_at&match_id=in.${inFilter(batch)}`,
+        "head-to-head",
+      )
+      : Promise.resolve([] as DbHeadToHead[]),
   ]);
 
   const playerCanonicalByUuid = new Map(playerRows.map((row) => [row.id, `p-${row.slug}`]));
