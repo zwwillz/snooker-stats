@@ -50,18 +50,21 @@ test("homepage headline selection is deterministic and retains recent results un
 test("tournament catalog follows individual WST events instead of merged series", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
   assert.match(ui, /function EventCard/);
-  assert.match(ui, /snapshot\.calendar\s*\.filter\(\(item\) => item\.season === selectedSeason\)/);
+  assert.match(ui, /calendarEvents\s*\.filter\(\(item\) => item\.season === selectedSeason\)/);
   assert.doesNotMatch(ui, /function SeriesCard/);
   assert.doesNotMatch(ui, /seriesDetail\.stages\.map/);
+  assert.doesNotMatch(ui, /seriesSlug/);
   assert.doesNotMatch(ui, /合并去重/);
 });
 
-test("recent tournaments are fixed to the current season while season calendar keeps its selector", async () => {
+test("recent tournaments keep the original live, just-finished, next-event priority", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
+  assert.match(ui, /const activeEventCard = mainSeasonEvents\.find\(\(item\) => isActiveOn\(item, today\)\)/);
+  assert.match(ui, /const graceEventCard = \[\.\.\.mainSeasonEvents\]\.reverse\(\)\.find\(\(item\) => item\.endDate < today && addDateDays\(item\.endDate, 1\) === today\)/);
+  assert.match(ui, /const featuredEventCard = activeEventCard \?\? graceEventCard \?\? firstUpcomingMain/);
   assert.match(ui, /const recentEvents = seasonCalendar/);
   assert.match(ui, /eventListMode === "calendar" \? <SeasonSelector/);
   assert.match(ui, /action="本赛季"/);
-  assert.doesNotMatch(ui, /selectedSeason === initialCurrentSeason && selectedFeaturedSeries/);
 });
 
 test("historical match detail only exposes official match statistics", async () => {
@@ -72,6 +75,7 @@ test("historical match detail only exposes official match statistics", async () 
   assert.match(ui, /isCurrentSeasonMatch && selectedDataTab === "season" && hasSeason/);
   assert.match(ui, /isCurrentSeasonMatch && selectedDataTab === "h2h" && h2h/);
   assert.match(ui, /isCurrentSeasonMatch \? "对阵数据" : "比赛统计"/);
+  assert.match(ui, /历史赛事/);
 });
 
 test("tournament-facing copy avoids internal database language", async () => {
