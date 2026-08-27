@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { PlayerCompareSnapshot } from "@/lib/snooker/player-compare";
 import type {
@@ -201,30 +201,24 @@ export function DataHubContent({
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const syncTechnicalFromUrl = () => {
       const params = new URLSearchParams(window.location.search);
       setTechnicalKey(params.get("view") === "data" && params.get("section") === "technical" ? technicalMetricKey(params.get("metric")) : null);
     };
-    const frame = window.requestAnimationFrame(syncTechnicalFromUrl);
+    syncTechnicalFromUrl();
     window.addEventListener("popstate", syncTechnicalFromUrl);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("popstate", syncTechnicalFromUrl);
-    };
+    return () => window.removeEventListener("popstate", syncTechnicalFromUrl);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const syncHonoursFromUrl = () => {
       const params = new URLSearchParams(window.location.search);
       setHonoursKey(params.get("view") === "data" && params.get("section") === "honours" ? honoursMetricKey(params.get("honour")) : null);
     };
-    const frame = window.requestAnimationFrame(syncHonoursFromUrl);
+    syncHonoursFromUrl();
     window.addEventListener("popstate", syncHonoursFromUrl);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("popstate", syncHonoursFromUrl);
-    };
+    return () => window.removeEventListener("popstate", syncHonoursFromUrl);
   }, []);
 
   const openTechnical = (key: SnookerTechnicalMetricKey) => {
@@ -302,6 +296,20 @@ export function DataHubContent({
     window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
     setHonoursKey(null);
   };
+
+  if (technicalKey && !technicalHub?.online) {
+    return <section className={styles.card} aria-label="加载技术榜">
+      <div className={styles.sectionHeader}><div><small>TECHNICAL LEADERBOARD</small><h2>技术榜</h2></div></div>
+      <div className={styles.technicalLoading}>正在加载技术榜数据…</div>
+    </section>;
+  }
+
+  if (honoursKey && !honoursHub?.online) {
+    return <section className={styles.card} aria-label="加载荣誉榜">
+      <div className={styles.sectionHeader}><div><small>CAREER HONOURS</small><h2>荣誉榜</h2></div></div>
+      <div className={styles.technicalLoading}>正在加载荣誉榜数据…</div>
+    </section>;
+  }
 
   return <>
     <section className={styles.pageIntro}>
