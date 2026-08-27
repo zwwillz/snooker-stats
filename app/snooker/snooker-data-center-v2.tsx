@@ -6,7 +6,6 @@ import type {
   SnookerCalendarEvent,
   SnookerDashboardSnapshot,
   SnookerEvent,
-  SnookerEventSeries,
   SnookerHeadToHeadMeeting,
   SnookerMatch,
   SnookerMatchPlayerStatistics,
@@ -35,8 +34,8 @@ type EventTab = "overview" | "schedule" | "data";
 type EventListMode = "recent" | "calendar";
 type MatchDataTab = "match" | "season" | "h2h";
 type DetailState =
-  | { type: "event"; slug: string; seriesSlug?: string; tab: EventTab }
-  | { type: "match"; matchId: string; eventSlug: string; seriesSlug?: string }
+  | { type: "event"; slug: string; tab: EventTab }
+  | { type: "match"; matchId: string; eventSlug: string }
   | { type: "player"; slug: string; returnView: MainView }
   | { type: "ranking"; section: SnookerRankingSection; key: SnookerCurrentRankingKey };
 
@@ -55,6 +54,11 @@ type DashboardResponse = {
   databaseEvents?: SnookerEvent[];
   currentSeason?: string;
   sourceHealth?: SourceHealth;
+};
+
+type CalendarResponse = {
+  ok?: boolean;
+  calendar?: SnookerCalendarEvent[];
 };
 
 const navItems: Array<{ id: NavId; label: string; icon: string }> = [
@@ -400,7 +404,6 @@ export default function SnookerDataCenterV2({
 }: {
   initialSnapshot: SnookerDashboardSnapshot;
   initialDatabaseEvents: SnookerEvent[];
-  initialEventSeries: SnookerEventSeries[];
   initialCurrentSeason: string;
   initialRankingHub: SnookerRankingHub;
   initialSourceHealth?: SourceHealth | null;
@@ -420,8 +423,13 @@ export default function SnookerDataCenterV2({
       : null;
   const [snapshot, setSnapshot] = useState(initialSnapshot);
   const [databaseEvents, setDatabaseEvents] = useState(initialDatabaseEvents);
+  const [calendarEvents, setCalendarEvents] = useState<SnookerCalendarEvent[]>(initialSnapshot.calendar);
+  const [calendarLoaded, setCalendarLoaded] = useState(false);
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarLoadError, setCalendarLoadError] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState(initialCurrentSeason);
   const [loadingEventSlug, setLoadingEventSlug] = useState<string | null>(null);
+  const [eventLoadError, setEventLoadError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<MainView>(initialPlayerSlug ? "players" : initialDataSection === "rankings" ? "data" : initialView);
   const [detail, setDetail] = useState<DetailState | null>(initialDetail);
   const [theme, setTheme] = useState<Theme>("green");
@@ -436,6 +444,25 @@ export default function SnookerDataCenterV2({
   const [rankingSection, setRankingSection] = useState<SnookerRankingSection>(initialRankingSection);
   const signatures = useRef(new Map(initialDatabaseEvents.flatMap((event) => allMatches(event)).map((match) => [match.id, matchSignature(match)])));
   const playerDirectoryScrollY = useRef(0);
+  const eventReturnState = useRef<{ view: MainView; mode: EventListMode; season: string; scrollY: number } | null>(null);
+  const eventDetailReturn = useRef<{ slug: string; tab: EventTab; scrollY: number } | null>(null);
+
+  const ensureCalendar = useCallback(async () => {
+    if (calendarLoaded || calendarLoading) return;
+    setCalendarLoading(true);
+    setCalendarLoadError(false);
+    try {
+      const response = await fetch("/api/snooker/v1/calendar", { headers: { Accept: "application/json" } });
+      const data = await response.json() as CalendarResponse;
+      if (!response.ok || !data.ok || !data.calendar) throw new Error("EVENT_CALENDAR_UNAVAILABLE");
+      setCalendarEvents(data.calendar);
+      setCalendarLoaded(true);
+    } catch {
+      setCalendarLoadError(true);
+    } finally {
+      setCalendarLoading(false);
+    }
+  }, [calendarLoaded, calendarLoading]);
 
   useEffect(() => {
     let frame = 0;
@@ -456,6 +483,19 @@ export default function SnookerDataCenterV2({
       // Theme still applies for the current document.
     }
   }, [theme]);
+
+  useEffect(() => {
+    if (activeView === "matches") void ensureCalendar();
+  }, [activeView, ensureCalendar]);
+
+  useEffect(() => {
+    setCalendarEvents((current) => {
+      if (!calendarLoaded) return snapshot.calendar;
+      const bySlug = new Map(current.map((item) => [item.slug, item]));
+      snapshot.calendar.filter((item) => item.season === initialCurrentSeason).forEach((item) => bySlug.set(item.slug, item));
+      return [...bySlug.values()].sort((a, b) => a.startDate.localeCompare(b.startDate));
+    });
+  }, [snapshot.calendar, calendarLoaded, initialCurrentSeason]);
 
   useEffect(() => {
     let frame = 0;
@@ -618,12 +658,12 @@ export default function SnookerDataCenterV2({
   const firstUpcomingMain = mainSeasonEvents.find((item) => item.startDate > today);
   const featuredEventCard = activeEventCard ?? graceEventCard ?? firstUpcomingMain ?? [...mainSeasonEvents].reverse()[0];
   const nextEventCard = featuredEventCard ? mainSeasonEvents.find((item) => item.startDate > featuredEventCard.startDate) : firstUpcomingMain;
-  const seasonOptions = useMemo(() => [...new Set(snapshot.calendar.map((item) => item.season))]
+  const seasonOptions = useMemo(() => [...new Set(calendarEvents.map((item) => item.season))]
     .filter((season) => Number(season.slice(0, 4)) >= 2019)
-    .sort((a, b) => b.localeCompare(a)), [snapshot.calendar]);
-  const selectedSeasonEvents = useMemo(() => snapshot.calendar
+    .sort((a, b) => b.localeCompare(a)), [calendarEvents]);
+  const selectedSeasonEvents = useMemo(() => calendarEvents
     .filter((item) => item.season === selectedSeason)
-    .sort((a, b) => a.startDate.localeCompare(b.startDate)), [snapshot.calendar, selectedSeason]);
+    .sort((a, b) => a.startDate.localeCompare(b.startDate)), [calendarEvents, selectedSeason]);
   const firstUpcomingCurrent = seasonCalendar.find((item) => item.startDate > today);
   const recentEvents = seasonCalendar
     .filter((item) => item.endDate < today || isActiveOn(item, today) || item.id === firstUpcomingCurrent?.id || item.id === featuredEventCard?.id)
@@ -641,33 +681,66 @@ export default function SnookerDataCenterV2({
     const existing = eventBySlug.get(slug);
     if (existing && !allMatches(existing).some((match) => match.status === "live" || match.status === "session-break")) return;
     setLoadingEventSlug(slug);
+    setEventLoadError((current) => current === slug ? null : current);
     try {
       const response = await fetch(`/api/snooker/v1/event?slug=${encodeURIComponent(slug)}`, { cache: "no-store", headers: { Accept: "application/json" } });
       const data = await response.json() as { ok?: boolean; event?: SnookerEvent };
-      if (response.ok && data.ok && data.event) {
-        setDatabaseEvents((current) => {
-          const index = current.findIndex((event) => event.slug === slug);
-          if (index < 0) return [...current, data.event!];
-          const next = [...current];
-          next[index] = mergeEventSnapshotsMonotonic([current[index]], [data.event!])[0] ?? current[index];
-          return next;
-        });
-      }
+      if (!response.ok || !data.ok || !data.event) throw new Error("EVENT_DETAIL_UNAVAILABLE");
+      setDatabaseEvents((current) => {
+        const index = current.findIndex((event) => event.slug === slug);
+        if (index < 0) return [...current, data.event!];
+        const next = [...current];
+        next[index] = mergeEventSnapshotsMonotonic([current[index]], [data.event!])[0] ?? current[index];
+        return next;
+      });
     } catch {
-      // Keep the metadata-only fallback when the request fails.
+      setEventLoadError(slug);
     } finally {
       setLoadingEventSlug((current) => current === slug ? null : current);
     }
   };
-  const openEvent = (slug: string, tab: EventTab = "overview", seriesSlug?: string) => {
-    setDetail({ type: "event", slug, ...(seriesSlug ? { seriesSlug } : {}), tab });
+  const openEvent = (slug: string, tab: EventTab = "overview") => {
+    if (detail === null) {
+      eventReturnState.current = { view: activeView, mode: eventListMode, season: selectedSeason, scrollY: window.scrollY };
+    }
+    setDetail({ type: "event", slug, tab });
     void ensureEventDetail(slug);
     window.scrollTo({ top: 0, behavior: "auto" });
   };
-  const openMatch = (matchId: string, eventSlug: string, seriesSlug?: string) => {
+  const closeEvent = () => {
+    const restore = eventReturnState.current;
+    setDetail(null);
+    if (restore) {
+      setActiveView(restore.view);
+      if (restore.view === "matches") {
+        setEventListMode(restore.mode);
+        setSelectedSeason(restore.season);
+      }
+      window.requestAnimationFrame(() => window.scrollTo({ top: restore.scrollY, behavior: "auto" }));
+    }
+    eventReturnState.current = null;
+    eventDetailReturn.current = null;
+  };
+  const openMatch = (matchId: string, eventSlug: string) => {
+    if (detail?.type === "event" && detail.slug === eventSlug) {
+      eventDetailReturn.current = { slug: eventSlug, tab: detail.tab, scrollY: window.scrollY };
+    } else {
+      eventDetailReturn.current = null;
+    }
     setMatchDataTab("match");
-    setDetail({ type: "match", matchId, eventSlug, ...(seriesSlug ? { seriesSlug } : {}) });
+    setDetail({ type: "match", matchId, eventSlug });
     window.scrollTo({ top: 0, behavior: "auto" });
+  };
+  const closeMatch = (eventSlug: string) => {
+    const restore = eventDetailReturn.current;
+    if (restore?.slug === eventSlug) {
+      setDetail({ type: "event", slug: eventSlug, tab: restore.tab });
+      window.requestAnimationFrame(() => window.scrollTo({ top: restore.scrollY, behavior: "auto" }));
+    } else {
+      setDetail({ type: "event", slug: eventSlug, tab: "schedule" });
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+    eventDetailReturn.current = null;
   };
   const openPlayer = (playerId: string) => {
     const target = players.get(playerId);
@@ -759,6 +832,8 @@ export default function SnookerDataCenterV2({
     setActiveView("data");
   };
   const changeView = (view: NavId) => {
+    eventReturnState.current = null;
+    eventDetailReturn.current = null;
     setDetail(null);
     setActiveView(view);
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -848,9 +923,9 @@ export default function SnookerDataCenterV2({
     ];
 
     return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
-      <header className={styles.detailHeader}><button onClick={() => setDetail({ type: "event", slug: selectedEvent.slug, tab: "schedule" })}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
+      <header className={styles.detailHeader}><button onClick={() => closeMatch(selectedEvent.slug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
       <section className={styles.matchHero}>
-        <div className={styles.matchHeroMeta}><span>{match.roundLabelZh} · {match.timeLabelZh ?? "比赛时间待定"}</span><b>{bestOfLabel(match.bestOf)}</b></div>
+        <div className={styles.matchHeroMeta}><span>{!isCurrentSeasonMatch ? `${selectedEvent.season}赛季 · 历史赛事 · ` : ""}{match.roundLabelZh} · {match.timeLabelZh ?? "比赛时间待定"}</span><b>{bestOfLabel(match.bestOf)}</b></div>
         <h1>{selectedEvent.nameZh}</h1>
         <div className={styles.versusGrid}>
           <div className={styles.versusPlayer}><div className={styles.avatarWrap}><PlayerAvatar player={p1} size="xl" />{match.winnerId === p1.id ? <em>胜</em> : null}</div><strong>{p1.nameZh}</strong><small>{p1.nameEn}</small></div>
@@ -892,7 +967,7 @@ export default function SnookerDataCenterV2({
         {isCurrentSeasonMatch && selectedDataTab === "h2h" && h2h ? <div className={`${polish.dataPanel} ${polish.h2hPanel}`}>
           <div className={polish.h2hPanelHeader}><span>交手记录</span><b>赛前 {h2h.meetings} 次</b></div>
           <div className={insight.h2hSummary}><div className={insight.h2hSide}><strong>{h2h.player1Wins}</strong><span>{p1.nameZh} 胜</span></div><div className={insight.h2hMiddle}><strong>{h2h.player1Frames} : {h2h.player2Frames}</strong><small>总局分</small></div><div className={insight.h2hSide}><strong>{h2h.player2Wins}</strong><span>{p2.nameZh} 胜</span></div></div>
-          {h2h.recentMeetings.length ? <div className={insight.h2hHistory}>{h2h.recentMeetings.map((item, index) => <div className={insight.h2hMeeting} key={`${item.date}-${index}`}><time>{meetingDate(item)}</time><div><small>{localizedTournamentLabel(item.tournament, snapshot.calendar)}{item.round ? ` · ${localizedRoundLabel(item.round)}` : ""}</small><strong>{localized(item.homePlayerName)} {item.homeScore ?? "-"} : {item.awayScore ?? "-"} {localized(item.awayPlayerName)}</strong></div></div>)}</div> : <div className={insight.noHistory}>两人此前暂无正式比赛交手记录。</div>}
+          {h2h.recentMeetings.length ? <div className={insight.h2hHistory}>{h2h.recentMeetings.map((item, index) => <div className={insight.h2hMeeting} key={`${item.date}-${index}`}><time>{meetingDate(item)}</time><div><small>{localizedTournamentLabel(item.tournament, calendarEvents)}{item.round ? ` · ${localizedRoundLabel(item.round)}` : ""}</small><strong>{localized(item.homePlayerName)} {item.homeScore ?? "-"} : {item.awayScore ?? "-"} {localized(item.awayPlayerName)}</strong></div></div>)}</div> : <div className={insight.noHistory}>两人此前暂无正式比赛交手记录。</div>}
         </div> : null}
       </section> : null}
 
@@ -901,9 +976,10 @@ export default function SnookerDataCenterV2({
   }
 
   if (detail?.type === "event") {
-    const calendarEvent = snapshot.calendar.find((item) => item.slug === detail.slug) ?? featuredEventCard;
+    const calendarEvent = calendarEvents.find((item) => item.slug === detail.slug) ?? snapshot.calendar.find((item) => item.slug === detail.slug) ?? featuredEventCard;
     const full = eventBySlug.get(detail.slug);
     if (!calendarEvent) return null;
+    const isHistoricalEvent = calendarEvent.season !== initialCurrentSeason;
     const eventDetails = full ? [full] : [];
     const eventMatches = eventDetails.flatMap((event) => allMatches(event));
     const finalEvent = full && finalOf(full) ? full : undefined;
@@ -929,8 +1005,8 @@ export default function SnookerDataCenterV2({
     const overviewVenue = calendarEvent.venueZh;
 
     return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
-      <header className={`${styles.detailHeader} ${priority.eventNameHeader}`}><button onClick={() => setDetail(null)}>‹</button><strong>{calendarEvent.nameZh}</strong><span>{calendarEvent.season}</span></header>
-      <section className={styles.eventDetailHero}><div className={styles.eventDetailTop}><StatusPill status={calendarEvent.status} label={calendarEvent.statusLabelZh} /><span>{eventDetailTypeLabel(calendarEvent)}</span></div><h1>{calendarEvent.nameZh}</h1><p>{calendarEvent.nameEn}</p><div className={styles.eventDetailMeta}><span>{formatDateRange(overviewStart, overviewEnd)}</span><span>{overviewCountry} · {overviewCity}</span></div></section>
+      <header className={`${styles.detailHeader} ${priority.eventNameHeader}`}><button onClick={closeEvent}>‹</button><strong>{calendarEvent.nameZh}</strong><span>{calendarEvent.season}</span></header>
+      <section className={styles.eventDetailHero}><div className={styles.eventDetailTop}><StatusPill status={calendarEvent.status} label={calendarEvent.statusLabelZh} /><span>{eventDetailTypeLabel(calendarEvent)}</span></div><h1>{calendarEvent.nameZh}</h1><p>{calendarEvent.nameEn}</p><div className={styles.eventDetailMeta}>{isHistoricalEvent ? <span>{calendarEvent.season}赛季 · 历史赛事</span> : null}<span>{formatDateRange(overviewStart, overviewEnd)}</span><span>{overviewCountry} · {overviewCity}</span></div></section>
       <div className={styles.eventTabs}><button className={detail.tab === "overview" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "overview" })}>赛事介绍</button><button className={detail.tab === "schedule" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "schedule" })}>赛程</button><button className={detail.tab === "data" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "data" })}>赛事数据</button></div>
 
       {detail.tab === "overview" ? <>
@@ -942,12 +1018,12 @@ export default function SnookerDataCenterV2({
       {detail.tab === "schedule" ? full ? <div className={styles.roundStack}>
         {full.schedulePartial ? <div className={insight.partialNotice}><b>赛程陆续公布中</b><span className={polish.partialText}>目前已公布 {full.publishedMatchCount ?? allMatches(full).length} 场比赛，更多赛程公布后将在这里更新。</span></div> : null}
         {orderedScheduleRounds(full).map((round) => <section className={styles.card} key={round.key}><SectionHeader title={round.labelZh} action={bestOfLabel(round.bestOf)} /><div className={styles.matchList}>{round.matches.map((match) => <MatchListRow key={match.id} match={match} players={players} onOpen={() => openMatch(match.id, full.slug)} />)}</div></section>)}
-      </div> : <section className={styles.card}><div className={styles.emptyState}>{loadingEventSlug === detail.slug ? "正在加载赛程…" : "详细赛程暂未公布。"}</div></section> : null}
+      </div> : <section className={styles.card}><div className={styles.emptyState}>{loadingEventSlug === detail.slug ? "正在加载赛程…" : eventLoadError === detail.slug ? "赛程加载失败，请稍后重试。" : "详细赛程暂未公布。"}</div>{eventLoadError === detail.slug ? <button className={styles.fullButton} onClick={() => void ensureEventDetail(detail.slug)}>重新加载</button> : null}</section> : null}
 
       {detail.tab === "data" ? eventStats ? <>
         <section className={styles.card}><SectionHeader eyebrow="TOURNAMENT DATA" title="赛事统计" /><div className={styles.statGrid}><article><small>已公布比赛</small><strong>{eventStats.matches}</strong><span>{eventStats.partial ? "赛程公布中" : "赛程已完整"}</span></article><article><small>参赛球员</small><strong>{eventStats.players}</strong><span>本届赛事</span></article><article><small>中国球员</small><strong>{eventStats.china}</strong><span>本届赛事</span></article><article><small>已完赛</small><strong>{eventStats.completed}</strong><span>{calendarEvent.status === "completed" ? "全部完成" : "截至目前"}</span></article></div></section>
         <section className={styles.card}><SectionHeader eyebrow="CHINA WATCH" title="中国球员战绩" /><div className={styles.chinaResultList}>{chinaStats.map(({ player, stats }) => <button key={player.id} onClick={() => openPlayer(player.id)}><PlayerAvatar player={player} size="sm" /><span><b>{player.nameZh}</b><small>世界第 {player.currentRank ?? "—"}</small></span><strong>{stats.bestRoundLabelZh}</strong><em>{stats.wins}胜{stats.losses}负</em></button>)}</div></section>
-      </> : <section className={styles.card}><div className={styles.emptyState}>赛事数据将在赛程和比赛结果公布后显示。</div></section> : null}
+      </> : <section className={styles.card}><div className={styles.emptyState}>{eventLoadError === detail.slug ? "赛事数据加载失败，请稍后重试。" : "赛事数据将在赛程和比赛结果公布后显示。"}</div>{eventLoadError === detail.slug ? <button className={styles.fullButton} onClick={() => void ensureEventDetail(detail.slug)}>重新加载</button> : null}</section> : null}
     </div></main>;
   }
 
@@ -987,12 +1063,12 @@ export default function SnookerDataCenterV2({
 
       {activeView === "matches" ? <>
         <section className={styles.pageIntro}><small>TOURNAMENTS</small><h1>赛事</h1><p>查看近期赛事和完整赛季赛历，及时了解正在进行、即将开始和已经结束的比赛。</p></section>
-        <div className={priority.eventModeTabs}><button className={eventListMode === "recent" ? priority.eventModeActive : ""} onClick={() => setEventListMode("recent")}>近期赛事</button><button className={eventListMode === "calendar" ? priority.eventModeActive : ""} onClick={() => setEventListMode("calendar")}>赛季赛历</button></div>
+        <div className={priority.eventModeTabs}><button className={eventListMode === "recent" ? priority.eventModeActive : ""} onClick={() => setEventListMode("recent")}>近期赛事</button><button className={eventListMode === "calendar" ? priority.eventModeActive : ""} onClick={() => { setEventListMode("calendar"); void ensureCalendar(); }}>赛季赛历</button></div>
         {eventListMode === "calendar" ? <SeasonSelector seasons={seasonOptions} value={selectedSeason} onChange={setSelectedSeason} /> : null}
         {eventListMode === "recent" ? <>
           {featuredEventCard ? <section className={styles.currentEventBanner} onClick={() => openEvent(featuredEventCard.slug, "overview")}><div><span className={eventStatusClass(featuredEventCard.status)}><StatusPill status={featuredEventCard.status} label={featuredEventCard.status === "live" ? "正在进行" : featuredEventCard.status === "upcoming" ? "即将开始" : "最近结束"} /></span><small>{featuredEventCard.typeZh}</small></div><h2>{featuredEventCard.nameZh}</h2><p>{formatDateRange(featuredEventCard.startDate, featuredEventCard.endDate)} · {featuredEventCard.cityZh}</p><span>查看详情 ›</span></section> : null}
           <section className={styles.card}><SectionHeader eyebrow="RECENT TOURNAMENTS" title="近期赛事" action="本赛季" /><div className={styles.calendarList}>{recentListEvents.map((item) => <EventCard key={item.id} item={item} onOpen={() => openEvent(item.slug)} />)}{recentListEvents.length === 0 && !featuredEventCard ? <div className={styles.emptyState}>本赛季暂无可显示的赛事。</div> : null}</div></section>
-        </> : <section className={styles.card}><SectionHeader eyebrow={`${selectedSeason} SEASON`} title="赛季赛历" action={`共 ${selectedSeasonEvents.length} 项赛事`} /><div className={styles.calendarList}>{selectedSeasonEvents.map((item) => <EventCard key={item.id} item={item} onOpen={() => openEvent(item.slug)} />)}{selectedSeasonEvents.length === 0 ? <div className={styles.emptyState}>该赛季暂无赛事。</div> : null}</div></section>}
+        </> : calendarLoading && !calendarLoaded ? <section className={styles.card}><div className={styles.emptyState}>正在加载历史赛历…</div></section> : calendarLoadError && !calendarLoaded ? <section className={styles.card}><div className={styles.emptyState}>历史赛历加载失败，请稍后重试。</div><button className={styles.fullButton} onClick={() => void ensureCalendar()}>重新加载</button></section> : <section className={styles.card}><SectionHeader eyebrow={`${selectedSeason} SEASON`} title="赛季赛历" action={`共 ${selectedSeasonEvents.length} 项赛事`} /><div className={styles.calendarList}>{selectedSeasonEvents.map((item) => <EventCard key={item.id} item={item} onOpen={() => openEvent(item.slug)} />)}{selectedSeasonEvents.length === 0 ? <div className={styles.emptyState}>该赛季暂无赛事。</div> : null}</div></section>}
       </> : null}
 
       {activeView === "players" ? <PlayerDirectoryContent players={directoryPlayers} query={playerQuery} filter={playerFilter} onQueryChange={setPlayerQuery} onFilterChange={setPlayerFilter} onOpenPlayer={(player) => openPlayer(player.id)} onPrefetchPlayer={(player) => prefetchPlayerDetail(player.slug)} /> : null}
