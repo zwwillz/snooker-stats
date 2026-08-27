@@ -50,7 +50,10 @@ function targetFrameRow(match: SnookerMatch, frameSection: HTMLElement) {
 }
 
 function clearDot() {
-  document.querySelectorAll<HTMLElement>(`[${DOT_ATTR}]`).forEach((node) => node.remove());
+  document.querySelectorAll<HTMLElement>(`[${DOT_ATTR}]`).forEach((node) => {
+    node.parentElement?.classList.remove(dotStyles.scoreAnchor);
+    node.remove();
+  });
 }
 
 function applyDot(payload: LivePayload | null) {
@@ -76,14 +79,14 @@ function applyDot(payload: LivePayload | null) {
   if (existing?.parentElement === target && existing.dataset.side === side) return;
 
   clearDot();
+  target.classList.add(dotStyles.scoreAnchor);
   const dot = document.createElement("span");
   dot.className = dotStyles.strikerDot;
   dot.setAttribute(DOT_ATTR, "true");
   dot.dataset.side = side;
   dot.setAttribute("aria-hidden", "true");
   dot.title = `${side === "home" ? identity.player1Name : identity.player2Name}正在击球`;
-  if (side === "home") target.append(dot);
-  else target.prepend(dot);
+  target.append(dot);
 }
 
 export default function LiveStrikerIndicator() {
