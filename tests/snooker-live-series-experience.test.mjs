@@ -47,14 +47,41 @@ test("homepage headline selection is deterministic and retains recent results un
   assert.match(ui, /selectHomepageHeadlineMatches\(databaseEvents, players\)/);
 });
 
-test("event series presents a continuous schedule without a stage selector", async () => {
+test("tournament catalog follows individual WST events instead of merged series", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
-  assert.doesNotMatch(ui, /className=\{priority\.stageSelector\}/);
-  assert.match(ui, /seriesDetail\.stages\.map/);
-  assert.match(ui, /seriesStageSection/);
-  assert.match(ui, /overviewStart = seriesDetail\?\.startDate/);
-  assert.match(ui, /aggregateEvents/);
-  assert.match(ui, /合并去重/);
+  assert.match(ui, /function EventCard/);
+  assert.match(ui, /snapshot\.calendar\s*\.filter\(\(item\) => item\.season === selectedSeason\)/);
+  assert.doesNotMatch(ui, /function SeriesCard/);
+  assert.doesNotMatch(ui, /seriesDetail\.stages\.map/);
+  assert.doesNotMatch(ui, /合并去重/);
+});
+
+test("recent tournaments are fixed to the current season while season calendar keeps its selector", async () => {
+  const ui = await read("app/snooker/snooker-data-center-v2.tsx");
+  assert.match(ui, /const recentEvents = seasonCalendar/);
+  assert.match(ui, /eventListMode === "calendar" \? <SeasonSelector/);
+  assert.match(ui, /action="本赛季"/);
+  assert.doesNotMatch(ui, /selectedSeason === initialCurrentSeason && selectedFeaturedSeries/);
+});
+
+test("historical match detail only exposes official match statistics", async () => {
+  const ui = await read("app/snooker/snooker-data-center-v2.tsx");
+  assert.match(ui, /const isCurrentSeasonMatch = selectedEvent\.season === initialCurrentSeason/);
+  assert.match(ui, /const hasMatchupData = isCurrentSeasonMatch \? hasStats \|\| hasSeason \|\| hasH2h : hasStats/);
+  assert.match(ui, /\{isCurrentSeasonMatch \? <div className=\{polish\.dataTabs\}/);
+  assert.match(ui, /isCurrentSeasonMatch && selectedDataTab === "season" && hasSeason/);
+  assert.match(ui, /isCurrentSeasonMatch && selectedDataTab === "h2h" && h2h/);
+  assert.match(ui, /isCurrentSeasonMatch \? "对阵数据" : "比赛统计"/);
+});
+
+test("tournament-facing copy avoids internal database language", async () => {
+  const ui = await read("app/snooker/snooker-data-center-v2.tsx");
+  assert.match(ui, /CHAMPION · 本届冠军/);
+  assert.match(ui, /赛程陆续公布中/);
+  assert.match(ui, /比赛数据实时更新/);
+  assert.doesNotMatch(ui, /详细赛程尚未入库/);
+  assert.doesNotMatch(ui, /本站数据库实时快照/);
+  assert.doesNotMatch(ui, /完赛后冻结保存到本站数据库/);
 });
 
 test("database hardening preserves terminal states and source freshness", async () => {
