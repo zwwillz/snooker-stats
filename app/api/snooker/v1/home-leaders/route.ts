@@ -4,8 +4,7 @@ import { loadSnookerTechnicalHub, type SnookerTechnicalMetricKey } from "@/lib/s
 
 export const revalidate = 300;
 
-const baseKeys: SnookerTechnicalMetricKey[] = ["centuries", "win_rate", "matches_won"];
-const fallbackKeys: SnookerTechnicalMetricKey[] = ["highest_break", "points_scored", "fifties", "average_break"];
+const leaderKeys: SnookerTechnicalMetricKey[] = ["maximums", "centuries", "win_rate", "shot_time"];
 
 type PlayerRow = {
   id: string;
@@ -45,17 +44,12 @@ export async function GET() {
     }
 
     const listByKey = new Map(hub.lists.map((list) => [list.key, list]));
-    const maximums = listByKey.get("maximums");
-    const fourthKey: SnookerTechnicalMetricKey | undefined = maximums?.rows[0]
-      ? "maximums"
-      : fallbackKeys.find((key) => Boolean(listByKey.get(key)?.rows[0]));
-    const keys = fourthKey ? [...baseKeys, fourthKey] : baseKeys;
     const playerBySlug = new Map(playerRows.map((player) => [player.slug, player]));
 
-    const leaders = keys.flatMap((key) => {
+    const leaders = leaderKeys.flatMap((key) => {
       const list = listByKey.get(key);
       const row = list?.rows[0];
-      if (!list || !row) return [];
+      if (!list || !row || (key === "maximums" && row.value <= 0)) return [];
       const player = playerBySlug.get(row.playerSlug);
       if (!player) return [];
       return [{
