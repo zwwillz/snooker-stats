@@ -484,18 +484,14 @@ export default function SnookerDataCenterV2({
     }
   }, [theme]);
 
-  useEffect(() => {
-    if (activeView === "matches") void ensureCalendar();
-  }, [activeView, ensureCalendar]);
-
-  useEffect(() => {
-    setCalendarEvents((current) => {
-      if (!calendarLoaded) return snapshot.calendar;
-      const bySlug = new Map(current.map((item) => [item.slug, item]));
-      snapshot.calendar.filter((item) => item.season === initialCurrentSeason).forEach((item) => bySlug.set(item.slug, item));
-      return [...bySlug.values()].sort((a, b) => a.startDate.localeCompare(b.startDate));
-    });
-  }, [snapshot.calendar, calendarLoaded, initialCurrentSeason]);
+  const effectiveCalendarEvents = useMemo(() => {
+    if (!calendarLoaded) return snapshot.calendar;
+    const bySlug = new Map(calendarEvents.map((item) => [item.slug, item]));
+    snapshot.calendar
+      .filter((item) => item.season === initialCurrentSeason)
+      .forEach((item) => bySlug.set(item.slug, item));
+    return [...bySlug.values()].sort((a, b) => a.startDate.localeCompare(b.startDate));
+  }, [calendarEvents, calendarLoaded, snapshot.calendar, initialCurrentSeason]);
 
   useEffect(() => {
     let frame = 0;
@@ -658,12 +654,12 @@ export default function SnookerDataCenterV2({
   const firstUpcomingMain = mainSeasonEvents.find((item) => item.startDate > today);
   const featuredEventCard = activeEventCard ?? graceEventCard ?? firstUpcomingMain ?? [...mainSeasonEvents].reverse()[0];
   const nextEventCard = featuredEventCard ? mainSeasonEvents.find((item) => item.startDate > featuredEventCard.startDate) : firstUpcomingMain;
-  const seasonOptions = useMemo(() => [...new Set(calendarEvents.map((item) => item.season))]
+  const seasonOptions = useMemo(() => [...new Set(effectiveCalendarEvents.map((item) => item.season))]
     .filter((season) => Number(season.slice(0, 4)) >= 2019)
-    .sort((a, b) => b.localeCompare(a)), [calendarEvents]);
-  const selectedSeasonEvents = useMemo(() => calendarEvents
+    .sort((a, b) => b.localeCompare(a)), [effectiveCalendarEvents]);
+  const selectedSeasonEvents = useMemo(() => effectiveCalendarEvents
     .filter((item) => item.season === selectedSeason)
-    .sort((a, b) => a.startDate.localeCompare(b.startDate)), [calendarEvents, selectedSeason]);
+    .sort((a, b) => a.startDate.localeCompare(b.startDate)), [effectiveCalendarEvents, selectedSeason]);
   const firstUpcomingCurrent = seasonCalendar.find((item) => item.startDate > today);
   const recentEvents = seasonCalendar
     .filter((item) => item.endDate < today || isActiveOn(item, today) || item.id === firstUpcomingCurrent?.id || item.id === featuredEventCard?.id)
@@ -967,7 +963,7 @@ export default function SnookerDataCenterV2({
         {isCurrentSeasonMatch && selectedDataTab === "h2h" && h2h ? <div className={`${polish.dataPanel} ${polish.h2hPanel}`}>
           <div className={polish.h2hPanelHeader}><span>交手记录</span><b>赛前 {h2h.meetings} 次</b></div>
           <div className={insight.h2hSummary}><div className={insight.h2hSide}><strong>{h2h.player1Wins}</strong><span>{p1.nameZh} 胜</span></div><div className={insight.h2hMiddle}><strong>{h2h.player1Frames} : {h2h.player2Frames}</strong><small>总局分</small></div><div className={insight.h2hSide}><strong>{h2h.player2Wins}</strong><span>{p2.nameZh} 胜</span></div></div>
-          {h2h.recentMeetings.length ? <div className={insight.h2hHistory}>{h2h.recentMeetings.map((item, index) => <div className={insight.h2hMeeting} key={`${item.date}-${index}`}><time>{meetingDate(item)}</time><div><small>{localizedTournamentLabel(item.tournament, calendarEvents)}{item.round ? ` · ${localizedRoundLabel(item.round)}` : ""}</small><strong>{localized(item.homePlayerName)} {item.homeScore ?? "-"} : {item.awayScore ?? "-"} {localized(item.awayPlayerName)}</strong></div></div>)}</div> : <div className={insight.noHistory}>两人此前暂无正式比赛交手记录。</div>}
+          {h2h.recentMeetings.length ? <div className={insight.h2hHistory}>{h2h.recentMeetings.map((item, index) => <div className={insight.h2hMeeting} key={`${item.date}-${index}`}><time>{meetingDate(item)}</time><div><small>{localizedTournamentLabel(item.tournament, effectiveCalendarEvents)}{item.round ? ` · ${localizedRoundLabel(item.round)}` : ""}</small><strong>{localized(item.homePlayerName)} {item.homeScore ?? "-"} : {item.awayScore ?? "-"} {localized(item.awayPlayerName)}</strong></div></div>)}</div> : <div className={insight.noHistory}>两人此前暂无正式比赛交手记录。</div>}
         </div> : null}
       </section> : null}
 
@@ -976,7 +972,7 @@ export default function SnookerDataCenterV2({
   }
 
   if (detail?.type === "event") {
-    const calendarEvent = calendarEvents.find((item) => item.slug === detail.slug) ?? snapshot.calendar.find((item) => item.slug === detail.slug) ?? featuredEventCard;
+    const calendarEvent = effectiveCalendarEvents.find((item) => item.slug === detail.slug) ?? snapshot.calendar.find((item) => item.slug === detail.slug) ?? featuredEventCard;
     const full = eventBySlug.get(detail.slug);
     if (!calendarEvent) return null;
     const isHistoricalEvent = calendarEvent.season !== initialCurrentSeason;
