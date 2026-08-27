@@ -1,10 +1,12 @@
 import type { SnookerDatabaseView } from "./database-public";
-import type { SnookerEvent, SnookerFrame, SnookerMatch, SnookerMatchStatus } from "./domain";
+import type { SnookerEvent, SnookerFrame, SnookerMatch, SnookerMatchPlayerStatistics, SnookerMatchStatus } from "./domain";
 import { getSnookerSupabasePublicConfig } from "./supabase-config";
 
 const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = getSnookerSupabasePublicConfig();
 const REST_URL = `${SUPABASE_URL}/rest/v1`;
 const ID_FILTER_BATCH_SIZE = 32;
+
+type Numeric = number | string | null;
 
 type DbLiveMatch = {
   id: string;
@@ -16,6 +18,9 @@ type DbLiveMatch = {
   source_status_meta: string | null;
   source_updated_at: string | null;
   completed_detected_at: string | null;
+  current_player_side: string | null;
+  current_break: number | null;
+  live_frame_no: number | null;
 };
 
 type DbLiveFrame = {
@@ -26,6 +31,20 @@ type DbLiveFrame = {
   break1: number | null;
   break2: number | null;
   note: string | null;
+};
+
+type DbLiveStat = {
+  match_id: string;
+  side: string;
+  total_points: number | null;
+  average_shot_time_seconds: Numeric;
+  pot_rate: Numeric;
+  breaks_50_plus: number | null;
+  breaks_100_plus: number | null;
+  highest_break: number | null;
+  average_break: Numeric;
+  shots_taken: number | null;
+  time_on_table_pct: Numeric;
 };
 
 function dbEventUuid(event: SnookerEvent) {
@@ -101,12 +120,53 @@ function frameMap(rows: DbLiveFrame[]) {
   return map;
 }
 
+function statisticMap(rows: DbLiveStat[]) {
+  const map = new Map<string, DbLiveStat[]>();
+  for (const row of rows) {
+    const list = map.get(row.match_id) ?? [];
+    list.push(row);
+    map.set(row.match_id, list);
+  }
+  return map;
+}
+
+function finite(value: Numeric | undefined) {
+  if (value === null || value === undefined) return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function mapStatistic(row: DbLiveStat, match: SnookerMatch): SnookerMatchPlayerStatistics | null {
+  const playerId = row.side === "home" ? match.player1Id : row.side === "away" ? match.player2Id : null;
+  if (!playerId) return null;
+  return {
+    playerId,
+    ...(finite(row.total_points) !== undefined ? { totalPoints: finite(row.total_points) } : {}),
+    ...(finite(row.average_shot_time_seconds) !== undefined ? { averageShotTimeSeconds: finite(row.average_shot_time_seconds) } : {}),
+    ...(finite(row.pot_rate) !== undefined ? { potRate: finite(row.pot_rate) } : {}),
+    ...(finite(row.breaks_50_plus) !== undefined ? { breaks50Plus: finite(row.breaks_50_plus) } : {}),
+    ...(finite(row.breaks_100_plus) !== undefined ? { breaks100Plus: finite(row.breaks_100_plus) } : {}),
+    ...(finite(row.highest_break) !== undefined ? { highestBreak: finite(row.highest_break) } : {}),
+    ...(finite(row.average_break) !== undefined ? { averageBreak: finite(row.average_break) } : {}),
+    ...(finite(row.shots_taken) !== undefined ? { shotsTaken: finite(row.shots_taken) } : {}),
+    ...(finite(row.time_on_table_pct) !== undefined ? { timeOnTablePct: finite(row.time_on_table_pct) } : {}),
+  };
+}
+
 function timestamp(value?: string | null) {
   const time = value ? Date.parse(value) : NaN;
   return Number.isFinite(time) ? time : 0;
 }
 
-function mergeMatch(previous: SnookerMatch, row: DbLiveMatch, frames?: SnookerFrame[]) {
+function isRealtimeRow(row: DbLiveMatch) {
+  const sourceStatus = String(row.source_status ?? "").toLowerCase();
+  const sourceMeta = String(row.source_status_meta ?? "").toLowerCase();
+  if (row.status === "live" || row.status === "session-break" || sourceStatus === "live") return true;
+  if (/interval|session[ _-]?break|mid[ _-]?session|break|pause/.test(sourceMeta)) return true;
+  return Boolean(row.completed_detected_at && Date.now() - timestamp(row.completed_detected_at) <= 90 * 60 * 1000);
+}
+
+function mergeMatch(previous: SnookerMatch, row: DbLiveMatch, frames?: SnookerFrame[], statisticRows?: DbLiveStat[]) {
   const incomingUpdatedAt = row.source_updated_at ?? undefined;
   if (previous.sourceUpdatedAt && incomingUpdatedAt && timestamp(incomingUpdatedAt) < timestamp(previous.sourceUpdatedAt)) return previous;
 
@@ -116,19 +176,31 @@ function mergeMatch(previous: SnookerMatch, row: DbLiveMatch, frames?: SnookerFr
   const score1 = row.score1 ?? previous.score1;
   const score2 = row.score2 ?? previous.score2;
   const nextFrames = frames?.length ? frames : previous.frames;
-  return {
+  const nextStatistics = statisticRows?.map((stat) => mapStatistic(stat, previous)).filter((stat): stat is SnookerMatchPlayerStatistics => Boolean(stat));
+  const next: SnookerMatch = {
     ...previous,
     score1,
     score2,
     status,
     statusLabelZh: statusLabel(status),
     ...(nextFrames?.length ? { frames: nextFrames } : {}),
+    ...(nextStatistics?.length ? { statistics: nextStatistics } : {}),
     ...(incomingUpdatedAt ? { sourceUpdatedAt: incomingUpdatedAt } : {}),
     ...(row.completed_detected_at ? { completedDetectedAt: row.completed_detected_at } : {}),
+    ...(row.current_break !== null ? { currentBreak: row.current_break } : {}),
+    ...(row.live_frame_no !== null ? { liveFrameNo: row.live_frame_no } : {}),
     ...(status === "completed" && score1 !== null && score2 !== null && score1 !== score2
       ? { winnerId: score1 > score2 ? previous.player1Id : previous.player2Id }
       : {}),
-  } satisfies SnookerMatch;
+  };
+
+  if (status === "live" && (row.current_player_side === "home" || row.current_player_side === "away")) {
+    next.currentPlayerSide = row.current_player_side;
+  } else {
+    delete next.currentPlayerSide;
+  }
+  if (row.current_break === null) delete next.currentBreak;
+  return next;
 }
 
 export async function refreshEventsWithLiveReadThrough(events: SnookerEvent[]) {
@@ -137,18 +209,25 @@ export async function refreshEventsWithLiveReadThrough(events: SnookerEvent[]) {
   try {
     const liveRows = await restNoStoreInBatches<DbLiveMatch>(
       eventIds,
-      (batch) => `snooker_matches?select=id,event_id,score1,score2,status,source_status,source_status_meta,source_updated_at,completed_detected_at&event_id=in.${inFilter(batch)}&order=match_no.asc`,
+      (batch) => `snooker_matches?select=id,event_id,score1,score2,status,source_status,source_status_meta,source_updated_at,completed_detected_at,current_player_side,current_break,live_frame_no&event_id=in.${inFilter(batch)}&order=match_no.asc`,
     );
     const baseByUuid = new Map(events.flatMap((event) => event.rounds.flatMap((round) => round.matches)).map((match) => [dbMatchUuid(match), match] as const));
-    const frameIds = liveRows
-      .filter((row) => row.status === "live" || row.status === "session-break" || (row.completed_detected_at && Date.now() - timestamp(row.completed_detected_at) <= 90 * 60 * 1000))
+    const realtimeIds = liveRows
+      .filter((row) => isRealtimeRow(row))
       .map((row) => row.id)
       .filter((id) => baseByUuid.has(id));
-    const frameRows = await restNoStoreInBatches<DbLiveFrame>(
-      frameIds,
-      (batch) => `snooker_frames?select=match_id,frame_no,score1,score2,break1,break2,note&match_id=in.${inFilter(batch)}&order=frame_no.asc`,
-    );
+    const [frameRows, statisticRows] = await Promise.all([
+      restNoStoreInBatches<DbLiveFrame>(
+        realtimeIds,
+        (batch) => `snooker_frames?select=match_id,frame_no,score1,score2,break1,break2,note&match_id=in.${inFilter(batch)}&order=frame_no.asc`,
+      ),
+      restNoStoreInBatches<DbLiveStat>(
+        realtimeIds,
+        (batch) => `snooker_match_statistics?select=match_id,side,total_points,average_shot_time_seconds,pot_rate,breaks_50_plus,breaks_100_plus,highest_break,average_break,shots_taken,time_on_table_pct&match_id=in.${inFilter(batch)}`,
+      ),
+    ]);
     const framesByMatch = frameMap(frameRows);
+    const statisticsByMatch = statisticMap(statisticRows);
     const rowByMatch = new Map(liveRows.map((row) => [row.id, row]));
 
     return events.map((event) => ({
@@ -158,7 +237,7 @@ export async function refreshEventsWithLiveReadThrough(events: SnookerEvent[]) {
         matches: round.matches.map((match) => {
           const uuid = dbMatchUuid(match);
           const row = uuid ? rowByMatch.get(uuid) : undefined;
-          return row ? mergeMatch(match, row, framesByMatch.get(row.id)) : match;
+          return row ? mergeMatch(match, row, framesByMatch.get(row.id), statisticsByMatch.get(row.id)) : match;
         }),
       })),
     }));
