@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { SnookerTechnicalMetricKey } from "@/lib/snooker/technical-hub";
 import styles from "./home-season-leaders.module.css";
@@ -30,10 +30,9 @@ type HomeLeadersResponse = {
 };
 
 const navLabels = ["首页", "赛事", "球员", "数据"];
-
-function initials(name: string) {
-  return name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-}
+let homeLeadersCache: HomeLeadersResponse | null = null;
+let homeLeadersInflight: Promise<HomeLeadersResponse | null> | null = null;
+let technicalWarmInflight: Promise<void> | null = null;
 
 function isMainNav(nav: Element) {
   const labels = Array.from(nav.querySelectorAll(":scope > button b"))
@@ -42,8 +41,12 @@ function isMainNav(nav: Element) {
   return navLabels.every((label) => labels.includes(label));
 }
 
+function findMainNav() {
+  return Array.from(document.querySelectorAll("nav")).find(isMainNav) ?? null;
+}
+
 function findContentTarget() {
-  const nav = Array.from(document.querySelectorAll("nav")).find(isMainNav);
+  const nav = findMainNav();
   const content = nav?.previousElementSibling;
   return content instanceof HTMLElement ? content : null;
 }
@@ -64,6 +67,41 @@ function applyHeaderPolish() {
 
   const version = shellHeader.querySelector<HTMLElement>(":scope > div:last-child > span:first-child");
   if (version?.textContent?.includes("DATA v")) version.style.display = "none";
+}
+
+function applyHomepageEnglishLabels(content: HTMLElement | null) {
+  if (!content) return;
+  Array.from(content.querySelectorAll("h2")).forEach((heading) => {
+    const title = heading.textContent?.trim();
+    const eyebrow = heading.parentElement?.querySelector<HTMLElement>(":scope > small");
+    if (!eyebrow) return;
+    if (title === "世界排名" && eyebrow.textContent !== "OFFICIAL WORLD RANKING") eyebrow.textContent = "OFFICIAL WORLD RANKING";
+    if (title === "中国球员" && eyebrow.textContent !== "CHINA PLAYERS") eyebrow.textContent = "CHINA PLAYERS";
+  });
+}
+
+async function loadHomeLeadersClient() {
+  if (homeLeadersCache) return homeLeadersCache;
+  if (homeLeadersInflight) return homeLeadersInflight;
+  homeLeadersInflight = fetch("/api/snooker/v1/home-leaders", { headers: { Accept: "application/json" } })
+    .then(async (response) => {
+      if (!response.ok) return null;
+      const data = await response.json() as HomeLeadersResponse;
+      if (data.ok && data.leaders && data.leaders.length >= 4) homeLeadersCache = data;
+      return data.ok ? data : null;
+    })
+    .catch(() => null)
+    .finally(() => { homeLeadersInflight = null; });
+  return homeLeadersInflight;
+}
+
+function warmTechnicalHub() {
+  if (technicalWarmInflight) return technicalWarmInflight;
+  technicalWarmInflight = fetch("/api/snooker/v1/technical", { headers: { Accept: "application/json" } })
+    .then(() => undefined)
+    .catch(() => undefined)
+    .finally(() => { technicalWarmInflight = null; });
+  return technicalWarmInflight;
 }
 
 function formatValue(leader: HomeLeader) {
@@ -87,97 +125,92 @@ function captionFor(key: SnookerTechnicalMetricKey) {
   }
 }
 
+function openTechnical(key: SnookerTechnicalMetricKey) {
+  void warmTechnicalHub();
+  const nav = findMainNav();
+  const dataButton = Array.from(nav?.querySelectorAll<HTMLButtonElement>(":scope > button") ?? [])
+    .find((button) => button.querySelector("b")?.textContent?.trim() === "数据");
+  if (!dataButton) return;
+
+  const returnState = { ...(window.history.state ?? {}), snookerReturnView: "home" };
+  window.history.replaceState(returnState, "", window.location.href);
+
+  const url = new URL(window.location.href);
+  url.searchParams.set("view", "data");
+  url.searchParams.delete("player");
+  url.searchParams.set("section", "technical");
+  url.searchParams.set("metric", key);
+  url.searchParams.delete("honour");
+  url.searchParams.delete("list");
+  url.searchParams.delete("group");
+  window.history.pushState(
+    { ...returnState, snookerTechnicalDetail: key },
+    "",
+    `${url.pathname}${url.search}${url.hash}`,
+  );
+  dataButton.click();
+}
+
 export default function HomeSeasonLeaders() {
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const [homeActive, setHomeActive] = useState(false);
-  const [shouldLoad, setShouldLoad] = useState(false);
-  const [payload, setPayload] = useState<HomeLeadersResponse | null>(null);
-  const [failed, setFailed] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [payload, setPayload] = useState<HomeLeadersResponse | null>(() => homeLeadersCache);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     const sync = () => {
       applyHeaderPolish();
-      setPortalTarget((current) => {
-        const next = findContentTarget();
-        return current === next ? current : next;
-      });
+      const next = findContentTarget();
+      applyHomepageEnglishLabels(next);
+      setPortalTarget((current) => current === next ? current : next);
       setHomeActive(isHomeUrl());
     };
 
     sync();
-    const mutation = new MutationObserver(sync);
-    mutation.observe(document.body, { childList: true, subtree: true, characterData: true });
+    const mutation = new MutationObserver(() => {
+      applyHeaderPolish();
+      const next = findContentTarget();
+      applyHomepageEnglishLabels(next);
+      setPortalTarget((current) => current === next ? current : next);
+    });
+    mutation.observe(document.body, { childList: true, subtree: true });
 
-    const onNavClick = (event: MouseEvent) => {
-      const target = event.target instanceof Element ? event.target : null;
-      const button = target?.closest("nav button");
-      const nav = button?.closest("nav");
-      if (!button || !nav || !isMainNav(nav)) return;
-      const label = button.querySelector("b")?.textContent?.trim();
-      setHomeActive(label === "首页");
-      window.requestAnimationFrame(sync);
-    };
-    const onPopState = () => window.requestAnimationFrame(sync);
-
-    document.addEventListener("click", onNavClick);
+    const onRouteChange = () => sync();
+    const onPopState = () => sync();
+    window.addEventListener("snooker-view-url-change", onRouteChange);
     window.addEventListener("popstate", onPopState);
     return () => {
       mutation.disconnect();
-      document.removeEventListener("click", onNavClick);
+      window.removeEventListener("snooker-view-url-change", onRouteChange);
       window.removeEventListener("popstate", onPopState);
     };
   }, []);
 
   useEffect(() => {
-    if (!homeActive || !portalTarget || shouldLoad || payload || failed) return;
-    const node = sentinelRef.current;
-    if (!node) return;
-    const observer = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) {
-        setShouldLoad(true);
-        observer.disconnect();
-      }
-    }, { rootMargin: "520px 0px" });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [homeActive, portalTarget, shouldLoad, payload, failed]);
-
-  useEffect(() => {
-    if (!shouldLoad || payload || failed) return;
-    const controller = new AbortController();
-    void fetch("/api/snooker/v1/home-leaders", {
-      headers: { Accept: "application/json" },
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        return response.json() as Promise<HomeLeadersResponse>;
-      })
-      .then((data) => {
-        if (!data?.ok || !data.leaders || data.leaders.length < 4) {
-          setFailed(true);
-          return;
-        }
+    if (!homeActive || payload) return;
+    let cancelled = false;
+    void warmTechnicalHub();
+    void loadHomeLeadersClient().then((data) => {
+      if (cancelled) return;
+      if (data?.ok && data.leaders && data.leaders.length >= 4) {
         setPayload(data);
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setFailed(true);
-      });
-    return () => controller.abort();
-  }, [shouldLoad, payload, failed]);
+        return;
+      }
+      window.setTimeout(() => {
+        if (!cancelled) setRetryKey((value) => value + 1);
+      }, Math.min(2500 + retryKey * 1000, 8000));
+    });
+    return () => { cancelled = true; };
+  }, [homeActive, payload, retryKey]);
 
-  if (!portalTarget || !homeActive || failed) return null;
+  if (!portalTarget || !homeActive) return null;
 
   if (!payload) {
     return createPortal(
-      <div className={styles.sentinel} ref={sentinelRef}>
-        {shouldLoad ? <section className={`${styles.card} ${styles.loadingCard}`} aria-label="加载本赛季数据榜">
-          <div className={styles.loadingHeader} />
-          <div className={styles.loadingGrid}>{[0, 1, 2, 3].map((index) => <span key={index} />)}</div>
-        </section> : null}
-      </div>,
+      <section className={`${styles.card} ${styles.loadingCard}`} aria-label="加载本赛季数据榜">
+        <div className={styles.loadingHeader} />
+        <div className={styles.loadingGrid}>{[0, 1, 2, 3].map((index) => <span key={index} />)}</div>
+      </section>,
       portalTarget,
     );
   }
@@ -189,17 +222,20 @@ export default function HomeSeasonLeaders() {
         <span>{payload.seasonLabel ?? "当前赛季"}</span>
       </div>
       <div className={styles.grid}>
-        {payload.leaders!.slice(0, 4).map((leader) => <a className={styles.item} href={`?view=data&section=technical&metric=${encodeURIComponent(leader.key)}`} key={leader.key}>
-          <span className={styles.metric}>{leader.labelZh}</span>
-          <div className={styles.player}>
-            <span className={styles.avatar}>{leader.player.avatarUrl ? <img src={leader.player.avatarUrl} alt="" loading="lazy" decoding="async" /> : initials(leader.player.nameEn)}</span>
-            <strong>{leader.player.nameZh}</strong>
+        {payload.leaders!.slice(0, 4).map((leader) => <button type="button" className={styles.item} onClick={() => openTechnical(leader.key)} key={leader.key}>
+          <div className={styles.copy}>
+            <span className={styles.metric}>{leader.labelZh}</span>
+            <div className={styles.player}>
+              <strong>{leader.player.nameZh}</strong>
+              <small>{leader.player.nameEn}</small>
+            </div>
+            <b className={styles.value}>{formatValue(leader)}</b>
+            <small className={styles.caption}>{captionFor(leader.key)}</small>
           </div>
-          <b className={styles.value}>{formatValue(leader)}</b>
-          <small className={styles.caption}>{captionFor(leader.key)}</small>
-        </a>)}
+          {leader.player.avatarUrl ? <img className={styles.portrait} src={leader.player.avatarUrl} alt="" loading="lazy" decoding="async" /> : null}
+        </button>)}
       </div>
-      <a className={styles.action} href="?view=data&section=technical&metric=centuries">查看完整数据榜 <span>›</span></a>
+      <button className={styles.action} type="button" onClick={() => openTechnical("centuries")}>查看完整数据榜 <span>›</span></button>
     </section>,
     portalTarget,
   );
