@@ -1,4 +1,4 @@
-import { loadSnookerEventDetail } from "./database-public";
+import { loadSnookerEventDetailFresh } from "./event-detail-fresh";
 import type {
   SnookerEvent,
   SnookerHeadToHead,
@@ -114,7 +114,7 @@ function dbMatchUuid(matchId: string) {
 }
 
 export async function loadSnookerEventDetailComplete(slug: string): Promise<SnookerEvent | null> {
-  const event = await loadSnookerEventDetail(slug);
+  const event = await loadSnookerEventDetailFresh(slug);
   if (!event) return null;
 
   const eventUuid = dbEventUuid(event);
