@@ -20,34 +20,43 @@ test("event series migration remains additive, secured and non-destructive", asy
   assert.match(migration, /where r\.enabled[\s\S]*new\.name_en ~\* r\.event_name_pattern/);
 });
 
-test("public loader may retain dormant series metadata without changing WST event rows", async () => {
+test("database may retain dormant series metadata without changing WST event rows", async () => {
   const database = await read("lib/snooker/database-public.ts");
   assert.match(database, /currentSnookerSeason/);
   assert.match(database, /snooker_event_series\?select=/);
   assert.match(database, /stage_name_en,stage_name_zh,stage_order/);
-  assert.match(database, /filter\(\(series\) => Number\(series\.season\.slice\(0, 4\)\) >= 2019\)/);
+  assert.match(database, /buildEventSeries/);
   assert.match(database, /loadSnookerEventDetail/);
   assert.doesNotMatch(database, /season=eq\.2026%2F27/);
 });
 
-test("event UI follows raw WST events and only the season calendar exposes season switching", async () => {
-  const [ui, css, page, dashboard] = await Promise.all([
+test("frontend follows raw WST events while historical seasons use a lightweight catalog", async () => {
+  const [ui, css, page, dashboard, calendar] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-priority.module.css"),
     read("app/page.tsx"),
     read("app/api/snooker/v1/dashboard/route.ts"),
+    read("lib/snooker/event-calendar.ts"),
   ]);
   assert.match(ui, /function SeasonSelector/);
   assert.match(ui, /eventListMode === "calendar" \? <SeasonSelector/);
   assert.match(ui, /function EventCard/);
-  assert.match(ui, /const selectedSeasonEvents = useMemo\(\(\) => snapshot\.calendar/);
+  assert.match(ui, /const effectiveCalendarEvents = useMemo/);
+  assert.match(ui, /const seasonOptions = useMemo\(\(\) => \[\.\.\.new Set\(effectiveCalendarEvents\.map/);
+  assert.match(ui, /const selectedSeasonEvents = useMemo\(\(\) => effectiveCalendarEvents/);
   assert.match(ui, /const recentEvents = seasonCalendar/);
+  assert.match(ui, /\/api\/snooker\/v1\/calendar/);
+  assert.doesNotMatch(ui, /SnookerEventSeries/);
+  assert.doesNotMatch(ui, /seriesSlug/);
   assert.doesNotMatch(ui, /function SeriesCard/);
   assert.doesNotMatch(ui, /preferredSeriesStage/);
   assert.doesNotMatch(ui, /seriesDetail\.stages\.map/);
   assert.doesNotMatch(ui, /seriesStageSection/);
   assert.match(ui, /api\/snooker\/v1\/event\?slug=/);
   assert.match(css, /\.seasonRail\{[^}]*overflow-x:auto/s);
-  assert.match(page, /initialEventSeries=\{database\.eventSeries\}/);
-  assert.match(dashboard, /eventSeries: database\.eventSeries/);
+  assert.doesNotMatch(page, /initialEventSeries/);
+  assert.doesNotMatch(dashboard, /eventSeries: database\.eventSeries/);
+  assert.match(calendar, /snooker_events\?select=id,slug,season/);
+  assert.doesNotMatch(calendar, /snooker_event_series/);
+  assert.doesNotMatch(calendar, /snooker_matches|snooker_rounds|snooker_frames/);
 });
