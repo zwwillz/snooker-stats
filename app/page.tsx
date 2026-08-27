@@ -1,6 +1,7 @@
 import SnookerDataCenterV2 from "./snooker/snooker-data-center-v2";
 import LiveStrikerIndicator from "./snooker/live-striker-indicator";
 import SnookerViewUrlSync from "./snooker/snooker-view-url-sync";
+import HomeSeasonLeaders from "./snooker/home-season-leaders";
 import { SNOOKER_BUILD_MARK } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { loadSnookerEventDetailComplete } from "@/lib/snooker/event-detail-complete";
@@ -76,6 +77,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
         initialRankingSection={initialDataSection ? rankingSection(query.group) : "current"}
         initialPlayerCompare={initialPlayerCompare}
       />
+      <HomeSeasonLeaders />
       <LiveStrikerIndicator />
     </>
   );
