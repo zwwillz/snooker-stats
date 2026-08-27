@@ -12,6 +12,7 @@ const viewByLabel: Record<string, RootView> = {
 };
 
 const expectedLabels = Object.keys(viewByLabel);
+const detailParams = ["player", "section", "list", "group", "metric", "honour"] as const;
 
 function isMainNavigation(nav: HTMLElement) {
   const labels = Array.from(nav.querySelectorAll(":scope > button b"))
@@ -20,24 +21,43 @@ function isMainNavigation(nav: HTMLElement) {
   return expectedLabels.every((label) => labels.includes(label));
 }
 
+function notifyViewUrlChange() {
+  window.dispatchEvent(new Event("snooker-view-url-change"));
+}
+
+function updateRootUrl(view: RootView) {
+  const url = new URL(window.location.href);
+  if (view === "home") url.searchParams.delete("view");
+  else url.searchParams.set("view", view);
+
+  if (view !== "data") detailParams.forEach((key) => url.searchParams.delete(key));
+  else url.searchParams.delete("player");
+
+  const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+  window.history.replaceState(window.history.state, "", nextUrl);
+  notifyViewUrlChange();
+}
+
 export default function SnookerViewUrlSync() {
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       const target = event.target instanceof Element ? event.target : null;
-      const button = target?.closest("nav button");
+      if (!target) return;
+
+      const brand = target.closest("main[data-theme] > div > header:first-child > button:first-child");
+      if (brand) {
+        updateRootUrl("home");
+        return;
+      }
+
+      const button = target.closest("nav button");
       const nav = button?.closest("nav");
-      if (!button || !nav || !isMainNavigation(nav)) return;
+      if (!button || !nav || !(nav instanceof HTMLElement) || !isMainNavigation(nav)) return;
 
       const label = button.querySelector("b")?.textContent?.trim() ?? "";
       const view = viewByLabel[label];
       if (!view) return;
-
-      const url = new URL(window.location.href);
-      if (view === "home") url.searchParams.delete("view");
-      else url.searchParams.set("view", view);
-
-      const nextUrl = `${url.pathname}${url.search}${url.hash}`;
-      window.history.replaceState(window.history.state, "", nextUrl);
+      updateRootUrl(view);
     };
 
     document.addEventListener("click", handleClick);
