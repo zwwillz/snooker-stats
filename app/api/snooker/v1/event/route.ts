@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     playerStats,
   }, {
     headers: {
-      "Cache-Control": realtime ? "no-store, no-cache, must-revalidate, max-age=0" : "public, max-age=60, s-maxage=300, stale-while-revalidate=3600",
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
     },
   });
 }
