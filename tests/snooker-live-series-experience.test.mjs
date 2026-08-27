@@ -50,7 +50,7 @@ test("homepage headline selection is deterministic and retains recent results un
 test("tournament catalog follows individual WST events instead of merged series", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
   assert.match(ui, /function EventCard/);
-  assert.match(ui, /calendarEvents\s*\.filter\(\(item\) => item\.season === selectedSeason\)/);
+  assert.match(ui, /effectiveCalendarEvents\s*\.filter\(\(item\) => item\.season === selectedSeason\)/);
   assert.doesNotMatch(ui, /function SeriesCard/);
   assert.doesNotMatch(ui, /seriesDetail\.stages\.map/);
   assert.doesNotMatch(ui, /seriesSlug/);
