@@ -13,8 +13,13 @@ test("event helper uses a fresh focused schedule and enriches match statistics",
   assert.match(freshHelper, /cache: "no-store"/);
   assert.match(freshHelper, /snooker_matches\?select=/);
   assert.match(helper, /snooker_match_statistics\?/);
-  assert.match(helper, /snooker_match_head_to_head\?/);
   assert.match(helper, /statistics: statsByMatch\.get/);
+});
+
+test("historical event detail keeps match stats but skips head-to-head loading", () => {
+  assert.match(helper, /const includeHeadToHead = event\.season === currentSnookerSeason\(\)/);
+  assert.match(helper, /includeHeadToHead[\s\S]*snooker_match_head_to_head\?select=/);
+  assert.match(helper, /: Promise\.resolve\(\[\] as DbHeadToHead\[\]\)/);
 });
 
 test("event route upgrades every event open to complete fresh event detail", () => {
