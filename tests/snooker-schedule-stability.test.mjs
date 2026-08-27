@@ -5,12 +5,14 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
-test("series schedule merges stage identity into the round card", async () => {
+test("schedule renders each WST event directly without merged stage identity", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
-  assert.doesNotMatch(ui, /CHAMPIONSHIP LEAGUE STAGE/);
+  assert.match(ui, /function EventCard/);
+  assert.match(ui, /orderedScheduleRounds\(full\)/);
+  assert.doesNotMatch(ui, /stage\.stageNameZh/);
+  assert.doesNotMatch(ui, /orderedScheduleRounds\(stageEvent\)/);
   assert.doesNotMatch(ui, /priority\.seriesStageHeading/);
-  assert.match(ui, /stage\.stageNameZh/);
-  assert.match(ui, /orderedScheduleRounds\(stageEvent\)/);
+  assert.doesNotMatch(ui, /seriesDetail\.stages\.map/);
 });
 
 test("schedule ordering uses scheduled time instead of match number as the primary key", async () => {
