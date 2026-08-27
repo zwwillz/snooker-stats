@@ -129,6 +129,9 @@ export type SnookerMatch = {
   winnerId?: string;
   sourceUpdatedAt?: string;
   completedDetectedAt?: string;
+  currentPlayerSide?: "home" | "away";
+  currentBreak?: number;
+  liveFrameNo?: number;
 };
 
 export type SnookerRound = {
