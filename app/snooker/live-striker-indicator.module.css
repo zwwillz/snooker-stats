@@ -1,0 +1,20 @@
+.strikerDot{
+  display:inline-block;
+  width:6px;
+  height:6px;
+  margin:0 3px;
+  border-radius:999px;
+  vertical-align:middle;
+  background:#16a36a;
+  box-shadow:0 0 0 0 rgba(22,163,106,.22);
+  animation:strikerPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes strikerPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(22,163,106,.16);opacity:.82}
+  50%{box-shadow:0 0 0 5px rgba(22,163,106,.08);opacity:1}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .strikerDot{animation:none}
+}
