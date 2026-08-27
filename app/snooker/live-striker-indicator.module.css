@@ -1,18 +1,33 @@
-.strikerDot{
+.scoreAnchor{
+  position:relative;
   display:inline-block;
-  width:6px;
-  height:6px;
-  margin:0 3px;
+}
+
+.strikerDot{
+  position:absolute;
+  top:50%;
+  width:5px;
+  height:5px;
+  margin:0;
   border-radius:999px;
-  vertical-align:middle;
-  background:#16a36a;
-  box-shadow:0 0 0 0 rgba(22,163,106,.22);
+  background:rgba(22,163,106,.46);
+  box-shadow:0 0 0 0 rgba(22,163,106,.12);
+  transform:translateY(-50%);
+  pointer-events:none;
   animation:strikerPulse 1.8s ease-in-out infinite;
 }
 
+.strikerDot[data-side="home"]{
+  right:-9px;
+}
+
+.strikerDot[data-side="away"]{
+  left:-9px;
+}
+
 @keyframes strikerPulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(22,163,106,.16);opacity:.82}
-  50%{box-shadow:0 0 0 5px rgba(22,163,106,.08);opacity:1}
+  0%,100%{box-shadow:0 0 0 0 rgba(22,163,106,.10);opacity:.55}
+  50%{box-shadow:0 0 0 5px rgba(22,163,106,.05);opacity:.72}
 }
 
 @media (prefers-reduced-motion: reduce){
