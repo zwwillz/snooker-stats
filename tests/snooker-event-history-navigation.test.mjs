@@ -16,7 +16,8 @@ test("historical season catalog is lightweight and independent from current-seas
   assert.doesNotMatch(calendar, /snooker_rounds|snooker_matches|snooker_frames|snooker_match_statistics/);
   assert.match(route, /loadSnookerEventCalendar/);
   assert.match(ui, /const \[calendarEvents, setCalendarEvents\]/);
-  assert.match(ui, /const seasonOptions = useMemo\(\(\) => \[\.\.\.new Set\(calendarEvents\.map/);
+  assert.match(ui, /const effectiveCalendarEvents = useMemo/);
+  assert.match(ui, /const seasonOptions = useMemo\(\(\) => \[\.\.\.new Set\(effectiveCalendarEvents\.map/);
   assert.match(ui, /const seasonCalendar = useMemo\(\(\) => \[\.\.\.snapshot\.calendar\]\.filter\(\(item\) => item\.season === initialCurrentSeason\)/);
 });
 
