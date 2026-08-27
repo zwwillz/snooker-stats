@@ -25,6 +25,28 @@
   right:calc(50% + 10px);
 }
 
+.frameWinnerScore{
+  position:relative;
+  color:var(--accent-strong);
+  font-weight:850;
+  z-index:0;
+}
+
+.frameWinnerScore::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:42px;
+  height:30px;
+  border:1px solid color-mix(in srgb,var(--accent) 16%,white);
+  border-radius:7px;
+  background:color-mix(in srgb,var(--accent) 11%,white);
+  transform:translate(-50%,-50%);
+  z-index:-1;
+  pointer-events:none;
+}
+
 @keyframes strikerPulse{
   0%,100%{box-shadow:0 0 0 0 rgba(22,163,106,.10);opacity:.55}
   50%{box-shadow:0 0 0 5px rgba(22,163,106,.05);opacity:.72}
