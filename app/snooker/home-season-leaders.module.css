@@ -4,10 +4,10 @@
 .action{width:100%;margin-top:10px;padding:11px;border:0;border-radius:12px;background:var(--accent-soft,#eaf6f1);color:var(--accent-strong,#075b40);font-size:10px;font-weight:850;cursor:pointer}.action span{font-size:13px;line-height:1}
 .loadingCard{min-height:218px}.loadingHeader{width:126px;height:24px;border-radius:8px;background:#f0f2f1}.loadingGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}.loadingGrid span{height:96px;border-radius:15px;background:linear-gradient(90deg,#f4f5f4 20%,#fafbfa 50%,#f4f5f4 80%);background-size:200% 100%;animation:leaderPulse 1.25s ease-in-out infinite}@keyframes leaderPulse{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-:global(main[data-theme] [role="status"]){order:99}
-:global(main[data-theme] :is(div,header,section):has(> small:first-child):has(h1,h2) > small:first-child){text-transform:uppercase}
-:global(main[data-theme] > div > header:first-child > div:last-child > span:first-child){display:none}
-:global(main[data-theme] > div > header:first-child > button:first-child > div > small){letter-spacing:.035em;white-space:nowrap}
+:global(main[data-theme]):has(.card) :global([role="status"]){order:99}
+:global(main[data-theme]):has(.card) :global(:is(div,header,section):has(> small:first-child):has(h1,h2) > small:first-child){text-transform:uppercase}
+:global(main[data-theme]):has(.card) > :global(div > header:first-child > div:last-child > span:first-child){display:none}
+:global(main[data-theme]):has(.card) > :global(div > header:first-child > button:first-child > div > small){letter-spacing:.035em;white-space:nowrap}
 
 @media (hover:hover){.item:hover{border-color:#dce2df;background:#f8f9f8}}
-@media (max-width:380px){.card{padding:16px}.item{min-height:126px;padding:11px}.copy{width:66%;min-height:102px}.value{font-size:25px}.portrait{width:42%;height:106px}.player strong{font-size:10px}:global(main[data-theme] > div > header:first-child > button:first-child > div > small){font-size:6.5px;letter-spacing:.015em}}
+@media (max-width:380px){.card{padding:16px}.item{min-height:126px;padding:11px}.copy{width:66%;min-height:102px}.value{font-size:25px}.portrait{width:42%;height:106px}.player strong{font-size:10px}:global(main[data-theme]):has(.card) > :global(div > header:first-child > button:first-child > div > small){font-size:6.5px;letter-spacing:.015em}}
