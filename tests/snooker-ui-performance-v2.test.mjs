@@ -39,7 +39,7 @@ test("home result winner is a small badge and compact names do not add English s
   assert.doesNotMatch(homeScore, /\.nameEn/);
 });
 
-test("match detail presents compact divided Match Season and H2H rows inside one matchup card", async () => {
+test("current-season match detail keeps Match Season and H2H rows while historical matches collapse to match stats", async () => {
   const [ui, css, insights, dbV2] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-ui-polish.module.css"),
@@ -49,7 +49,8 @@ test("match detail presents compact divided Match Season and H2H rows inside one
 
   assert.match(ui, /type MatchDataTab = "match" \| "season" \| "h2h"/);
   assert.match(ui, /MATCHUP DATA/);
-  assert.match(ui, /<h2>对阵数据<\/h2>/);
+  assert.match(ui, /isCurrentSeasonMatch \? "对阵数据" : "比赛统计"/);
+  assert.match(ui, /const hasMatchupData = isCurrentSeasonMatch \? hasStats \|\| hasSeason \|\| hasH2h : hasStats/);
   assert.match(ui, /<MatchupPlayer player=\{p1\}/);
   assert.match(ui, /<MatchupPlayer player=\{p2\}/);
   assert.match(ui, />本场<\/span><small>MATCH<\/small>/);
@@ -70,7 +71,7 @@ test("match detail presents compact divided Match Season and H2H rows inside one
   assert.match(insights, /\.h2hSummary\{[^}]*min-height:62px[^}]*border-bottom:1px solid #dfe5e2/);
   assert.match(insights, /\.h2hSide\{[^}]*padding:0 2px/);
   assert.match(insights, /\.h2hMiddle strong\{display:none\}/);
-  assert.match(insights, /content:"历史对阵"/);
+  assert.match(insights, /content:"总局分"/);
   assert.match(ui, /localizedTournamentLabel\(item\.tournament, snapshot\.calendar\)/);
   assert.doesNotMatch(ui, /styles\.detailInfoCard/);
   assert.match(dbV2, /snooker_player_season_stats\?select=/);
@@ -97,15 +98,17 @@ test("official world ranking is explicit, top three on home, euro-prefixed and a
   assert.match(ui, /eyebrow="Official World Ranking" title="中国球员"/);
 });
 
-test("event overview typography and public source wording are consistent", async () => {
+test("event overview typography and public copy are user-facing", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
 
   assert.match(ui, /eyebrow="TOURNAMENT OVERVIEW" title="赛事概览"/);
   assert.match(ui, /eyebrow="PRIZE MONEY" title="奖金分配"/);
   assert.match(ui, /className=\{polish\.championCard\}/);
-  assert.match(ui, /官方当前已公布/);
-  assert.match(ui, /官方比赛中心/);
-  assert.doesNotMatch(ui, /WST 当前/);
+  assert.match(ui, /CHAMPION · 本届冠军/);
+  assert.match(ui, /赛程陆续公布中/);
+  assert.match(ui, /更多赛程公布后将在这里更新/);
+  assert.doesNotMatch(ui, /官方当前已公布/);
+  assert.doesNotMatch(ui, /完赛后冻结保存到本站数据库/);
   assert.doesNotMatch(ui, /WST Match Centre/);
 });
 
@@ -117,17 +120,17 @@ test("calendar dates render identically across EdgeOne and browser time zones", 
   assert.doesNotMatch(ui, /new Date\(`\$\{item\.startDate\}T00:00:00\+08:00`\)/);
 });
 
-test("recent events keep original type/status positions and semantic colors", async () => {
+test("recent events use current-season raw events and avoid duplicating the featured event", async () => {
   const [ui, css] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-ui-polish.module.css"),
   ]);
 
-  assert.match(ui, /item\.id === selectedFeaturedSeries\?\.id/);
-  assert.doesNotMatch(ui, /item\.id !== selectedFeaturedSeries\?\.id/);
+  assert.match(ui, /const recentEvents = seasonCalendar/);
+  assert.match(ui, /const recentListEvents = featuredEventCard \? recentEvents\.filter\(\(item\) => item\.id !== featuredEventCard\.id\)/);
   assert.match(ui, /eventStatusText.*eventStatusClass\(item\.status\).*eventStatusLabel\(item\)/s);
   assert.match(ui, /<StatusPill status="type" label=\{item\.typeZh\} \/>/);
-  assert.match(ui, /eyebrow="RECENT TOURNAMENTS" title="近期赛事"/);
+  assert.match(ui, /eyebrow="RECENT TOURNAMENTS" title="近期赛事" action="本赛季"/);
   assert.match(ui, /actionClassName=\{`\$\{polish\.eventStatusText\} \$\{eventStatusClass\(nextEventCard\.status\)\}`\}/);
   assert.match(css, /\.eventStatusLive>span\{background:#eaf3ff!important;color:#2465a8!important\}/);
   assert.match(css, /\.eventStatusUpcoming>span\{background:#fff0e6!important;color:#bd5615!important\}/);
