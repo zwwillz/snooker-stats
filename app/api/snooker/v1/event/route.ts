@@ -3,10 +3,39 @@ import { eventSummary, getPlayerEventStats, SNOOKER_BUILD_MARK, SNOOKER_FOUNDATI
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { loadSnookerEventDetail } from "@/lib/snooker/database-public";
 import { loadSnookerEventDetailComplete } from "@/lib/snooker/event-detail-complete";
+import { loadSnookerEventDetailFresh } from "@/lib/snooker/event-detail-fresh";
 import { refreshSingleEventLive } from "@/lib/snooker/live-read-through";
+import type { SnookerEvent } from "@/lib/snooker/domain";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+function mergeFreshSchedule(fresh: SnookerEvent, enriched: SnookerEvent | null): SnookerEvent {
+  if (!enriched) return fresh;
+  const enrichedMatches = new Map(
+    enriched.rounds.flatMap((round) => round.matches).map((match) => [match.id, match] as const),
+  );
+  return {
+    ...enriched,
+    ...fresh,
+    ...(enriched.prizes?.length ? { prizes: enriched.prizes } : {}),
+    ...(enriched.previousChampionZh ? { previousChampionZh: enriched.previousChampionZh } : {}),
+    ...(enriched.previousChampionYear ? { previousChampionYear: enriched.previousChampionYear } : {}),
+    rounds: fresh.rounds.map((round) => ({
+      ...round,
+      matches: round.matches.map((match) => {
+        const enrichedMatch = enrichedMatches.get(match.id);
+        if (!enrichedMatch) return match;
+        return {
+          ...enrichedMatch,
+          ...match,
+          ...(enrichedMatch.statistics ? { statistics: enrichedMatch.statistics } : {}),
+          ...(enrichedMatch.headToHead ? { headToHead: enrichedMatch.headToHead } : {}),
+        };
+      }),
+    })),
+  };
+}
 
 export async function GET(request: NextRequest) {
   const database = await loadSnookerDatabaseViewV2();
@@ -15,23 +44,26 @@ export async function GET(request: NextRequest) {
   const cachedEvent = database.eventDetails.find((item) => item.slug === slug)
     ?? (snapshot.event.slug === slug ? snapshot.event : null);
 
-  let detailedEvent = null;
-  try {
-    detailedEvent = await loadSnookerEventDetailComplete(slug);
-  } catch (error) {
-    console.error("[snooker-event] complete event detail failed; falling back to cached/base detail", error);
-  }
+  const [freshResult, detailedResult] = await Promise.allSettled([
+    loadSnookerEventDetailFresh(slug),
+    loadSnookerEventDetailComplete(slug),
+  ]);
+  const freshEvent = freshResult.status === "fulfilled" ? freshResult.value : null;
+  const detailedEvent = detailedResult.status === "fulfilled" ? detailedResult.value : null;
+  if (freshResult.status === "rejected") console.error("[snooker-event] fresh event detail failed", freshResult.reason);
+  if (detailedResult.status === "rejected") console.error("[snooker-event] enriched event detail failed", detailedResult.reason);
 
-  const baseEvent = detailedEvent
-    ?? cachedEvent
-    ?? await loadSnookerEventDetail(slug);
+  const baseEvent = freshEvent
+    ? mergeFreshSchedule(freshEvent, detailedEvent)
+    : detailedEvent
+      ?? cachedEvent
+      ?? await loadSnookerEventDetail(slug);
   if (!baseEvent) return NextResponse.json({ ok: false, error: "EVENT_NOT_FOUND" }, { status: 404 });
 
   const event = await refreshSingleEventLive(baseEvent);
   const playerStats = snapshot.players
     .map((player) => getPlayerEventStats(player.id, event))
     .filter(Boolean);
-  const realtime = event.rounds.some((round) => round.matches.some((match) => match.status === "live" || match.status === "session-break"));
 
   return NextResponse.json({
     ok: true,
