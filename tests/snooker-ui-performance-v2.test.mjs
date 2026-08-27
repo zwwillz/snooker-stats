@@ -72,7 +72,7 @@ test("current-season match detail keeps Match Season and H2H rows while historic
   assert.match(insights, /\.h2hSide\{[^}]*padding:0 2px/);
   assert.match(insights, /\.h2hMiddle strong\{display:none\}/);
   assert.match(insights, /content:"总局分"/);
-  assert.match(ui, /localizedTournamentLabel\(item\.tournament, snapshot\.calendar\)/);
+  assert.match(ui, /localizedTournamentLabel\(item\.tournament, effectiveCalendarEvents\)/);
   assert.doesNotMatch(ui, /styles\.detailInfoCard/);
   assert.match(dbV2, /snooker_player_season_stats\?select=/);
   assert.match(dbV2, /season_start_year=eq\.\$\{Number\(base\.currentSeason\.slice\(0, 4\)\)\}/);

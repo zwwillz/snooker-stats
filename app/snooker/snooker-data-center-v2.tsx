@@ -21,7 +21,14 @@ import { PlayerDirectoryContent, type PlayerFilter } from "./players/player-dire
 import PlayerDetailInline from "./players/player-detail-inline";
 import { prefetchPlayerDetail, prefetchPlayerExperience } from "./players/player-detail-client";
 import { eventDetailTypeLabel } from "@/lib/snooker/taxonomy";
-import { matchDisplayStatus, mergeEventSnapshotsMonotonic, selectHomepageHeadlineMatches } from "@/lib/snooker/live-client";
+import {
+  COMPLETED_PROTECTION_MS,
+  UPCOMING_PREHEAT_MS,
+  matchDisplayStatus,
+  mergeEventSnapshotsMonotonic,
+  resolveCompletedAt,
+  selectHomepageHeadlineMatches,
+} from "@/lib/snooker/live-client";
 import styles from "./snooker-data-center.module.css";
 import priority from "./snooker-priority.module.css";
 import insight from "./snooker-insights.module.css";
@@ -550,10 +557,9 @@ export default function SnookerDataCenterV2({
   const shouldPollDashboard = databaseEvents.some((event) => allMatches(event).some((match) => {
     if (match.status === "live" || match.status === "session-break") return true;
     const scheduled = match.scheduledAt ? Date.parse(match.scheduledAt) : 0;
-    if (match.status === "upcoming" && scheduled && scheduled >= pollReferenceTime && scheduled - pollReferenceTime <= 6 * 60 * 60 * 1000) return true;
-    const completed = match.completedDetectedAt || match.sourceUpdatedAt;
-    const completedAt = completed ? Date.parse(completed) : 0;
-    return (match.status === "completed" || match.status === "walkover") && completedAt > 0 && pollReferenceTime - completedAt <= 60 * 60 * 1000;
+    if (match.status === "upcoming" && scheduled && scheduled >= pollReferenceTime && scheduled - pollReferenceTime <= UPCOMING_PREHEAT_MS) return true;
+    const completedAt = resolveCompletedAt(match, pollReferenceTime);
+    return (match.status === "completed" || match.status === "walkover") && completedAt > 0 && pollReferenceTime - completedAt <= COMPLETED_PROTECTION_MS;
   }));
 
   const refresh = useCallback(async () => {

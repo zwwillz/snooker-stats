@@ -8,6 +8,7 @@ import { loadSnookerEventDetailComplete } from "@/lib/snooker/event-detail-compl
 import { refreshSingleEventLive, refreshSnookerDatabaseViewLive } from "@/lib/snooker/live-read-through";
 import { CURRENT_RANKING_KEYS, loadSnookerRankingHub, type SnookerCurrentRankingKey, type SnookerRankingSection } from "@/lib/snooker/ranking-hub";
 import { loadPlayerCompare } from "@/lib/snooker/player-compare";
+import { buildHomeLeaders } from "@/lib/snooker/home-leaders";
 import { snookerCacheLabel, SNOOKER_CACHE_SECONDS } from "@/lib/snooker/cache-policy";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
   const focusedEvent = focusedBase ? await refreshSingleEventLive(focusedBase) : database.snapshot.event;
   const focusedEvents = [focusedEvent];
   const snapshot = { ...database.snapshot, event: focusedEvent };
+  const homeLeaders = buildHomeLeaders(snapshot.players, database.currentSeason);
   const teaserPlayers = [...snapshot.players]
     .filter((player) => player.isCurrentTour ?? player.currentRank !== null)
     .sort((a, b) => (a.currentRank ?? 9999) - (b.currentRank ?? 9999) || a.nameEn.localeCompare(b.nameEn))
@@ -76,7 +78,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
         initialRankingSection={initialDataSection ? rankingSection(query.group) : "current"}
         initialPlayerCompare={initialPlayerCompare}
       />
-      <HomeSeasonLeaders />
+      <HomeSeasonLeaders initialPayload={homeLeaders} />
       <LiveStrikerIndicator />
     </>
   );

@@ -40,10 +40,13 @@ test("homepage headline selection is deterministic and retains recent results un
     read("lib/snooker/live-client.ts"),
   ]);
   assert.match(liveClient, /selectHomepageHeadlineMatch/);
-  assert.match(liveClient, /60 \* 60 \* 1000/);
+  assert.match(liveClient, /COMPLETED_PROTECTION_MS = 45 \* 60 \* 1000/);
+  assert.match(liveClient, /UPCOMING_PREHEAT_MS = 3 \* 60 \* 60 \* 1000/);
+  assert.match(liveClient, /UPCOMING_FALLBACK_MS = 3 \* 24 \* 60 \* 60 \* 1000/);
+  assert.match(liveClient, /resolveCompletedAt/);
   assert.match(liveClient, /roundPriority/);
   assert.match(liveClient, /chinaPriority/);
-  assert.match(liveClient, /liveExists/);
+  assert.match(liveClient, /const live = candidates\.filter/);
   assert.match(ui, /selectHomepageHeadlineMatches\(databaseEvents, players\)/);
 });
 

@@ -2,36 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import type { SnookerTechnicalMetricKey } from "@/lib/snooker/technical-hub";
+import type { HomeLeaderItem, HomeLeaderMetricKey, HomeLeadersPayload } from "@/lib/snooker/home-leaders";
 import styles from "./home-season-leaders.module.css";
 
-type LeaderUnit = "count" | "percent" | "seconds" | "points";
-
-type HomeLeader = {
-  key: SnookerTechnicalMetricKey;
-  labelZh: string;
-  labelEn: string;
-  value: number;
-  unit: LeaderUnit;
-  player: {
-    id: string;
-    slug: string;
-    nameZh: string;
-    nameEn: string;
-    avatarUrl: string | null;
-    currentRank: number | null;
-  };
-};
-
-type HomeLeadersResponse = {
-  ok?: boolean;
-  seasonLabel?: string;
-  leaders?: HomeLeader[];
-};
-
 const navLabels = ["首页", "赛事", "球员", "数据"];
-let homeLeadersCache: HomeLeadersResponse | null = null;
-let homeLeadersInflight: Promise<HomeLeadersResponse | null> | null = null;
 let technicalWarmInflight: Promise<void> | null = null;
 
 function isMainNav(nav: Element) {
@@ -80,21 +54,6 @@ function applyHomepageEnglishLabels(content: HTMLElement | null) {
   });
 }
 
-async function loadHomeLeadersClient() {
-  if (homeLeadersCache) return homeLeadersCache;
-  if (homeLeadersInflight) return homeLeadersInflight;
-  homeLeadersInflight = fetch("/api/snooker/v1/home-leaders", { headers: { Accept: "application/json" } })
-    .then(async (response) => {
-      if (!response.ok) return null;
-      const data = await response.json() as HomeLeadersResponse;
-      if (data.ok && data.leaders && data.leaders.length >= 4) homeLeadersCache = data;
-      return data.ok ? data : null;
-    })
-    .catch(() => null)
-    .finally(() => { homeLeadersInflight = null; });
-  return homeLeadersInflight;
-}
-
 function warmTechnicalHub() {
   if (technicalWarmInflight) return technicalWarmInflight;
   technicalWarmInflight = fetch("/api/snooker/v1/technical", { headers: { Accept: "application/json" } })
@@ -104,28 +63,23 @@ function warmTechnicalHub() {
   return technicalWarmInflight;
 }
 
-function formatValue(leader: HomeLeader) {
+function formatValue(leader: HomeLeaderItem) {
+  if (leader.value === null) return "—";
   if (leader.unit === "percent") return `${leader.value.toFixed(1)}%`;
   if (leader.unit === "seconds") return `${leader.value.toFixed(1)}s`;
-  if (leader.unit === "points") return Math.round(leader.value).toLocaleString("en-GB");
   return Math.round(leader.value).toLocaleString("en-GB");
 }
 
-function captionFor(key: SnookerTechnicalMetricKey) {
+function captionFor(key: HomeLeaderMetricKey) {
   switch (key) {
+    case "maximums": return "本赛季147";
     case "centuries": return "本赛季破百";
     case "win_rate": return "比赛胜率";
-    case "matches_won": return "本赛季胜场";
-    case "maximums": return "本赛季147";
-    case "highest_break": return "本赛季最高单杆";
-    case "points_scored": return "本赛季总得分";
-    case "fifties": return "本赛季50+";
-    case "average_break": return "本赛季平均单杆";
-    default: return "本赛季数据";
+    case "shot_time": return "平均出杆时间";
   }
 }
 
-function openTechnical(key: SnookerTechnicalMetricKey) {
+function openTechnical(key: HomeLeaderMetricKey) {
   void warmTechnicalHub();
   const nav = findMainNav();
   const dataButton = Array.from(nav?.querySelectorAll<HTMLButtonElement>(":scope > button") ?? [])
@@ -151,11 +105,9 @@ function openTechnical(key: SnookerTechnicalMetricKey) {
   dataButton.click();
 }
 
-export default function HomeSeasonLeaders() {
+export default function HomeSeasonLeaders({ initialPayload }: { initialPayload: HomeLeadersPayload }) {
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const [homeActive, setHomeActive] = useState(false);
-  const [payload, setPayload] = useState<HomeLeadersResponse | null>(() => homeLeadersCache);
-  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     const sync = () => {
@@ -187,55 +139,40 @@ export default function HomeSeasonLeaders() {
   }, []);
 
   useEffect(() => {
-    if (!homeActive || payload) return;
-    let cancelled = false;
-    void warmTechnicalHub();
-    void loadHomeLeadersClient().then((data) => {
-      if (cancelled) return;
-      if (data?.ok && data.leaders && data.leaders.length >= 4) {
-        setPayload(data);
-        return;
-      }
-      window.setTimeout(() => {
-        if (!cancelled) setRetryKey((value) => value + 1);
-      }, Math.min(2500 + retryKey * 1000, 8000));
-    });
-    return () => { cancelled = true; };
-  }, [homeActive, payload, retryKey]);
+    if (!homeActive) return;
+    const timer = window.setTimeout(() => { void warmTechnicalHub(); }, 800);
+    return () => window.clearTimeout(timer);
+  }, [homeActive]);
 
   if (!portalTarget || !homeActive) return null;
-
-  if (!payload) {
-    return createPortal(
-      <section className={`${styles.card} ${styles.loadingCard}`} aria-label="加载本赛季数据榜">
-        <div className={styles.loadingHeader} />
-        <div className={styles.loadingGrid}>{[0, 1, 2, 3].map((index) => <span key={index} />)}</div>
-      </section>,
-      portalTarget,
-    );
-  }
 
   return createPortal(
     <section className={styles.card} aria-label="本赛季数据榜">
       <div className={styles.header}>
         <div><small>SEASON LEADERS</small><h2>本赛季数据榜</h2></div>
-        <span>{payload.seasonLabel ?? "当前赛季"}</span>
+        <span>{initialPayload.seasonLabel || "当前赛季"}</span>
       </div>
       <div className={styles.grid}>
-        {payload.leaders!.slice(0, 4).map((leader) => <button type="button" className={styles.item} onClick={() => openTechnical(leader.key)} key={leader.key}>
+        {initialPayload.leaders.map((leader) => <button
+          type="button"
+          className={styles.item}
+          onClick={() => leader.available && openTechnical(leader.key)}
+          disabled={!leader.available}
+          key={leader.key}
+        >
           <div className={styles.copy}>
             <span className={styles.metric}>{leader.labelZh}</span>
             <div className={styles.player}>
-              <strong>{leader.player.nameZh}</strong>
-              <small>{leader.player.nameEn}</small>
+              <strong>{leader.player?.nameZh ?? "暂无数据"}</strong>
+              <small>{leader.player?.nameEn ?? leader.labelEn}</small>
             </div>
             <b className={styles.value}>{formatValue(leader)}</b>
             <small className={styles.caption}>{captionFor(leader.key)}</small>
           </div>
-          {leader.player.avatarUrl ? <img className={styles.portrait} src={leader.player.avatarUrl} alt="" loading="lazy" decoding="async" /> : null}
+          {leader.player?.avatarUrl ? <img className={styles.portrait} src={leader.player.avatarUrl} alt="" loading="lazy" decoding="async" /> : null}
         </button>)}
       </div>
-      <button className={styles.action} type="button" onClick={() => openTechnical("centuries")}>查看完整数据榜 <span>›</span></button>
+      <button className={styles.action} type="button" onClick={() => openTechnical("centuries")}>查看完整数据榜</button>
     </section>,
     portalTarget,
   );
