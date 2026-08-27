@@ -126,7 +126,7 @@ export async function loadSnookerEventDetailComplete(slug: string): Promise<Snoo
   const [metaRows, prizeRows, playerRows, statRows, h2hRows] = await Promise.all([
     rest<DbEventMeta[]>(`snooker_events?select=id,previous_champion_name_zh,previous_champion_year,expected_match_count&id=eq.${eventUuid}&limit=1`),
     rest<DbPrize[]>(`snooker_event_prizes?select=event_id,prize_key,label_zh,label_en,amount,currency,sort_order,is_total&event_id=eq.${eventUuid}&order=sort_order.asc`),
-    rest<DbPlayerKey[]>("snooker_players?select=id,slug"),
+    rest<DbPlayerKey[]>("snooker_public_players?select=id,slug"),
     restInBatches<DbMatchStat>(
       matchUuids,
       (batch) => `snooker_match_statistics?select=match_id,player_id,total_points,average_shot_time_seconds,pot_rate,breaks_50_plus,breaks_100_plus,highest_break,average_break,shots_taken,time_on_table_pct&match_id=in.${inFilter(batch)}`,
