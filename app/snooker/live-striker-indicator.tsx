@@ -17,6 +17,7 @@ type LivePayload = {
 };
 
 const DOT_ATTR = "data-live-striker-dot";
+const WINNER_ATTR = "data-frame-winner";
 
 function visibleMatchIdentity() {
   const hero = document.querySelector<HTMLElement>(`.${styles.matchHero}`);
@@ -53,6 +54,62 @@ function clearDot() {
   document.querySelectorAll<HTMLElement>(`[${DOT_ATTR}]`).forEach((node) => {
     node.parentElement?.classList.remove(dotStyles.scoreAnchor);
     node.remove();
+  });
+}
+
+function clearWinnerHighlights() {
+  document.querySelectorAll<HTMLElement>(`[${WINNER_ATTR}]`).forEach((node) => {
+    node.classList.remove(dotStyles.frameWinnerScore);
+    node.removeAttribute(WINNER_ATTR);
+  });
+}
+
+function applyWinnerHighlights() {
+  const hero = document.querySelector<HTMLElement>(`.${styles.matchHero}`);
+  const frameSection = document.querySelector<HTMLElement>(`.${styles.frameSection}`);
+  if (!hero || !frameSection) {
+    clearWinnerHighlights();
+    return;
+  }
+
+  const overallScore = Array.from(hero.querySelectorAll<HTMLElement>(`.${styles.bigScore} > strong > span`));
+  if (overallScore.length < 2) {
+    clearWinnerHighlights();
+    return;
+  }
+
+  const score1 = Number(overallScore[0].textContent?.trim());
+  const score2 = Number(overallScore[1].textContent?.trim());
+  if (!Number.isFinite(score1) || !Number.isFinite(score2)) {
+    clearWinnerHighlights();
+    return;
+  }
+
+  const completedFrameCount = score1 + score2;
+  const winners = new Set<HTMLElement>();
+  const rows = Array.from(frameSection.querySelectorAll<HTMLElement>(`.${styles.frameRow}`));
+
+  for (const row of rows) {
+    const frameNo = Number(row.querySelector("b")?.textContent?.trim());
+    const frameScores = Array.from(row.querySelectorAll<HTMLElement>("strong"));
+    if (!Number.isFinite(frameNo) || frameNo > completedFrameCount || frameScores.length < 2) continue;
+
+    const left = Number(frameScores[0].textContent?.trim());
+    const right = Number(frameScores[1].textContent?.trim());
+    if (!Number.isFinite(left) || !Number.isFinite(right) || left === right) continue;
+    winners.add(left > right ? frameScores[0] : frameScores[1]);
+  }
+
+  document.querySelectorAll<HTMLElement>(`[${WINNER_ATTR}]`).forEach((node) => {
+    if (!winners.has(node)) {
+      node.classList.remove(dotStyles.frameWinnerScore);
+      node.removeAttribute(WINNER_ATTR);
+    }
+  });
+
+  winners.forEach((node) => {
+    node.classList.add(dotStyles.frameWinnerScore);
+    node.setAttribute(WINNER_ATTR, "true");
   });
 }
 
@@ -115,6 +172,7 @@ export default function LiveStrikerIndicator() {
     };
 
     const syncDom = () => {
+      applyWinnerHighlights();
       const visible = visibleMatchIdentity();
       if (!visible) {
         clearDot();
@@ -124,13 +182,17 @@ export default function LiveStrikerIndicator() {
       applyDot(latest);
     };
 
+    applyWinnerHighlights();
     void fetchLive();
     const dataTimer = window.setInterval(() => {
       if (!document.hidden && visibleMatchIdentity()) void fetchLive();
     }, 30_000);
     const domTimer = window.setInterval(syncDom, 1_000);
     const onVisibility = () => {
-      if (!document.hidden && visibleMatchIdentity()) void fetchLive();
+      if (!document.hidden) {
+        applyWinnerHighlights();
+        if (visibleMatchIdentity()) void fetchLive();
+      }
     };
     document.addEventListener("visibilitychange", onVisibility);
 
@@ -140,6 +202,7 @@ export default function LiveStrikerIndicator() {
       window.clearInterval(domTimer);
       document.removeEventListener("visibilitychange", onVisibility);
       clearDot();
+      clearWinnerHighlights();
     };
   }, []);
 
