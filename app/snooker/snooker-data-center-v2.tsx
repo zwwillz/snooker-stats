@@ -205,7 +205,8 @@ function scheduledTime(match: SnookerMatch) {
 }
 
 function orderedScheduleRounds(event: SnookerEvent) {
-  const completedEvent = event.status === "completed" || allMatches(event).every((match) => match.status === "completed" || match.status === "walkover");
+  const final = finalOf(event);
+  const completedEvent = event.status === "completed" || final?.status === "completed" || final?.status === "walkover";
   const rounds = event.rounds.map((round) => ({
     ...round,
     matches: [...round.matches].sort((a, b) => {
@@ -234,6 +235,36 @@ function orderedScheduleRounds(event: SnookerEvent) {
     }
     return a.labelZh.localeCompare(b.labelZh, "zh-CN");
   });
+}
+
+function scheduleFocusMatch(event: SnookerEvent, now = Date.now()) {
+  const matches = allMatches(event);
+  const ascending = (a: SnookerMatch, b: SnookerMatch) => {
+    const aTime = scheduledTime(a) ?? Number.POSITIVE_INFINITY;
+    const bTime = scheduledTime(b) ?? Number.POSITIVE_INFINITY;
+    return aTime - bTime || a.matchNo - b.matchNo || a.id.localeCompare(b.id);
+  };
+
+  const live = matches
+    .filter((match) => match.status === "live" || match.status === "session-break")
+    .sort(ascending);
+  if (live.length) return live[0];
+
+  const upcoming = matches.filter((match) => match.status === "upcoming").sort(ascending);
+  const future = upcoming.filter((match) => {
+    const time = scheduledTime(match);
+    return time !== null && time >= now;
+  });
+  if (future.length) return future[0];
+  if (upcoming.length) return upcoming[0];
+
+  return matches
+    .filter((match) => match.status === "completed" || match.status === "walkover")
+    .sort((a, b) => {
+      const aTime = scheduledTime(a) ?? Number.NEGATIVE_INFINITY;
+      const bTime = scheduledTime(b) ?? Number.NEGATIVE_INFINITY;
+      return bTime - aTime || b.matchNo - a.matchNo || b.id.localeCompare(a.id);
+    })[0];
 }
 
 function finalOf(event?: SnookerEvent) {
@@ -332,7 +363,7 @@ function MatchListRow({ match, players, onOpen }: { match: SnookerMatch; players
   if (!p1 || !p2) return null;
   const score = match.status === "walkover" ? "W : O" : `${match.score1 ?? "-"} : ${match.score2 ?? "-"}`;
   return (
-    <button className={`${styles.matchRow} ${priority.horizontalMatchRow}`} onClick={onOpen}>
+    <button className={`${styles.matchRow} ${priority.horizontalMatchRow}`} data-schedule-match-id={match.id} onClick={onOpen}>
       <div className={styles.matchRowMeta}>
         <span>{match.timeLabelZh ?? match.roundLabelZh}{match.matchNo ? ` · #${match.matchNo}` : ""}</span>
         <span>{bestOfLabel(match.bestOf)}</span>
@@ -453,6 +484,7 @@ export default function SnookerDataCenterV2({
   const playerDirectoryScrollY = useRef(0);
   const eventReturnState = useRef<{ view: MainView; mode: EventListMode; season: string; scrollY: number } | null>(null);
   const eventDetailReturn = useRef<{ slug: string; tab: EventTab; scrollY: number } | null>(null);
+  const scheduleAutoFocusedEvents = useRef(new Set<string>());
 
   const ensureCalendar = useCallback(async () => {
     if (calendarLoaded || calendarLoading) return;
@@ -553,6 +585,24 @@ export default function SnookerDataCenterV2({
     }))
     .sort((a, b) => (a.currentRank ?? 9999) - (b.currentRank ?? 9999) || a.nameEn.localeCompare(b.nameEn)), [snapshot.players]);
   const eventBySlug = useMemo(() => new Map(databaseEvents.map((event) => [event.slug, event])), [databaseEvents]);
+
+  useEffect(() => {
+    if (detail?.type !== "event" || detail.tab !== "schedule") return;
+    const event = eventBySlug.get(detail.slug);
+    if (!event || event.status !== "live" || scheduleAutoFocusedEvents.current.has(event.id)) return;
+    const target = scheduleFocusMatch(event);
+    if (!target) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const element = Array.from(document.querySelectorAll<HTMLElement>("[data-schedule-match-id]"))
+        .find((node) => node.dataset.scheduleMatchId === target.id);
+      if (!element) return;
+      scheduleAutoFocusedEvents.current.add(event.id);
+      element.scrollIntoView({ block: "center", behavior: "auto" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [detail, eventBySlug]);
   const pollReferenceTime = sourceHealth?.fetchedAt ? Date.parse(sourceHealth.fetchedAt) : 0;
   const shouldPollDashboard = databaseEvents.some((event) => allMatches(event).some((match) => {
     if (match.status === "live" || match.status === "session-break") return true;
