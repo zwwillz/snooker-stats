@@ -376,7 +376,7 @@ function MatchListRow({ match, players, onOpen }: { match: SnookerMatch; players
         </div>
         <b className={match.status === "live" ? priority.liveScoreText : ""}>{score}</b>
         <div className={`${polish.matchPlayerCell} ${polish.matchPlayerRight}`}>
-          <span>{match.winnerId === p2.id ? <em className={polish.matchWin}>胜</em> : null}{p2.shortNameZh}{match.status === "walkover" && match.winnerId && match.winnerId !== p2.id ? <em className={polish.withdrawnBadge}>退赛</em> : null}</span>
+          <span>{match.winnerId === p2.id ? <em className={polish.matchWin}>胜</em> : null}{p2.shortNameZh}{match.status === "walkover" && match.winnerId && match.winnerId !== p2.id ? <span className={polish.withdrawnBadge}>退赛</span> : null}</span>
           <PlayerAvatar player={p2} size="sm" />
         </div>
       </div>
@@ -731,7 +731,7 @@ export default function SnookerDataCenterV2({
   const ensureEventDetail = async (slug: string) => {
     if (loadingEventSlug === slug) return;
     const existing = eventBySlug.get(slug);
-    if (existing && !allMatches(existing).some((match) => match.status === "live" || match.status === "session-break")) return;
+    if (existing && !existing.detailPartial && !allMatches(existing).some((match) => match.status === "live" || match.status === "session-break")) return;
     setLoadingEventSlug(slug);
     setEventLoadError((current) => current === slug ? null : current);
     try {
@@ -779,6 +779,7 @@ export default function SnookerDataCenterV2({
     } else {
       eventDetailReturn.current = null;
     }
+    void ensureEventDetail(eventSlug);
     setMatchDataTab("match");
     setDetail({ type: "match", matchId, eventSlug });
     window.scrollTo({ top: 0, behavior: "auto" });
