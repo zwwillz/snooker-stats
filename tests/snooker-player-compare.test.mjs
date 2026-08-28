@@ -66,7 +66,7 @@ test("player compare entry cards support optional preload but homepage defers th
   const rootPage = await read("app/page.tsx");
   assert.match(teaser, /initialData\?: PlayerCompareSnapshot/);
   assert.match(teaser, /actionClassName\?: string/);
-  assert.match(teaser, /fetch\(buildCompareApiUrl/);
+  assert.match(teaser, /\/api\/snooker\/v1\/player-compare\?/);
   assert.match(rootPage, /initialPlayerCompare={null}/);
   assert.doesNotMatch(rootPage, /loadPlayerCompare/);
 });
