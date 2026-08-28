@@ -6,8 +6,6 @@ import type { HomeLeaderItem, HomeLeaderMetricKey, HomeLeadersPayload } from "@/
 import { findHomepagePortalTarget, findMainNav } from "./home-portal-target";
 import styles from "./home-season-leaders.module.css";
 
-let technicalWarmInflight: Promise<void> | null = null;
-
 function applyHeaderPolish() {
   const shellHeader = document.querySelector<HTMLElement>("main[data-theme] > div > header:first-child");
   if (!shellHeader) return;
@@ -32,15 +30,6 @@ function applyHomepageEnglishLabels(content: HTMLElement | null) {
   });
 }
 
-function warmTechnicalHub() {
-  if (technicalWarmInflight) return technicalWarmInflight;
-  technicalWarmInflight = fetch("/api/snooker/v1/technical", { headers: { Accept: "application/json" } })
-    .then(() => undefined)
-    .catch(() => undefined)
-    .finally(() => { technicalWarmInflight = null; });
-  return technicalWarmInflight;
-}
-
 function formatValue(leader: HomeLeaderItem) {
   if (leader.value === null) return "—";
   if (leader.unit === "percent") return `${leader.value.toFixed(1)}%`;
@@ -58,7 +47,6 @@ function captionFor(key: HomeLeaderMetricKey) {
 }
 
 function openTechnical(key: HomeLeaderMetricKey) {
-  void warmTechnicalHub();
   const nav = findMainNav();
   const dataButton = Array.from(nav?.querySelectorAll<HTMLButtonElement>(":scope > button") ?? [])
     .find((button) => button.querySelector("b")?.textContent?.trim() === "数据");
@@ -106,12 +94,6 @@ export default function HomeSeasonLeaders({ initialPayload }: { initialPayload: 
       window.removeEventListener("popstate", sync);
     };
   }, []);
-
-  useEffect(() => {
-    if (!portalTarget) return;
-    const timer = window.setTimeout(() => { void warmTechnicalHub(); }, 800);
-    return () => window.clearTimeout(timer);
-  }, [portalTarget]);
 
   if (!portalTarget) return null;
 
