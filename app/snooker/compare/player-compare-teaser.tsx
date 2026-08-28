@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { PlayerCompareSnapshot } from "@/lib/snooker/player-compare";
 import styles from "./player-compare-teaser.module.css";
@@ -37,19 +37,32 @@ export default function PlayerCompareTeaser({
   headerClassName: string;
 }) {
   const router = useRouter();
+  const cardRef = useRef<HTMLElement | null>(null);
   const pair = useMemo(() => players.filter((player) => player.isCurrentTour).slice(0, 2), [players]);
   const initialMatchesPair = Boolean(initialData && pair.length === 2 && initialData.players[0].slug === pair[0].slug && initialData.players[1].slug === pair[1].slug);
   const [data, setData] = useState<PlayerCompareSnapshot | null>(() => initialMatchesPair ? initialData : null);
+  const [shouldLoad, setShouldLoad] = useState(initialMatchesPair);
   const compareHref = pair.length === 2
     ? `/snooker/compare?player1=${encodeURIComponent(pair[0].slug)}&player2=${encodeURIComponent(pair[1].slug)}${data?.season ? `&season=${encodeURIComponent(data.season)}` : ""}`
     : "/snooker/compare";
 
   useEffect(() => {
-    if (pair.length === 2) router.prefetch(compareHref);
-  }, [compareHref, pair.length, router]);
+    if (variant !== "home" || shouldLoad || !cardRef.current || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      setShouldLoad(true);
+      observer.disconnect();
+    }, { rootMargin: "120px 0px" });
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, [shouldLoad, variant]);
 
   useEffect(() => {
-    if (pair.length < 2) return;
+    if (variant === "data" && !shouldLoad) setShouldLoad(true);
+  }, [shouldLoad, variant]);
+
+  useEffect(() => {
+    if (!shouldLoad || pair.length < 2) return;
     if (initialMatchesPair && initialData) return;
     const controller = new AbortController();
     const params = new URLSearchParams({ player1: pair[0].slug, player2: pair[1].slug });
@@ -65,11 +78,15 @@ export default function PlayerCompareTeaser({
       .then((compare) => { if (compare) setData(compare); })
       .catch(() => null);
     return () => controller.abort();
-  }, [initialData, initialMatchesPair, pair]);
+  }, [initialData, initialMatchesPair, pair, shouldLoad]);
 
   if (pair.length < 2) return null;
   const [left, right] = pair;
   const [leftStats, rightStats] = data?.seasonStats ?? [null, null];
+  const warmCompare = () => {
+    if (!shouldLoad) setShouldLoad(true);
+    router.prefetch(compareHref);
+  };
   const rememberReturn = () => {
     try {
       const returnUrl = new URL(window.location.href);
@@ -81,7 +98,7 @@ export default function PlayerCompareTeaser({
     }
   };
 
-  return <section className={`${styles.card} ${variant === "data" ? styles.dataVariant : ""}`}>
+  return <section ref={cardRef} className={`${styles.card} ${variant === "data" ? styles.dataVariant : ""}`}>
     <div className={styles.headerFrame}>
       <header className={`${styles.header} ${headerClassName}`}>
         <div><small>PLAYER COMPARE</small><h2>球员对比</h2><p>{variant === "data" ? "赛季表现、职业生涯、直接交手与荣誉，一页比较。" : "谁的赛季表现更强？"}</p></div>
@@ -103,10 +120,10 @@ export default function PlayerCompareTeaser({
       <Link
         className={actionClassName ? `${styles.actionReset} ${actionClassName}` : styles.action}
         href={compareHref}
-        prefetch={true}
-        onPointerEnter={() => router.prefetch(compareHref)}
-        onPointerDown={() => router.prefetch(compareHref)}
-        onFocus={() => router.prefetch(compareHref)}
+        prefetch={false}
+        onPointerEnter={warmCompare}
+        onPointerDown={warmCompare}
+        onFocus={warmCompare}
         onClick={rememberReturn}
       >
         {variant === "data" ? <>开始球员对比 <span>›</span></> : "查看完整球员对比"}
