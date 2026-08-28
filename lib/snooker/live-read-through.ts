@@ -81,12 +81,28 @@ async function restNoStoreInBatches<T>(ids: string[], buildPath: (batch: string[
   return results.flatMap((result) => result.status === "fulfilled" ? result.value : []);
 }
 
+function isFrameEndedMidSessionInterval(row: DbLiveMatch, previous: SnookerMatch) {
+  const sourceStatus = String(row.source_status ?? "").toLowerCase();
+  const sourceMeta = String(row.source_status_meta ?? "").toLowerCase();
+  const homeFrames = Number(row.score1 ?? previous.score1 ?? 0);
+  const awayFrames = Number(row.score2 ?? previous.score2 ?? 0);
+  const completedFrames = homeFrames + awayFrames;
+  const winTarget = Math.floor(previous.bestOf / 2) + 1;
+  return sourceStatus === "live"
+    && sourceMeta === "frame_has_ended"
+    && previous.bestOf >= 9
+    && completedFrames === 4
+    && Math.max(homeFrames, awayFrames) < winTarget;
+}
+
 function normalizedLiveStatus(row: DbLiveMatch, previous: SnookerMatch): SnookerMatchStatus {
   const canonical = row.status;
   const sourceStatus = String(row.source_status ?? "").toLowerCase();
   const sourceMeta = String(row.source_status_meta ?? "").toLowerCase();
   if (canonical === "completed" || canonical === "walkover") return canonical;
+  if (["suspended", "paused", "interrupted"].includes(sourceStatus)) return "session-break";
   if (/interval|session[ _-]?break|mid[ _-]?session|break|pause/.test(sourceMeta)) return "session-break";
+  if (isFrameEndedMidSessionInterval(row, previous)) return "session-break";
   if (canonical === "session-break") return "session-break";
   if (canonical === "live" || sourceStatus === "live") return "live";
   if ((previous.status === "live" || previous.status === "session-break") && canonical === "upcoming") return previous.status;
@@ -162,6 +178,7 @@ function isRealtimeRow(row: DbLiveMatch) {
   const sourceStatus = String(row.source_status ?? "").toLowerCase();
   const sourceMeta = String(row.source_status_meta ?? "").toLowerCase();
   if (row.status === "live" || row.status === "session-break" || sourceStatus === "live") return true;
+  if (["suspended", "paused", "interrupted"].includes(sourceStatus)) return true;
   if (/interval|session[ _-]?break|mid[ _-]?session|break|pause/.test(sourceMeta)) return true;
   return Boolean(row.completed_detected_at && Date.now() - timestamp(row.completed_detected_at) <= 90 * 60 * 1000);
 }
