@@ -9,7 +9,7 @@
   height:5px;
   margin:0;
   border-radius:999px;
-  background:rgba(22,163,106,.46);
+  background:rgba(22,163,106,.52);
   box-shadow:0 0 0 0 rgba(22,163,106,.12);
   transform:translateY(-50%);
   pointer-events:none;
@@ -18,11 +18,11 @@
 }
 
 .strikerDot[data-side="home"]{
-  left:calc(50% + 10px);
+  left:calc(50% + 18px);
 }
 
 .strikerDot[data-side="away"]{
-  right:calc(50% + 10px);
+  right:calc(50% + 18px);
 }
 
 .frameWinnerScore{
@@ -48,8 +48,8 @@
 }
 
 @keyframes strikerPulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(22,163,106,.10);opacity:.55}
-  50%{box-shadow:0 0 0 5px rgba(22,163,106,.05);opacity:.72}
+  0%,100%{box-shadow:0 0 0 0 rgba(22,163,106,.10);opacity:.62}
+  50%{box-shadow:0 0 0 5px rgba(22,163,106,.05);opacity:.78}
 }
 
 @media (prefers-reduced-motion: reduce){
