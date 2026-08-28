@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
-import { loadSnookerEventDetailComplete } from "@/lib/snooker/event-detail-complete";
 import { eventSummary, SNOOKER_BUILD_MARK, SNOOKER_FOUNDATION_VERSION } from "@/lib/snooker/foundation";
 import { getCachedDashboardWithLiveOverlay } from "@/lib/snooker/live-dashboard-cache";
 import { SNOOKER_CACHE_SECONDS, SNOOKER_DASHBOARD_CACHE_CONTROL, snookerCacheLabel } from "@/lib/snooker/cache-policy";
-import { refreshSingleEventLive, refreshSnookerDatabaseViewLive } from "@/lib/snooker/live-read-through";
+import { refreshSnookerDatabaseViewLive } from "@/lib/snooker/live-read-through";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -17,10 +16,9 @@ export async function GET(request: NextRequest) {
 
   const cachedDatabase = await loadSnookerDatabaseViewV2();
   const database = await refreshSnookerDatabaseViewLive(cachedDatabase);
-  const focusedBase = await loadSnookerEventDetailComplete(database.snapshot.event.slug).catch(() => null);
-  const focusedEvent = focusedBase ? await refreshSingleEventLive(focusedBase) : database.snapshot.event;
+  const focusedEvent = database.snapshot.event;
   const databaseEvents = [focusedEvent];
-  const snapshot = { ...database.snapshot, event: focusedEvent };
+  const snapshot = database.snapshot;
   const allMatches = focusedEvent.rounds.flatMap((round) => round.matches);
   const liveMatches = allMatches.filter((match) => match.status === "live" || match.status === "session-break");
   const sourceHealth = {

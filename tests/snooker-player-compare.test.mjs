@@ -61,12 +61,14 @@ test("player compare polish moves season selection below the season tab and keep
   assert.doesNotMatch(client, /className={styles\.heroControls}/);
 });
 
-test("player compare entry cards can render from server-preloaded data and inherit page buttons", async () => {
+test("player compare entry cards support optional preload but homepage defers the expensive comparison", async () => {
   const teaser = await read("app/snooker/compare/player-compare-teaser.tsx");
   const rootPage = await read("app/page.tsx");
   assert.match(teaser, /initialData\?: PlayerCompareSnapshot/);
   assert.match(teaser, /actionClassName\?: string/);
-  assert.match(rootPage, /initialPlayerCompare={initialPlayerCompare}/);
+  assert.match(teaser, /\/api\/snooker\/v1\/player-compare\?/);
+  assert.match(rootPage, /initialPlayerCompare={null}/);
+  assert.doesNotMatch(rootPage, /loadPlayerCompare/);
 });
 
 test("player compare follows the main green-red theme selection", async () => {

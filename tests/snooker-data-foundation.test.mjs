@@ -47,7 +47,8 @@ test("snooker frontend is database-first and only relevant headline matches poll
     read("app/snooker/snooker-priority.module.css"),
   ]);
   assert.match(pageSource, /loadSnookerDatabaseView/);
-  assert.match(pageSource, /loadSnookerEventDetailComplete\(database\.snapshot\.event\.slug\)/);
+  assert.doesNotMatch(pageSource, /loadSnookerEventDetailComplete/);
+  assert.match(pageSource, /const focusedEvent = database\.snapshot\.event/);
   assert.match(pageSource, /initialDatabaseEvents=\{focusedEvents\}/);
   assert.doesNotMatch(pageSource, /getCachedDashboardWithLiveOverlay/);
   assert.match(pageSource, /export const revalidate = 0/);
@@ -58,6 +59,8 @@ test("snooker frontend is database-first and only relevant headline matches poll
   assert.match(dbSource, /snooker_frames\?select=/);
   assert.match(dbSource, /data_ready/);
   assert.match(dashboardSource, /loadSnookerDatabaseView/);
+  assert.doesNotMatch(dashboardSource, /loadSnookerEventDetailComplete/);
+  assert.doesNotMatch(dashboardSource, /refreshSingleEventLive/);
   assert.match(dashboardSource, /searchParams\.has\("monitor"\)/);
   assert.match(dashboardSource, /getCachedDashboardWithLiveOverlay/);
   assert.match(dashboardSource, /const databaseEvents = \[focusedEvent\]/);
