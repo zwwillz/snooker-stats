@@ -1,5 +1,5 @@
 import SnookerDataCenterV2 from "./snooker/snooker-data-center-v2";
-import LiveStrikerIndicator from "./snooker/live-striker-indicator";
+import LiveStrikerIndicatorGated from "./snooker/live-striker-indicator-gated";
 import SnookerViewUrlSync from "./snooker/snooker-view-url-sync";
 import HomeSeasonLeaders from "./snooker/home-season-leaders";
 import HomeAboutCard from "./snooker/home-about-card";
@@ -8,6 +8,7 @@ import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { refreshSnookerDatabaseViewLive } from "@/lib/snooker/live-read-through";
 import { CURRENT_RANKING_KEYS, loadSnookerRankingHub, type SnookerCurrentRankingKey, type SnookerRankingSection } from "@/lib/snooker/ranking-hub";
 import { buildHomeLeaders } from "@/lib/snooker/home-leaders";
+import { loadSnookerHomeBootstrap } from "@/lib/snooker/home-bootstrap";
 import { snookerCacheLabel, SNOOKER_CACHE_SECONDS } from "@/lib/snooker/cache-policy";
 
 export const dynamic = "force-dynamic";
@@ -24,12 +25,7 @@ function rankingSection(value?: string): SnookerRankingSection {
 }
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ view?: string; player?: string; section?: string; list?: string; group?: string }> }) {
-  const [cachedDatabase, rankingHub, query] = await Promise.all([loadSnookerDatabaseViewV2(), loadSnookerRankingHub(), searchParams]);
-  const database = await refreshSnookerDatabaseViewLive(cachedDatabase);
-  const focusedEvent = database.snapshot.event;
-  const focusedEvents = [focusedEvent];
-  const snapshot = database.snapshot;
-  const homeLeaders = buildHomeLeaders(snapshot.players, database.currentSeason);
+  const query = await searchParams;
   const requestedPlayer = query.player?.trim() || null;
   const initialDataSection = query.view === "data" && query.section === "rankings" ? "rankings" as const : null;
   const initialView: SnookerRootView = requestedPlayer
@@ -39,6 +35,17 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
       : query.view === "matches" || query.view === "players" || query.view === "data"
         ? query.view
         : "home";
+  const useHomeBootstrap = initialView === "home" && !requestedPlayer;
+
+  const [cachedDatabase, rankingHub, bootstrapLeaders] = useHomeBootstrap
+    ? await loadSnookerHomeBootstrap().then((bootstrap) => [bootstrap.database, bootstrap.rankingHub, bootstrap.homeLeaders] as const)
+    : await Promise.all([loadSnookerDatabaseViewV2(), loadSnookerRankingHub()]).then(([database, hub]) => [database, hub, null] as const);
+
+  const database = await refreshSnookerDatabaseViewLive(cachedDatabase);
+  const focusedEvent = database.snapshot.event;
+  const focusedEvents = [focusedEvent];
+  const snapshot = database.snapshot;
+  const homeLeaders = bootstrapLeaders ?? buildHomeLeaders(snapshot.players, database.currentSeason);
   const hasLiveMatch = focusedEvents.some((event) => event.rounds.some((round) => round.matches.some((match) => match.status === "live" || match.status === "session-break")));
 
   const sourceHealth = {
@@ -48,20 +55,22 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
     sourceLabel: hasLiveMatch ? "Supabase · 实时直读" : snookerCacheLabel(database.databaseOnline),
     cacheSeconds: hasLiveMatch ? 0 : database.databaseOnline ? SNOOKER_CACHE_SECONDS.recent : SNOOKER_CACHE_SECONDS.history,
     message: database.databaseOnline
-      ? "前端读取独立斯诺克数据库；赛事详情按站完整读取，直播比分使用 no-store 实时直读。"
+      ? useHomeBootstrap
+        ? "首页使用轻量数据入口；赛事详情、完整排名和专业数据按需读取，直播比分继续使用 no-store 实时直读。"
+        : "前端读取独立斯诺克数据库；赛事详情按站完整读取，直播比分使用 no-store 实时直读。"
       : "独立数据库暂不可用，当前使用本地已验证快照兜底。",
   };
 
   return (
     <>
-      <SnookerViewUrlSync />
+      <SnookerViewUrlSync serverLoadData={useHomeBootstrap} />
       <SnookerDataCenterV2
         initialSnapshot={snapshot}
         initialDatabaseEvents={focusedEvents}
         initialCurrentSeason={database.currentSeason}
         initialRankingHub={rankingHub}
         initialSourceHealth={sourceHealth}
-        buildMark={`${SNOOKER_BUILD_MARK}-DB12`}
+        buildMark={`${SNOOKER_BUILD_MARK}-DB13`}
         initialView={initialView}
         initialPlayerSlug={requestedPlayer}
         initialDataSection={initialDataSection}
@@ -71,7 +80,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
       />
       <HomeSeasonLeaders initialPayload={homeLeaders} />
       <HomeAboutCard />
-      <LiveStrikerIndicator />
+      <LiveStrikerIndicatorGated />
     </>
   );
 }
