@@ -41,7 +41,7 @@ export default function PlayerCompareTeaser({
   const pair = useMemo(() => players.filter((player) => player.isCurrentTour).slice(0, 2), [players]);
   const initialMatchesPair = Boolean(initialData && pair.length === 2 && initialData.players[0].slug === pair[0].slug && initialData.players[1].slug === pair[1].slug);
   const [data, setData] = useState<PlayerCompareSnapshot | null>(() => initialMatchesPair ? initialData : null);
-  const [shouldLoad, setShouldLoad] = useState(initialMatchesPair);
+  const [shouldLoad, setShouldLoad] = useState(() => variant === "data" || initialMatchesPair);
   const compareHref = pair.length === 2
     ? `/snooker/compare?player1=${encodeURIComponent(pair[0].slug)}&player2=${encodeURIComponent(pair[1].slug)}${data?.season ? `&season=${encodeURIComponent(data.season)}` : ""}`
     : "/snooker/compare";
@@ -55,10 +55,6 @@ export default function PlayerCompareTeaser({
     }, { rootMargin: "120px 0px" });
     observer.observe(cardRef.current);
     return () => observer.disconnect();
-  }, [shouldLoad, variant]);
-
-  useEffect(() => {
-    if (variant === "data" && !shouldLoad) setShouldLoad(true);
   }, [shouldLoad, variant]);
 
   useEffect(() => {
