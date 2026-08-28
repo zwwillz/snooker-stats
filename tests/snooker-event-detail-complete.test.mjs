@@ -22,17 +22,22 @@ test("historical event detail keeps match stats but skips head-to-head loading",
   assert.match(helper, /: Promise\.resolve\(\[\] as DbHeadToHead\[\]\)/);
 });
 
-test("event route upgrades every event open to complete fresh event detail", () => {
+test("event route upgrades every explicit event open without preloading the full dashboard", () => {
   assert.match(route, /detailedEvent = await loadSnookerEventDetailComplete\(slug\)/);
   assert.doesNotMatch(route, /cachedEvent\.status === "completed"/);
-  assert.match(route, /const baseEvent = detailedEvent/);
+  assert.match(route, /let baseEvent = detailedEvent \?\? cachedEvent/);
+  assert.match(route, /if \(!slug\)[\s\S]*loadSnookerDatabaseViewV2\(\)/);
+  assert.match(route, /const participantIds = \[\.\.\.new Set/);
   assert.match(route, /no-store, no-cache, must-revalidate/);
 });
 
-test("root and dashboard keep only a complete focused event and lazy-load historical events", () => {
-  assert.match(page, /loadSnookerEventDetailComplete\(database\.snapshot\.event\.slug\)/);
+test("root and dashboard reuse the already enriched focused event and lazy-load historical events", () => {
+  assert.doesNotMatch(page, /loadSnookerEventDetailComplete/);
+  assert.match(page, /const focusedEvent = database\.snapshot\.event/);
   assert.match(page, /initialDatabaseEvents=\{focusedEvents\}/);
-  assert.match(dashboard, /loadSnookerEventDetailComplete\(database\.snapshot\.event\.slug\)/);
+  assert.doesNotMatch(dashboard, /loadSnookerEventDetailComplete/);
+  assert.doesNotMatch(dashboard, /refreshSingleEventLive/);
+  assert.match(dashboard, /const focusedEvent = database\.snapshot\.event/);
   assert.match(dashboard, /const databaseEvents = \[focusedEvent\]/);
   assert.match(dashboard, /历史赛事在打开时按站完整加载/);
 });
