@@ -3,32 +3,10 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { HomeLeaderItem, HomeLeaderMetricKey, HomeLeadersPayload } from "@/lib/snooker/home-leaders";
+import { findHomepagePortalTarget, findMainNav } from "./home-portal-target";
 import styles from "./home-season-leaders.module.css";
 
-const navLabels = ["首页", "赛事", "球员", "数据"];
 let technicalWarmInflight: Promise<void> | null = null;
-
-function isMainNav(nav: Element) {
-  const labels = Array.from(nav.querySelectorAll(":scope > button b"))
-    .map((node) => node.textContent?.trim() ?? "")
-    .filter(Boolean);
-  return navLabels.every((label) => labels.includes(label));
-}
-
-function findMainNav() {
-  return Array.from(document.querySelectorAll("nav")).find(isMainNav) ?? null;
-}
-
-function findContentTarget() {
-  const nav = findMainNav();
-  const content = nav?.previousElementSibling;
-  return content instanceof HTMLElement ? content : null;
-}
-
-function isHomeUrl() {
-  const view = new URL(window.location.href).searchParams.get("view");
-  return !view || view === "home";
-}
 
 function applyHeaderPolish() {
   const shellHeader = document.querySelector<HTMLElement>("main[data-theme] > div > header:first-child");
@@ -107,44 +85,35 @@ function openTechnical(key: HomeLeaderMetricKey) {
 
 export default function HomeSeasonLeaders({ initialPayload }: { initialPayload: HomeLeadersPayload }) {
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
-  const [homeActive, setHomeActive] = useState(false);
 
   useEffect(() => {
     const sync = () => {
       applyHeaderPolish();
-      const next = findContentTarget();
+      const next = findHomepagePortalTarget();
       applyHomepageEnglishLabels(next);
       setPortalTarget((current) => current === next ? current : next);
-      setHomeActive(isHomeUrl());
     };
 
     sync();
-    const mutation = new MutationObserver(() => {
-      applyHeaderPolish();
-      const next = findContentTarget();
-      applyHomepageEnglishLabels(next);
-      setPortalTarget((current) => current === next ? current : next);
-    });
+    const mutation = new MutationObserver(sync);
     mutation.observe(document.body, { childList: true, subtree: true });
 
-    const onRouteChange = () => sync();
-    const onPopState = () => sync();
-    window.addEventListener("snooker-view-url-change", onRouteChange);
-    window.addEventListener("popstate", onPopState);
+    window.addEventListener("snooker-view-url-change", sync);
+    window.addEventListener("popstate", sync);
     return () => {
       mutation.disconnect();
-      window.removeEventListener("snooker-view-url-change", onRouteChange);
-      window.removeEventListener("popstate", onPopState);
+      window.removeEventListener("snooker-view-url-change", sync);
+      window.removeEventListener("popstate", sync);
     };
   }, []);
 
   useEffect(() => {
-    if (!homeActive) return;
+    if (!portalTarget) return;
     const timer = window.setTimeout(() => { void warmTechnicalHub(); }, 800);
     return () => window.clearTimeout(timer);
-  }, [homeActive]);
+  }, [portalTarget]);
 
-  if (!portalTarget || !homeActive) return null;
+  if (!portalTarget) return null;
 
   return createPortal(
     <section className={styles.card} aria-label="本赛季数据榜">
