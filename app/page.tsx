@@ -5,10 +5,8 @@ import HomeSeasonLeaders from "./snooker/home-season-leaders";
 import HomeAboutCard from "./snooker/home-about-card";
 import { SNOOKER_BUILD_MARK } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
-import { loadSnookerEventDetailComplete } from "@/lib/snooker/event-detail-complete";
-import { refreshSingleEventLive, refreshSnookerDatabaseViewLive } from "@/lib/snooker/live-read-through";
+import { refreshSnookerDatabaseViewLive } from "@/lib/snooker/live-read-through";
 import { CURRENT_RANKING_KEYS, loadSnookerRankingHub, type SnookerCurrentRankingKey, type SnookerRankingSection } from "@/lib/snooker/ranking-hub";
-import { loadPlayerCompare } from "@/lib/snooker/player-compare";
 import { buildHomeLeaders } from "@/lib/snooker/home-leaders";
 import { snookerCacheLabel, SNOOKER_CACHE_SECONDS } from "@/lib/snooker/cache-policy";
 
@@ -28,18 +26,10 @@ function rankingSection(value?: string): SnookerRankingSection {
 export default async function Home({ searchParams }: { searchParams: Promise<{ view?: string; player?: string; section?: string; list?: string; group?: string }> }) {
   const [cachedDatabase, rankingHub, query] = await Promise.all([loadSnookerDatabaseViewV2(), loadSnookerRankingHub(), searchParams]);
   const database = await refreshSnookerDatabaseViewLive(cachedDatabase);
-  const focusedBase = await loadSnookerEventDetailComplete(database.snapshot.event.slug).catch(() => null);
-  const focusedEvent = focusedBase ? await refreshSingleEventLive(focusedBase) : database.snapshot.event;
+  const focusedEvent = database.snapshot.event;
   const focusedEvents = [focusedEvent];
-  const snapshot = { ...database.snapshot, event: focusedEvent };
+  const snapshot = database.snapshot;
   const homeLeaders = buildHomeLeaders(snapshot.players, database.currentSeason);
-  const teaserPlayers = [...snapshot.players]
-    .filter((player) => player.isCurrentTour ?? player.currentRank !== null)
-    .sort((a, b) => (a.currentRank ?? 9999) - (b.currentRank ?? 9999) || a.nameEn.localeCompare(b.nameEn))
-    .slice(0, 2);
-  const initialPlayerCompare = teaserPlayers.length === 2
-    ? await loadPlayerCompare(teaserPlayers[0].slug, teaserPlayers[1].slug).catch(() => null)
-    : null;
   const requestedPlayer = query.player?.trim() || null;
   const initialDataSection = query.view === "data" && query.section === "rankings" ? "rankings" as const : null;
   const initialView: SnookerRootView = requestedPlayer
@@ -77,7 +67,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
         initialDataSection={initialDataSection}
         initialRankingKey={initialDataSection ? rankingKey(query.list) : null}
         initialRankingSection={initialDataSection ? rankingSection(query.group) : "current"}
-        initialPlayerCompare={initialPlayerCompare}
+        initialPlayerCompare={null}
       />
       <HomeSeasonLeaders initialPayload={homeLeaders} />
       <HomeAboutCard />
