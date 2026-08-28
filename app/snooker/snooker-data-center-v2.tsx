@@ -334,18 +334,18 @@ function MatchListRow({ match, players, onOpen }: { match: SnookerMatch; players
   return (
     <button className={`${styles.matchRow} ${priority.horizontalMatchRow}`} onClick={onOpen}>
       <div className={styles.matchRowMeta}>
-        <span>{match.timeLabelZh ?? match.roundLabelZh}</span>
+        <span>{match.timeLabelZh ?? match.roundLabelZh}{match.matchNo ? ` · #${match.matchNo}` : ""}</span>
         <span>{bestOfLabel(match.bestOf)}</span>
         <StatusPill status={match.status} label={matchDisplayStatus(match)} />
       </div>
       <div className={priority.matchVersusRow}>
         <div className={polish.matchPlayerCell}>
           <PlayerAvatar player={p1} size="sm" />
-          <span>{p1.shortNameZh}{match.winnerId === p1.id ? <em className={polish.matchWin}>胜</em> : null}</span>
+          <span>{p1.shortNameZh}{match.status === "walkover" && match.winnerId && match.winnerId !== p1.id ? <em className={polish.withdrawnBadge}>退赛</em> : null}{match.winnerId === p1.id ? <em className={polish.matchWin}>胜</em> : null}</span>
         </div>
         <b className={match.status === "live" ? priority.liveScoreText : ""}>{score}</b>
         <div className={`${polish.matchPlayerCell} ${polish.matchPlayerRight}`}>
-          <span>{match.winnerId === p2.id ? <em className={polish.matchWin}>胜</em> : null}{p2.shortNameZh}</span>
+          <span>{match.winnerId === p2.id ? <em className={polish.matchWin}>胜</em> : null}{p2.shortNameZh}{match.status === "walkover" && match.winnerId && match.winnerId !== p2.id ? <em className={polish.withdrawnBadge}>退赛</em> : null}</span>
           <PlayerAvatar player={p2} size="sm" />
         </div>
       </div>
@@ -930,9 +930,9 @@ export default function SnookerDataCenterV2({
         <div className={styles.matchHeroMeta}><span>{!isCurrentSeasonMatch ? `${selectedEvent.season}赛季 · 历史赛事 · ` : ""}{match.roundLabelZh} · {match.timeLabelZh ?? "比赛时间待定"}</span><b>{bestOfLabel(match.bestOf)}</b></div>
         <h1>{selectedEvent.nameZh}</h1>
         <div className={styles.versusGrid}>
-          <div className={styles.versusPlayer}><div className={styles.avatarWrap}><PlayerAvatar player={p1} size="xl" />{match.winnerId === p1.id ? <em>胜</em> : null}</div><strong>{p1.nameZh}</strong><small>{p1.nameEn}</small></div>
-          <div className={styles.bigScore}><strong>{match.status === "walkover" ? "W - O" : <><span>{match.score1 ?? "-"}</span> <i className={match.status === "live" ? priority.liveSeparator : ""}>-</i> <span>{match.score2 ?? "-"}</span></>}</strong><StatusPill status={match.status} label={statusLabel} /><small>{bestOfLabel(match.bestOf)}</small>{realtime ? <small>{refreshing ? "正在更新…" : `最近更新 ${updated}`}</small> : null}</div>
-          <div className={styles.versusPlayer}><div className={styles.avatarWrap}><PlayerAvatar player={p2} size="xl" />{match.winnerId === p2.id ? <em>胜</em> : null}</div><strong>{p2.nameZh}</strong><small>{p2.nameEn}</small></div>
+          <div className={styles.versusPlayer}><div className={styles.avatarWrap}><PlayerAvatar player={p1} size="xl" />{match.winnerId === p1.id ? <em>胜</em> : null}{match.status === "walkover" && match.winnerId && match.winnerId !== p1.id ? <span className={polish.withdrawnAvatarBadge}>退赛</span> : null}</div><strong>{p1.nameZh}</strong><small>{p1.nameEn}</small></div>
+          <div className={styles.bigScore}><strong>{match.status === "walkover" ? "W - O" : <><span>{match.score1 ?? "-"}</span> <i className={match.status === "live" ? priority.liveSeparator : ""}>-</i> <span>{match.score2 ?? "-"}</span></>}</strong><StatusPill status={match.status} label={statusLabel} /><small>{match.matchNo ? `#${match.matchNo}` : ""}</small>{realtime ? <small>{refreshing ? "正在更新…" : `最近更新 ${updated}`}</small> : null}</div>
+          <div className={styles.versusPlayer}><div className={styles.avatarWrap}><PlayerAvatar player={p2} size="xl" />{match.winnerId === p2.id ? <em>胜</em> : null}{match.status === "walkover" && match.winnerId && match.winnerId !== p2.id ? <span className={polish.withdrawnAvatarBadge}>退赛</span> : null}</div><strong>{p2.nameZh}</strong><small>{p2.nameEn}</small></div>
         </div>
       </section>
 
@@ -1044,11 +1044,11 @@ export default function SnookerDataCenterV2({
             const player2 = players.get(headlineMatch.player2Id);
             if (!player1 || !player2) return null;
             return <section className={`${styles.card} ${priority.headlineSlide}`} key={`${headlineEvent.id}-${headlineMatch.id}`}>
-              <div className={styles.liveHeader}><div><small>{headlineMatch.roundLabelZh} · {headlineMatch.timeLabelZh ?? ""}</small><h2>{headlineEvent.nameZh} · {headlineMatch.roundLabelZh}</h2></div><StatusPill status={headlineMatch.status} label={matchDisplayStatus(headlineMatch)} /></div>
+              <div className={styles.liveHeader}><div><small>{headlineMatch.roundLabelZh} · {headlineMatch.timeLabelZh ?? ""}{headlineMatch.matchNo ? ` · #${headlineMatch.matchNo}` : ""}</small><h2>{headlineEvent.nameZh} · {headlineMatch.roundLabelZh}</h2></div><StatusPill status={headlineMatch.status} label={matchDisplayStatus(headlineMatch)} /></div>
               <div className={styles.homeScore}>
-                <button onClick={() => openPlayer(headlineMatch.player1Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={player1} size="lg" />{headlineMatch.winnerId === headlineMatch.player1Id ? <em className={polish.winBadge}>胜</em> : null}</div><span className={polish.homePlayerName}>{player1.shortNameZh}</span></button>
+                <button onClick={() => openPlayer(headlineMatch.player1Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={player1} size="lg" />{headlineMatch.winnerId === headlineMatch.player1Id ? <em className={polish.winBadge}>胜</em> : null}{headlineMatch.status === "walkover" && headlineMatch.winnerId && headlineMatch.winnerId !== headlineMatch.player1Id ? <span className={polish.withdrawnAvatarBadge}>退赛</span> : null}</div><span className={polish.homePlayerName}>{player1.shortNameZh}</span></button>
                 <div><strong>{headlineMatch.score1 ?? "-"} <i className={headlineMatch.status === "live" ? priority.liveSeparator : ""}>:</i> {headlineMatch.score2 ?? "-"}</strong><small>{bestOfLabel(headlineMatch.bestOf)}</small><span className={priority.scoreUpdated}><i />更新 {formatUpdatedAt(sourceHealth?.fetchedAt)}</span></div>
-                <button onClick={() => openPlayer(headlineMatch.player2Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={player2} size="lg" />{headlineMatch.winnerId === headlineMatch.player2Id ? <em className={polish.winBadge}>胜</em> : null}</div><span className={polish.homePlayerName}>{player2.shortNameZh}</span></button>
+                <button onClick={() => openPlayer(headlineMatch.player2Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={player2} size="lg" />{headlineMatch.winnerId === headlineMatch.player2Id ? <em className={polish.winBadge}>胜</em> : null}{headlineMatch.status === "walkover" && headlineMatch.winnerId && headlineMatch.winnerId !== headlineMatch.player2Id ? <span className={polish.withdrawnAvatarBadge}>退赛</span> : null}</div><span className={polish.homePlayerName}>{player2.shortNameZh}</span></button>
               </div>
               <button className={styles.fullButton} onClick={() => openMatch(headlineMatch.id, headlineEvent.slug)}>查看比赛详情</button>
               {headlineSelections.length > 1 ? <div className={priority.headlineSwipeHint}>左右滑动 · {index + 1}/{headlineSelections.length}</div> : null}
