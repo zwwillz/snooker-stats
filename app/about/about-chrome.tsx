@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, type MouseEvent, type ReactNode } from "react";
 import styles from "./about.module.css";
 
@@ -24,7 +25,7 @@ function HomeAnchor({ className, ariaLabel, children }: { className: string; ari
     window.history.back();
   };
 
-  return <a className={className} href="/" aria-label={ariaLabel} onClick={onClick}>{children}</a>;
+  return <Link className={className} href="/" aria-label={ariaLabel} onClick={onClick}>{children}</Link>;
 }
 
 export default function AboutChrome() {
