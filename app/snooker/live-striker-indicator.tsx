@@ -18,6 +18,7 @@ type LivePayload = {
 
 const DOT_ATTR = "data-live-striker-dot";
 const WINNER_ATTR = "data-frame-winner";
+const STRIKER_PULSE_DURATION_MS = 1_800;
 
 function visibleMatchIdentity() {
   const hero = document.querySelector<HTMLElement>(`.${styles.matchHero}`);
@@ -113,12 +114,15 @@ function applyWinnerHighlights() {
   });
 }
 
+function applyPulsePhase(dot: HTMLElement) {
+  const phaseMs = Date.now() % STRIKER_PULSE_DURATION_MS;
+  dot.style.animationDelay = `-${(phaseMs / 1000).toFixed(3)}s`;
+}
+
 function applyDot(payload: LivePayload | null) {
   const identity = visibleMatchIdentity();
-  if (!identity || !payload) {
-    clearDot();
-    return;
-  }
+  if (!identity || !payload) return;
+
   const match = findVisibleMatch(payload, identity);
   if (!match || match.status !== "live" || (match.currentPlayerSide !== "home" && match.currentPlayerSide !== "away")) {
     clearDot();
@@ -126,10 +130,8 @@ function applyDot(payload: LivePayload | null) {
   }
   const row = targetFrameRow(match, identity.frameSection);
   const scores = row ? Array.from(row.querySelectorAll<HTMLElement>("strong")) : [];
-  if (scores.length < 2) {
-    clearDot();
-    return;
-  }
+  if (scores.length < 2) return;
+
   const side = match.currentPlayerSide;
   const target = side === "home" ? scores[0] : scores[1];
   const existing = document.querySelector<HTMLElement>(`[${DOT_ATTR}]`);
@@ -143,6 +145,7 @@ function applyDot(payload: LivePayload | null) {
   dot.dataset.side = side;
   dot.setAttribute("aria-hidden", "true");
   dot.title = `${side === "home" ? identity.player1Name : identity.player2Name}正在击球`;
+  applyPulsePhase(dot);
   target.append(dot);
 }
 
@@ -152,6 +155,7 @@ export default function LiveStrikerIndicator() {
     let lastFetchedAt = 0;
     let fetching = false;
     let disposed = false;
+    let mutationFrame = 0;
 
     const fetchLive = async () => {
       if (fetching || disposed) return;
@@ -182,6 +186,19 @@ export default function LiveStrikerIndicator() {
       applyDot(latest);
     };
 
+    const syncAfterMutation = () => {
+      if (mutationFrame || disposed) return;
+      mutationFrame = window.requestAnimationFrame(() => {
+        mutationFrame = 0;
+        if (disposed) return;
+        applyWinnerHighlights();
+        applyDot(latest);
+      });
+    };
+
+    const observer = new MutationObserver(syncAfterMutation);
+    observer.observe(document.body, { childList: true, subtree: true });
+
     applyWinnerHighlights();
     void fetchLive();
     const dataTimer = window.setInterval(() => {
@@ -198,6 +215,8 @@ export default function LiveStrikerIndicator() {
 
     return () => {
       disposed = true;
+      observer.disconnect();
+      if (mutationFrame) window.cancelAnimationFrame(mutationFrame);
       window.clearInterval(dataTimer);
       window.clearInterval(domTimer);
       document.removeEventListener("visibilitychange", onVisibility);
