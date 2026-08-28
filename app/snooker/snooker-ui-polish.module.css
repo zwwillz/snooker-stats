@@ -11,6 +11,7 @@
 .matchPlayerRight{justify-content:flex-end;text-align:right}
 .matchWin{display:inline-flex;margin-left:4px;vertical-align:middle;padding:2px 5px;border-radius:999px;background:var(--accent-soft);color:var(--accent-strong);font-size:6px;font-weight:900;font-style:normal}
 .matchPlayerRight .matchWin{margin-left:0;margin-right:4px}
+.withdrawnBadge{display:inline-flex;margin-left:5px;vertical-align:middle;padding:2px 5px;border-radius:999px;background:#f5edf7;color:#76517c;font-size:6px;font-weight:900;font-style:normal;line-height:1.2}.matchPlayerRight .withdrawnBadge{margin-left:5px}.withdrawnAvatarBadge{position:absolute;right:-13px;top:-3px;z-index:2;padding:3px 5px;border-radius:999px;background:#f5edf7;color:#76517c;font-size:6px;font-weight:900;line-height:1;box-shadow:0 0 0 2px #fff;white-space:nowrap}
 .dataArea{margin:14px}
 .dataTabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border:1px solid var(--line);border-radius:14px;background:#eef1ef}
 .dataTabs button{height:42px;border:0;border-radius:10px;background:transparent;color:#7d8480;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9px;font-weight:850;cursor:pointer;touch-action:manipulation}
