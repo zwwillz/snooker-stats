@@ -1,0 +1,27 @@
+name: Temporary Schedule Focus Patch
+
+on:
+  push:
+    branches: [fix/walkover-normalization-schedule-focus]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[schedule-focus-patched]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/walkover-normalization-schedule-focus
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/patch-schedule-focus.mjs
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/snooker/snooker-data-center-v2.tsx
+          git commit -m "Fix current event schedule focus [schedule-focus-patched]"
+          git push
