@@ -20,6 +20,7 @@ type Body = {
   range?: string;
   query?: string;
   page?: number;
+  section?: string;
 };
 
 type SessionState = {
@@ -208,6 +209,10 @@ Deno.serve(async (req) => {
       case "snapshot":
         fn = "snooker_ops_snapshot";
         args = { p_token: body.token || "" };
+        break;
+      case "snapshot-section":
+        fn = "snooker_ops_snapshot_section";
+        args = { p_token: body.token || "", p_section: body.section || "overview" };
         break;
       case "action":
         fn = "snooker_ops_run_action";

@@ -15,6 +15,11 @@ type AnalyticsLog = { id: number; run_type: string; scope_type: string | null; s
 type ActionLog = { id: number; action: string; status: string; payload: Record<string, unknown>; result: Record<string, unknown> | null; error_message: string | null; started_at: string; finished_at: string | null };
 export type DataOpsSnapshot = { ok: true; generatedAt: string; overview: Overview; seasons: SeasonRow[]; analytics: AnalyticsRow[]; rankings: RankingRow[]; syncTasks: SyncTask[]; cronJobs: CronJob[]; syncLogs: SyncLog[]; analyticsLogs: AnalyticsLog[]; actionLogs: ActionLog[]; audits: AuditRow[]; quality: Quality };
 type Tab = "overview" | "analytics" | "sync" | "quality" | "logs";
+type DataOpsSectionResponse = Partial<DataOpsSnapshot> & { ok: true; section: Tab; generatedAt: string; viewer: Viewer };
+
+const emptyOverview: Overview = { databaseSize: "—", databaseBytes: 0, events: 0, matches: 0, frames: 0, breaks: 0, players: 0, currentTourPlayers: 0, careerAggregates: 0, h2hPairs: 0, titles: 0, warehouseStart: null, warehouseEnd: null };
+const emptyQuality: Quality = { currentTourMissingAvatar: 0, currentTourMissingChineseName: 0, completedWstEventsMissingSourceId: 0, completedMatchesWithoutFrames: 0, currentRankingListsNotSynced: 0, rankingConflictsOpen: 0 };
+const emptySnapshot = (): DataOpsSnapshot => ({ ok: true, generatedAt: new Date(0).toISOString(), overview: emptyOverview, seasons: [], analytics: [], rankings: [], syncTasks: [], cronJobs: [], syncLogs: [], analyticsLogs: [], actionLogs: [], audits: [], quality: emptyQuality });
 
 const tabs: Array<{ key: Tab; label: string; short: string }> = [
   { key: "overview", label: "数据概览", short: "概览" },
@@ -30,38 +35,51 @@ function intervalText(seconds: number | null | undefined) { if (!seconds) return
 function coverageTone(value: number) { if (value >= 95) return styles.toneGood; if (value >= 60) return styles.toneWarn; return styles.toneInfo; }
 function statusTone(status: string) { if (["success", "completed", "synced", "active"].includes(status)) return styles.toneGood; if (["partial", "pending", "running", "skipped"].includes(status)) return styles.toneWarn; if (["failed", "unavailable", "disabled"].includes(status)) return styles.toneBad; return styles.toneMuted; }
 
-export default function DataOpsClientV2({ initialViewer, initialSnapshot }: { initialViewer: Viewer | null; initialSnapshot: DataOpsSnapshot | null }) {
-  const [viewer, setViewer] = useState<Viewer | null>(initialViewer);
-  const [snapshot, setSnapshot] = useState<DataOpsSnapshot | null>(initialSnapshot);
+export default function DataOpsClientV2() {
+  const [viewer, setViewer] = useState<Viewer | null>(null);
+  const [snapshot, setSnapshot] = useState<DataOpsSnapshot>(emptySnapshot);
+  const [loadedSections, setLoadedSections] = useState<Set<Tab>>(() => new Set());
+  const [bootstrapping, setBootstrapping] = useState(true);
   const [tab, setTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const loadSnapshot = useCallback(async (showLoading = false) => {
-    if (!viewer || viewer.mustChangePassword) return;
+  const loadSection = useCallback(async (section: Tab, showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
-      const response = await fetch("/api/snooker/data-ops/snapshot", { cache: "no-store" });
-      if (response.status === 401) { setViewer(null); setSnapshot(null); return; }
+      const response = await fetch(`/api/snooker/data-ops/snapshot?section=${section}`, { cache: "no-store" });
+      if (response.status === 401) { setViewer(null); setLoadedSections(new Set()); return; }
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "数据读取失败。");
-      setSnapshot(body as DataOpsSnapshot);
+      const data = body as DataOpsSectionResponse;
+      setViewer(data.viewer);
+      setSnapshot((current) => {
+        const merged = { ...current, ...data, ok: true } as DataOpsSnapshot;
+        // Analytics returns only its own scheduler row. Never let that focused
+        // response replace the complete task list after Sync Center has loaded.
+        if (section === "analytics" && current.syncTasks.length > 1) {
+          merged.syncTasks = current.syncTasks;
+        }
+        return merged;
+      });
+      setLoadedSections((current) => new Set(current).add(section));
       if (showLoading) setError("");
     } catch (e) { if (showLoading) setError(e instanceof Error ? e.message : "数据读取失败。"); }
-    finally { if (showLoading) setLoading(false); }
-  }, [viewer]);
+    finally { setBootstrapping(false); if (showLoading) setLoading(false); }
+  }, []);
 
   useEffect(() => {
-    if (!viewer || viewer.mustChangePassword || !snapshot) return;
-    const monitor = snapshot.syncTasks?.find((task) => task.jobKey === "site_monitor");
-    if (!monitor?.enabled || !monitor.intervalSeconds) return;
-    const timer = window.setInterval(() => { void loadSnapshot(false); }, monitor.intervalSeconds * 1000);
-    return () => window.clearInterval(timer);
-  }, [viewer, snapshot, loadSnapshot]);
+    const timer = window.setTimeout(() => void loadSection("overview"), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadSection]);
 
-  async function logout() { await fetch("/api/snooker/data-ops/auth/logout", { method: "POST" }); setViewer(null); setSnapshot(null); setTab("overview"); }
+  async function logout() { await fetch("/api/snooker/data-ops/auth/logout", { method: "POST" }); setViewer(null); setSnapshot(emptySnapshot()); setLoadedSections(new Set()); setTab("overview"); }
+  function selectTab(next: Tab) {
+    setTab(next);
+    if (!loadedSections.has(next)) void loadSection(next, true);
+  }
   async function runAction(action: string, payload: Record<string, unknown> = {}, confirmText?: string) {
     if (confirmText && !window.confirm(confirmText)) return;
     setPendingAction(action); setMessage(""); setError("");
@@ -69,25 +87,26 @@ export default function DataOpsClientV2({ initialViewer, initialSnapshot }: { in
       const response = await fetch("/api/snooker/data-ops/action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, payload }) });
       const body = await response.json(); if (!response.ok) throw new Error(body.error || "操作执行失败。");
       setMessage(action === "sync_policy_update" ? "同步配置已保存并立即生效。" : "操作已完成，状态已刷新。");
-      await loadSnapshot(false);
+      await loadSection(tab, false);
     } catch (e) { setError(e instanceof Error ? e.message : "操作执行失败。"); }
     finally { setPendingAction(null); }
   }
 
-  if (!viewer) return <LoginView onLogin={async (v) => { setViewer(v); if (!v.mustChangePassword) setTimeout(() => void loadSnapshot(false), 0); }} />;
-  if (viewer.mustChangePassword) return <PasswordSetupView viewer={viewer} onChanged={(v) => { setViewer(v); setTimeout(() => void loadSnapshot(false), 0); }} onLogout={logout} />;
+  if (bootstrapping) return <main className={styles.loginRoot}><LoadingPanel onRetry={() => void loadSection("overview", true)} /></main>;
+  if (!viewer) return <LoginView onLogin={async (v) => { setViewer(v); if (!v.mustChangePassword) void loadSection("overview", true); }} />;
+  if (viewer.mustChangePassword) return <PasswordSetupView viewer={viewer} onChanged={(v) => { setViewer(v); void loadSection("overview", true); }} onLogout={logout} />;
 
   const analyticsTask = snapshot?.syncTasks?.find((task) => task.jobKey === "analytics_current");
   return <main className={styles.root}>
     <header className={styles.topbar}>
       <div className={styles.brand}><span>147</span><div><strong>斯诺克数据运维中心</strong><small>SNOOKER DATA OPS · SYNC CENTER V2</small></div></div>
-      <div className={styles.topActions}><span className={styles.viewer}><b>{viewer.displayName}</b><small>{viewer.username}</small></span><button className={styles.ghostButton} onClick={() => void loadSnapshot(true)} disabled={loading}>{loading ? "刷新中" : "刷新"}</button><button className={styles.logoutButton} onClick={() => void logout()}>退出</button></div>
+      <div className={styles.topActions}><span className={styles.viewer}><b>{viewer.displayName}</b><small>{viewer.username}</small></span><button className={styles.ghostButton} onClick={() => void loadSection(tab, true)} disabled={loading}>{loading ? "刷新中" : "刷新"}</button><button className={styles.logoutButton} onClick={() => void logout()}>退出</button></div>
     </header>
     <div className={styles.shell}>
       <section className={styles.pageHead}><div><small>DATA PLATFORM CONTROL CENTER</small><h1>数据运维中心</h1><p>统一查看事实仓库、Analytics、数据同步、质量审计与运行日志。</p></div><div className={styles.engineStatus}><i /><span><b>Sync Center v2 · Analytics v1</b><small>{snapshot ? `快照 ${time(snapshot.generatedAt)}` : "正在读取状态"}</small></span></div></section>
-      <nav className={styles.tabs}>{tabs.map((item) => <button key={item.key} className={tab === item.key ? styles.tabActive : ""} onClick={() => setTab(item.key)}><span>{item.label}</span><em>{item.short}</em></button>)}</nav>
+      <nav className={styles.tabs}>{tabs.map((item) => <button key={item.key} className={tab === item.key ? styles.tabActive : ""} onClick={() => selectTab(item.key)}><span>{item.label}</span><em>{item.short}</em></button>)}</nav>
       {(message || error) && <div className={`${styles.notice} ${error ? styles.noticeError : styles.noticeGood}`}>{error || message}<button onClick={() => { setMessage(""); setError(""); }}>×</button></div>}
-      {!snapshot ? <LoadingPanel onRetry={() => void loadSnapshot(true)} /> : <>
+      {!loadedSections.has(tab) ? <LoadingPanel onRetry={() => void loadSection(tab, true)} /> : <>
         {tab === "overview" && <OverviewTab snapshot={snapshot} />}
         {tab === "analytics" && <AnalyticsTab snapshot={snapshot} analyticsTask={analyticsTask} pendingAction={pendingAction} runAction={runAction} />}
         {tab === "sync" && <SyncCenterV2 tasks={snapshot.syncTasks || []} rankings={snapshot.rankings || []} cronJobs={snapshot.cronJobs || []} pendingAction={pendingAction} runAction={runAction} />}

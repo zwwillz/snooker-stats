@@ -77,6 +77,12 @@ export async function loadSnookerOpsSnapshot<T>() {
   return callSnookerOps<T>("snapshot", { token });
 }
 
+export async function loadSnookerOpsSnapshotSection<T>(section: string) {
+  const token = await currentToken();
+  if (!token) throw new Error("UNAUTHORIZED");
+  return callSnookerOps<T>("snapshot-section", { token, section });
+}
+
 export async function runSnookerOpsAction<T>(action: string, payload: Record<string, unknown> = {}) {
   const token = await currentToken();
   if (!token) throw new Error("UNAUTHORIZED");

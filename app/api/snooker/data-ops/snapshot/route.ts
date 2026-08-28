@@ -1,11 +1,17 @@
-import { loadSnookerOpsSnapshot } from "@/lib/snooker/data-ops-auth";
+import { loadSnookerOpsSnapshotSection } from "@/lib/snooker/data-ops-auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET() {
+const sections = new Set(["overview", "analytics", "sync", "quality", "logs"]);
+
+export async function GET(request: Request) {
   try {
-    const snapshot = await loadSnookerOpsSnapshot<unknown>();
+    const requested = new URL(request.url).searchParams.get("section") || "overview";
+    if (!sections.has(requested)) {
+      return Response.json({ error: "不支持的数据分区。" }, { status: 400 });
+    }
+    const snapshot = await loadSnookerOpsSnapshotSection<unknown>(requested);
     return Response.json(snapshot, { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "数据运维快照读取失败。";
