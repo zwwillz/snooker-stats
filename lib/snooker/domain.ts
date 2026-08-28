@@ -184,6 +184,7 @@ export type SnookerEvent = {
   sourceUrl: string;
   snapshotAt: string;
   rounds: SnookerRound[];
+  detailPartial?: boolean;
   schedulePartial?: boolean;
   publishedMatchCount?: number;
 };
