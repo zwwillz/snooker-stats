@@ -34,19 +34,27 @@ test("session breaks remain active and are shown as break state", async () => {
   assert.match(migration, /new\.status := 'session-break'/);
 });
 
-test("homepage headline selection is deterministic and retains recent results until live takeover", async () => {
+test("homepage headline prioritizes live, imminent starts, recent results, then normal upcoming windows", async () => {
   const [ui, liveClient] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("lib/snooker/live-client.ts"),
   ]);
   assert.match(liveClient, /selectHomepageHeadlineMatch/);
+  assert.match(liveClient, /IMMINENT_UPCOMING_MS = 30 \* 60 \* 1000/);
   assert.match(liveClient, /COMPLETED_PROTECTION_MS = 45 \* 60 \* 1000/);
   assert.match(liveClient, /UPCOMING_PREHEAT_MS = 3 \* 60 \* 60 \* 1000/);
   assert.match(liveClient, /UPCOMING_FALLBACK_MS = 3 \* 24 \* 60 \* 60 \* 1000/);
   assert.match(liveClient, /resolveCompletedAt/);
   assert.match(liveClient, /roundPriority/);
   assert.match(liveClient, /chinaPriority/);
-  assert.match(liveClient, /const live = candidates\.filter/);
+
+  const liveIndex = liveClient.indexOf("const live = candidates.filter");
+  const imminentIndex = liveClient.indexOf("const imminent = upcomingWithin(IMMINENT_UPCOMING_MS)");
+  const completedIndex = liveClient.indexOf("const recentlyCompleted = candidates.filter");
+  const preheatIndex = liveClient.indexOf("const preheating = upcomingWithin(UPCOMING_PREHEAT_MS)");
+  assert.ok(liveIndex >= 0 && imminentIndex > liveIndex, "imminent upcoming must follow live priority");
+  assert.ok(completedIndex > imminentIndex, "30-minute imminent upcoming must override the 45-minute result hold");
+  assert.ok(preheatIndex > completedIndex, "normal 3-hour preheat must remain below the recent-result hold");
   assert.match(ui, /selectHomepageHeadlineMatches\(databaseEvents, players\)/);
 });
 
