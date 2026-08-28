@@ -360,6 +360,7 @@ function buildEvents(
       sourceUrl: eventRow.source_url || "",
       snapshotAt: eventRow.source_updated_at || loadedAt,
       rounds,
+      detailPartial: true,
     };
   });
 }
