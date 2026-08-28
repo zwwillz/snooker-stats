@@ -1,6 +1,7 @@
 import type { SnookerEvent, SnookerMatch, SnookerPlayer } from "./domain";
 
 const FINAL_STATUSES = new Set(["completed", "walkover"]);
+export const IMMINENT_UPCOMING_MS = 30 * 60 * 1000;
 export const COMPLETED_PROTECTION_MS = 45 * 60 * 1000;
 export const UPCOMING_PREHEAT_MS = 3 * 60 * 60 * 1000;
 export const UPCOMING_FALLBACK_MS = 3 * 24 * 60 * 60 * 1000;
@@ -136,6 +137,21 @@ export function selectHomepageHeadlineMatches(
     return live.slice(0, Math.max(1, Math.min(4, limit)));
   }
 
+  const upcomingWithin = (windowMs: number) => candidates.filter(({ match }) => {
+    if (match.status !== "upcoming") return false;
+    const scheduled = time(match.scheduledAt);
+    return scheduled > now && scheduled - now <= windowMs;
+  });
+
+  // Once the next confirmed match is very close, it becomes more useful than a
+  // just-finished result. This also prevents delayed completion detection from
+  // restarting a 45-minute result hold across the next match's start time.
+  const imminent = upcomingWithin(IMMINENT_UPCOMING_MS);
+  if (imminent.length) {
+    sortUpcomingCandidates(imminent, players);
+    return imminent.slice(0, 1);
+  }
+
   const recentlyCompleted = candidates.filter(({ match }) => {
     if (!FINAL_STATUSES.has(match.status)) return false;
     const completedAt = resolveCompletedAt(match, now);
@@ -147,11 +163,6 @@ export function selectHomepageHeadlineMatches(
     return recentlyCompleted.slice(0, 1);
   }
 
-  const upcomingWithin = (windowMs: number) => candidates.filter(({ match }) => {
-    if (match.status !== "upcoming") return false;
-    const scheduled = time(match.scheduledAt);
-    return scheduled > now && scheduled - now <= windowMs;
-  });
   const preheating = upcomingWithin(UPCOMING_PREHEAT_MS);
   const upcoming = preheating.length ? preheating : upcomingWithin(UPCOMING_FALLBACK_MS);
   if (!upcoming.length) return [];
