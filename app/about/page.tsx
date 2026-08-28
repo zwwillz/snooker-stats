@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { loadPublicAboutStats } from "@/lib/snooker/public-site-stats";
+import AboutChrome from "./about-chrome";
 import styles from "./about.module.css";
 
 export const revalidate = 21600;
@@ -25,18 +25,12 @@ export default async function AboutPage() {
 
   return (
     <main className={styles.page}>
-      <header className={styles.topbar}>
-        <Link className={styles.brand} href="/" aria-label="返回147数据局首页">
-          <span className={styles.brandMark}>147</span>
-          <span><strong>147数据局</strong><small>中文斯诺克数据平台</small></span>
-        </Link>
-        <Link className={styles.back} href="/">返回首页 <span aria-hidden="true">↗</span></Link>
-      </header>
+      <AboutChrome />
 
       <div className={styles.shell}>
         <section className={styles.hero}>
           <div className={styles.heroCopy}>
-            <small className={styles.eyebrow}>ABOUT 147 DATA</small>
+            <small className={styles.eyebrow}>ABOUT</small>
             <h1>关于147数据局</h1>
             <p className={styles.heroLead}>因为喜欢斯诺克，所以想把它的数据认真整理下来。</p>
             <p className={styles.heroText}>147数据局是一个由斯诺克爱好者创建和持续维护的独立数据网站，目前不以商业盈利为目的。我们希望长期整理赛事、球员和比赛数据，逐步建立一个更完整、更好用的中文斯诺克数据网站。</p>
@@ -116,8 +110,7 @@ export default async function AboutPage() {
             <small>DATA QUALITY</small>
             <h2>关于数据准确性</h2>
             <p>我们会尽可能核对和整理每一项数据。但斯诺克赛事历史很长，不同时期的数据保存情况不同，不同资料来源之间也可能存在记录差异，因此部分历史赛事仍可能存在遗漏、错误或信息不完整。</p>
-            <p>147数据局会持续补充和校正。如果你发现数据问题，欢迎通过邮箱告诉我们。</p>
-            <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("147数据局数据纠错")}`}>反馈数据问题 <span aria-hidden="true">→</span></a>
+            <p className={styles.inlineContact}>147数据局会持续补充和校正。如果你发现数据问题，欢迎 <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("147数据局数据纠错")}`}>反馈数据问题 <span aria-hidden="true">→</span></a></p>
           </article>
 
           <article className={styles.noteCard}>
@@ -143,10 +136,7 @@ export default async function AboutPage() {
             <div className={styles.supportTags}><span>服务器 / 云资源</span><span>数据库 / 存储</span><span>CDN / 网络</span><span>费用资助</span><span>历史资料</span><span>技术支持</span></div>
           </div>
           <div className={styles.contactCard}>
-            <span>CONTACT</span>
-            <strong>联系147数据局</strong>
-            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
-            <small>数据纠错、资料贡献、资源支持及其他联系均可使用此邮箱。</small>
+            <p>如果你愿意提供历史资料、资源支持、技术帮助或其他建议，欢迎 <a href={`mailto:${CONTACT_EMAIL}`}>联系147数据局 <span aria-hidden="true">→</span></a></p>
           </div>
         </section>
 
