@@ -8,6 +8,7 @@ const aboutCss = readFileSync(new URL("../app/about/about.module.css", import.me
 const aboutStats = readFileSync(new URL("../lib/snooker/public-site-stats.ts", import.meta.url), "utf8");
 const homePage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
 const homeCard = readFileSync(new URL("../app/snooker/home-about-card.tsx", import.meta.url), "utf8");
+const homePortalTarget = readFileSync(new URL("../app/snooker/home-portal-target.ts", import.meta.url), "utf8");
 const homeCardCss = readFileSync(new URL("../app/snooker/home-about-card.module.css", import.meta.url), "utf8");
 
 test("about page keeps the approved project positioning and private contact presentation", () => {
@@ -49,7 +50,8 @@ test("homepage exposes only the lightweight theme-aware about entry on the home 
   assert.match(homePage, /import HomeAboutCard/);
   assert.match(homePage, /<HomeAboutCard \/>/);
   assert.match(homeCard, /href="\/about"/);
-  assert.match(homeCard, /isHomeUrl\(\)/);
+  assert.match(homeCard, /findHomepagePortalTarget\(\)/);
+  assert.match(homePortalTarget, /activeMainNavLabel\(nav\) !== "首页"/);
   assert.match(homeCard, /<small>ABOUT<\/small>/);
   assert.match(homeCard, /snooker-about-return/);
   assert.match(homeCardCss, /var\(--accent-faint/);
