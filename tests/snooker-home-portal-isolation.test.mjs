@@ -10,7 +10,9 @@ const about = fs.readFileSync("app/snooker/home-about-card.tsx", "utf8");
 test("homepage-only extras are mounted only by the lightweight home bootstrap", () => {
   assert.match(page, /useHomeBootstrap \? <HomeExtras leaders=\{homeLeaders\} \/> : null/);
   assert.match(extras, /function isHomepage\(\)/);
-  assert.match(extras, /!view \|\| view === "home"/);
+  assert.match(extras, /view && view !== "home"/);
+  assert.match(extras, /params\.has\("player"\)/);
+  assert.match(extras, /dataStyles\.detailShell/);
 });
 
 test("season leaders and about card render directly without portal infrastructure", () => {
@@ -21,8 +23,9 @@ test("season leaders and about card render directly without portal infrastructur
   }
 });
 
-test("homepage extras follow root URL and browser history changes without observing the body", () => {
+test("homepage extras follow local root/detail changes without observing the body", () => {
   assert.match(extras, /snooker-view-url-change/);
   assert.match(extras, /popstate/);
+  assert.match(extras, /document\.addEventListener\("click", scheduleSync, true\)/);
   assert.doesNotMatch(extras, /MutationObserver/);
 });
