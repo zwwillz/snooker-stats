@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import styles from "./snooker-view-url-sync.module.css";
 
 type RootView = "home" | "matches" | "players" | "data";
 
@@ -42,44 +44,57 @@ function updateRootUrl(view: RootView) {
 }
 
 export default function SnookerViewUrlSync({ serverLoadData = false }: { serverLoadData?: boolean }) {
-  useEffect(() => {
-    const handleClick = (event: MouseEvent) => {
-      const target = event.target instanceof Element ? event.target : null;
-      if (!target) return;
+  const router = useRouter();
+  const [navigating, setNavigating] = useState(false);
 
-      const brand = target.closest("main[data-theme] > div > header:first-child > button:first-child");
-      if (brand) {
-        updateRootUrl("home");
-        return;
-      }
+  const routeFromHome = (view: RootView) => {
+    if (navigating) return;
+    setNavigating(true);
+    router.push(rootUrl(view));
+  };
 
-      const button = target.closest<HTMLButtonElement>("button");
-      if (serverLoadData && button?.textContent?.replace(/\s+/g, "").includes("查看完整世界排名")) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        window.location.assign(rootUrl("data"));
-        return;
-      }
+  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
 
-      const navButton = target.closest("nav button");
-      const nav = navButton?.closest("nav");
-      if (!navButton || !nav || !(nav instanceof HTMLElement) || !isMainNavigation(nav)) return;
+    const brand = target.closest("main[data-theme] > div > header:first-child > button:first-child");
+    if (brand) {
+      updateRootUrl("home");
+      return;
+    }
 
-      const label = navButton.querySelector("b")?.textContent?.trim() ?? "";
-      const view = viewByLabel[label];
-      if (!view) return;
-      if (serverLoadData && view === "data") {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        window.location.assign(rootUrl("data"));
-        return;
-      }
-      updateRootUrl(view);
-    };
+    const button = target.closest<HTMLButtonElement>("button");
+    const compactText = button?.textContent?.replace(/\s+/g, "") ?? "";
+    if (serverLoadData && compactText.includes("赛事列表")) {
+      event.preventDefault();
+      event.stopPropagation();
+      routeFromHome("matches");
+      return;
+    }
+    if (serverLoadData && compactText.includes("查看完整世界排名")) {
+      event.preventDefault();
+      event.stopPropagation();
+      routeFromHome("data");
+      return;
+    }
 
-    document.addEventListener("click", handleClick, true);
-    return () => document.removeEventListener("click", handleClick, true);
-  }, [serverLoadData]);
+    const navButton = target.closest("nav button");
+    const nav = navButton?.closest("nav");
+    if (!navButton || !nav || !(nav instanceof HTMLElement) || !isMainNavigation(nav)) return;
 
-  return null;
+    const label = navButton.querySelector("b")?.textContent?.trim() ?? "";
+    const view = viewByLabel[label];
+    if (!view) return;
+    if (serverLoadData && view !== "home") {
+      event.preventDefault();
+      event.stopPropagation();
+      routeFromHome(view);
+      return;
+    }
+    updateRootUrl(view);
+  };
+
+  return <div onClickCapture={handleClick} style={{ display: "contents" }}>
+    {navigating ? <span className={styles.progress} aria-hidden="true" /> : null}
+  </div>;
 }
