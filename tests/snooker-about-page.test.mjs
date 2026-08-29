@@ -7,8 +7,8 @@ const aboutChrome = readFileSync(new URL("../app/about/about-chrome.tsx", import
 const aboutCss = readFileSync(new URL("../app/about/about.module.css", import.meta.url), "utf8");
 const aboutStats = readFileSync(new URL("../lib/snooker/public-site-stats.ts", import.meta.url), "utf8");
 const homePage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+const homeExtras = readFileSync(new URL("../app/snooker/home-extras.tsx", import.meta.url), "utf8");
 const homeCard = readFileSync(new URL("../app/snooker/home-about-card.tsx", import.meta.url), "utf8");
-const homePortalTarget = readFileSync(new URL("../app/snooker/home-portal-target.ts", import.meta.url), "utf8");
 const homeCardCss = readFileSync(new URL("../app/snooker/home-about-card.module.css", import.meta.url), "utf8");
 
 test("about page keeps the approved project positioning and private contact presentation", () => {
@@ -46,12 +46,12 @@ test("about statistics use warehouse counts with the requested display factors",
   assert.match(aboutStats, /revalidate: ABOUT_STATS_REVALIDATE_SECONDS/);
 });
 
-test("homepage exposes only the lightweight theme-aware about entry on the home view", () => {
-  assert.match(homePage, /import HomeAboutCard/);
-  assert.match(homePage, /<HomeAboutCard \/>/);
+test("homepage exposes the lightweight theme-aware about entry directly on the home view", () => {
+  assert.match(homePage, /import HomeExtras/);
+  assert.match(homePage, /useHomeBootstrap \? <HomeExtras leaders=\{homeLeaders\} \/> : null/);
+  assert.match(homeExtras, /<HomeAboutCard \/>/);
   assert.match(homeCard, /href="\/about"/);
-  assert.match(homeCard, /findHomepagePortalTarget\(\)/);
-  assert.match(homePortalTarget, /activeMainNavLabel\(nav\) !== "首页"/);
+  assert.doesNotMatch(homeCard, /findHomepagePortalTarget|createPortal|MutationObserver/);
   assert.match(homeCard, /<small>ABOUT<\/small>/);
   assert.match(homeCard, /snooker-about-return/);
   assert.match(homeCardCss, /var\(--accent-faint/);
