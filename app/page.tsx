@@ -1,14 +1,13 @@
 import SnookerDataCenterV2 from "./snooker/snooker-data-center-v2";
 import LiveStrikerIndicatorGated from "./snooker/live-striker-indicator-gated";
 import SnookerViewUrlSync from "./snooker/snooker-view-url-sync";
-import HomeSeasonLeaders from "./snooker/home-season-leaders";
-import HomeAboutCard from "./snooker/home-about-card";
+import HomeExtras from "./snooker/home-extras";
 import { SNOOKER_BUILD_MARK } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { refreshSnookerDatabaseViewLive } from "@/lib/snooker/live-read-through";
 import { CURRENT_RANKING_KEYS, loadSnookerRankingHub, type SnookerCurrentRankingKey, type SnookerRankingSection } from "@/lib/snooker/ranking-hub";
 import { buildHomeLeaders } from "@/lib/snooker/home-leaders";
-import { loadSnookerHomeBootstrap } from "@/lib/snooker/home-bootstrap";
+import { loadSnookerHomeBootstrapV3 } from "@/lib/snooker/home-bootstrap-v3";
 import { snookerCacheLabel, SNOOKER_CACHE_SECONDS } from "@/lib/snooker/cache-policy";
 
 export const dynamic = "force-dynamic";
@@ -37,9 +36,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
         : "home";
   const useHomeBootstrap = initialView === "home" && !requestedPlayer;
 
-  const [cachedDatabase, rankingHub, bootstrapLeaders] = useHomeBootstrap
-    ? await loadSnookerHomeBootstrap().then((bootstrap) => [bootstrap.database, bootstrap.rankingHub, bootstrap.homeLeaders] as const)
-    : await Promise.all([loadSnookerDatabaseViewV2(), loadSnookerRankingHub()]).then(([database, hub]) => [database, hub, null] as const);
+  const [cachedDatabase, rankingHub, bootstrapLeaders, bootstrapCompare] = useHomeBootstrap
+    ? await loadSnookerHomeBootstrapV3().then((bootstrap) => [bootstrap.database, bootstrap.rankingHub, bootstrap.homeLeaders, bootstrap.homePlayerCompare] as const)
+    : await Promise.all([loadSnookerDatabaseViewV2(), loadSnookerRankingHub()]).then(([database, hub]) => [database, hub, null, null] as const);
 
   const database = await refreshSnookerDatabaseViewLive(cachedDatabase);
   const focusedEvent = database.snapshot.event;
@@ -76,10 +75,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
         initialDataSection={initialDataSection}
         initialRankingKey={initialDataSection ? rankingKey(query.list) : null}
         initialRankingSection={initialDataSection ? rankingSection(query.group) : "current"}
-        initialPlayerCompare={null}
+        initialPlayerCompare={bootstrapCompare}
       />
-      <HomeSeasonLeaders initialPayload={homeLeaders} />
-      <HomeAboutCard />
+      {useHomeBootstrap ? <HomeExtras leaders={homeLeaders} /> : null}
       <LiveStrikerIndicatorGated />
     </>
   );
