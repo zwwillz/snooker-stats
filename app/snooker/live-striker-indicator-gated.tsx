@@ -1,8 +1,10 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import LiveStrikerIndicator from "./live-striker-indicator";
 import styles from "./snooker-data-center.module.css";
+
+const LiveStrikerIndicator = dynamic(() => import("./live-striker-indicator"));
 
 function matchDetailVisible() {
   return Boolean(
