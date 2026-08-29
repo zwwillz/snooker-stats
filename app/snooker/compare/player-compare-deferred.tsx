@@ -27,7 +27,6 @@ export default function PlayerCompareDeferred({
 
   useEffect(() => {
     const controller = new AbortController();
-    setError(false);
     const params = new URLSearchParams({ player1, player2 });
     if (season) params.set("season", season);
     void fetch(`/api/snooker/v1/player-compare?${params.toString()}`, {
@@ -47,7 +46,12 @@ export default function PlayerCompareDeferred({
     return () => controller.abort();
   }, [attempt, player1, player2, season]);
 
+  const retry = () => {
+    setError(false);
+    setAttempt((value) => value + 1);
+  };
+
   if (data) return <PlayerCompareClient players={players} initialCompare={data} />;
-  if (error) return <main style={{ minHeight: "100dvh", display: "grid", placeItems: "center", background: "#f5f7f6", padding: 24 }}><div style={{ textAlign: "center" }}><strong>球员对比数据暂时没有加载成功</strong><br /><button type="button" onClick={() => setAttempt((value) => value + 1)} style={{ marginTop: 14, padding: "10px 18px", border: 0, borderRadius: 12 }}>重新加载</button></div></main>;
+  if (error) return <main style={{ minHeight: "100dvh", display: "grid", placeItems: "center", background: "#f5f7f6", padding: 24 }}><div style={{ textAlign: "center" }}><strong>球员对比数据暂时没有加载成功</strong><br /><button type="button" onClick={retry} style={{ marginTop: 14, padding: "10px 18px", border: 0, borderRadius: 12 }}>重新加载</button></div></main>;
   return <PlayerCompareLoadingShell />;
 }
