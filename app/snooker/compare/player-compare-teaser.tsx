@@ -99,9 +99,8 @@ export default function PlayerCompareTeaser({
       <Link
         className={actionClassName ? `${styles.actionReset} ${actionClassName}` : styles.action}
         href={compareHref}
-        prefetch
+        prefetch={false}
         onPointerEnter={warmCompare}
-        onPointerDown={warmCompare}
         onFocus={warmCompare}
         onClick={rememberReturn}
       >
