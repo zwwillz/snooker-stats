@@ -1,0 +1,17 @@
+.wrapper{
+  --accent:#0b7a55;--accent-strong:#075b40;--accent-dark:#063d2d;--accent-soft:#eaf6f1;--accent-faint:#f5faf7;
+  --ink:#171b1a;--muted:#747b78;--line:#e7ece9;--surface:#fff;
+  position:relative;z-index:2;width:min(100%,720px);margin:-92px auto 0;padding:0 16px 92px;
+  display:flex;flex-direction:column;gap:14px;background:rgba(255,255,255,.78);color:var(--ink)
+}
+:global(html[data-snooker-theme="red"]) .wrapper{--accent:#d81336;--accent-strong:#b80e2b;--accent-dark:#7b071d;--accent-soft:#fff0f3;--accent-faint:#fff7f8}
+
+:global(body:has([data-home-extras]) main[data-theme] [role="status"]){display:none!important}
+:global(body:has([data-home-extras]) main[data-theme] > div > header:first-child > div:last-child > span:first-child){display:none!important}
+:global(body:has([data-home-extras]) main[data-theme] > div > header:first-child > button:first-child > div > strong){font-size:0!important}
+:global(body:has([data-home-extras]) main[data-theme] > div > header:first-child > button:first-child > div > strong)::after{content:"147数据局";font-size:14px;font-weight:850}
+:global(body:has([data-home-extras]) main[data-theme] > div > header:first-child > button:first-child > div > small){font-size:0!important;letter-spacing:.035em!important;white-space:nowrap}
+:global(body:has([data-home-extras]) main[data-theme] > div > header:first-child > button:first-child > div > small)::after{content:"中文斯诺克数据平台 · CN SNOOKER STATS";font-size:7px;color:#929894}
+
+@media (min-width:721px){.wrapper{padding-left:20px;padding-right:20px}}
+@media (max-width:420px){.wrapper{padding-left:12px;padding-right:12px}:global(body:has([data-home-extras]) main[data-theme] > div > header:first-child > button:first-child > div > strong)::after{font-size:13px}:global(body:has([data-home-extras]) main[data-theme] > div > header:first-child > button:first-child > div > small)::after{font-size:6.5px}}
