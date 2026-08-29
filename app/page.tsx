@@ -5,6 +5,7 @@ import HomeExtras from "./snooker/home-extras";
 import { SNOOKER_BUILD_MARK } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { refreshSnookerDatabaseViewLive } from "@/lib/snooker/live-read-through";
+import { refreshSnookerHomeLiveScore } from "@/lib/snooker/home-live-read-through";
 import { CURRENT_RANKING_KEYS, loadSnookerRankingHub, type SnookerCurrentRankingKey, type SnookerRankingSection } from "@/lib/snooker/ranking-hub";
 import { buildHomeLeaders } from "@/lib/snooker/home-leaders";
 import { loadSnookerHomeBootstrapV3 } from "@/lib/snooker/home-bootstrap-v3";
@@ -40,7 +41,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
     ? await loadSnookerHomeBootstrapV3().then((bootstrap) => [bootstrap.database, bootstrap.rankingHub, bootstrap.homeLeaders, bootstrap.homePlayerCompare] as const)
     : await Promise.all([loadSnookerDatabaseViewV2(), loadSnookerRankingHub()]).then(([database, hub]) => [database, hub, null, null] as const);
 
-  const database = await refreshSnookerDatabaseViewLive(cachedDatabase);
+  const database = useHomeBootstrap
+    ? await refreshSnookerHomeLiveScore(cachedDatabase)
+    : await refreshSnookerDatabaseViewLive(cachedDatabase);
   const focusedEvent = database.snapshot.event;
   const focusedEvents = [focusedEvent];
   const snapshot = database.snapshot;
