@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync("app/page.tsx", "utf8");
@@ -11,7 +11,6 @@ const extras = readFileSync("app/snooker/home-extras.tsx", "utf8");
 const compare = readFileSync("app/snooker/compare/player-compare-teaser.tsx", "utf8");
 const comparePage = readFileSync("app/snooker/compare/page.tsx", "utf8");
 const compareDeferred = readFileSync("app/snooker/compare/player-compare-deferred.tsx", "utf8");
-const compareLoading = readFileSync("app/snooker/compare/loading.tsx", "utf8");
 const gate = readFileSync("app/snooker/live-striker-indicator-gated.tsx", "utf8");
 const striker = readFileSync("app/snooker/live-striker-indicator.tsx", "utf8");
 const urlSync = readFileSync("app/snooker/snooker-view-url-sync.tsx", "utf8");
@@ -41,29 +40,39 @@ test("season leaders are four bounded top-one queries rather than a full season 
   assert.match(bootstrap, /matches_played=gte\.5&average_shot_time=gt\.0/);
 });
 
-test("homepage player compare is server-prefilled from bounded aggregate queries", () => {
+test("homepage player compare is server-prefilled from resilient bounded aggregate queries", () => {
   assert.match(bootstrapV3, /snooker_player_season_aggregates/);
   assert.match(bootstrapV3, /snooker_player_h2h_aggregates/);
+  assert.match(bootstrapV3, /player_low_id=eq\.\$\{lowUuid\}&player_high_id=eq\.\$\{highUuid\}/);
+  assert.match(bootstrapV3, /\.catch\(\(\) => \[\]\)/);
   assert.doesNotMatch(bootstrapV3, /snooker_player_career_aggregates/);
   assert.doesNotMatch(bootstrapV3, /snooker_matches\?/);
   assert.doesNotMatch(compare, /IntersectionObserver/);
   assert.match(compare, /variant !== "data"/);
-  assert.doesNotMatch(compare, /prefetch=\{false\}/);
 });
 
-test("fixed homepage cards render directly without portals or body observers", () => {
+test("homepage links do not automatically prefetch expensive routes", () => {
+  assert.match(compare, /prefetch=\{false\}/);
+  assert.doesNotMatch(compare, /onPointerDown=\{warmCompare\}/);
+  assert.match(about, /prefetch=\{false\}/);
+});
+
+test("fixed homepage cards render directly and hide from client detail views", () => {
   assert.match(page, /<HomeExtras leaders=\{homeLeaders\} \/>/);
   assert.match(extras, /<HomeSeasonLeaders initialPayload=\{leaders\} \/>/);
   assert.match(extras, /<HomeAboutCard \/>/);
+  assert.match(extras, /dataStyles\.detailShell/);
+  assert.match(extras, /document\.addEventListener\("click", scheduleSync, true\)/);
   assert.doesNotMatch(leaders, /createPortal|MutationObserver|findHomepagePortalTarget/);
   assert.doesNotMatch(about, /createPortal|MutationObserver|findHomepagePortalTarget/);
+  assert.doesNotMatch(extras, /MutationObserver/);
 });
 
-test("player compare route switches to a loading shell before the full payload finishes", () => {
+test("player compare uses one stable in-page loading shell without a route loading flash", () => {
   assert.match(comparePage, /PlayerCompareDeferred/);
   assert.doesNotMatch(comparePage, /loadPlayerCompare/);
   assert.match(compareDeferred, /\/api\/snooker\/v1\/player-compare/);
-  assert.match(compareLoading, /PlayerCompareLoadingShell/);
+  assert.equal(existsSync("app/snooker/compare/loading.tsx"), false);
 });
 
 test("live striker keeps 30 second refresh without body MutationObservers", () => {
@@ -75,9 +84,9 @@ test("live striker keeps 30 second refresh without body MutationObservers", () =
   assert.match(striker, /30_000/);
 });
 
-test("homepage navigation can start a server view transition before main hydration", () => {
-  assert.match(urlSync, /router\.push\(rootUrl\(view\)\)/);
-  assert.match(urlSync, /serverLoadData && view !== "home"/);
-  assert.match(urlSync, /stopImmediatePropagation\(\)/);
-  assert.match(urlSync, /setNavigating\(true\)/);
+test("homepage navigation stays client-local and never blocks on a server route", () => {
+  assert.match(urlSync, /window\.history\.replaceState/);
+  assert.match(urlSync, /snooker-view-url-change/);
+  assert.doesNotMatch(urlSync, /useRouter|router\.push|stopImmediatePropagation|setNavigating/);
+  assert.match(page, /<SnookerViewUrlSync \/>/);
 });
