@@ -62,7 +62,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
 
   return (
     <>
-      <SnookerViewUrlSync serverLoadData={useHomeBootstrap} />
+      <SnookerViewUrlSync />
       <SnookerDataCenterV2
         initialSnapshot={snapshot}
         initialDatabaseEvents={focusedEvents}
