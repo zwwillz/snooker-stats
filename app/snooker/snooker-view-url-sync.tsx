@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import styles from "./snooker-view-url-sync.module.css";
+import { useEffect } from "react";
 
 type RootView = "home" | "matches" | "players" | "data";
 
@@ -43,16 +41,8 @@ function updateRootUrl(view: RootView) {
   notifyViewUrlChange();
 }
 
-export default function SnookerViewUrlSync({ serverLoadData = false }: { serverLoadData?: boolean }) {
-  const router = useRouter();
-  const [navigating, setNavigating] = useState(false);
-
+export default function SnookerViewUrlSync() {
   useEffect(() => {
-    const routeFromHome = (view: RootView) => {
-      setNavigating(true);
-      router.push(rootUrl(view));
-    };
-
     const handleClick = (event: MouseEvent) => {
       const target = event.target instanceof Element ? event.target : null;
       if (!target) return;
@@ -65,16 +55,12 @@ export default function SnookerViewUrlSync({ serverLoadData = false }: { serverL
 
       const button = target.closest<HTMLButtonElement>("button");
       const compactText = button?.textContent?.replace(/\s+/g, "") ?? "";
-      if (serverLoadData && compactText.includes("赛事列表")) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        routeFromHome("matches");
+      if (compactText.includes("赛事列表")) {
+        updateRootUrl("matches");
         return;
       }
-      if (serverLoadData && compactText.includes("查看完整世界排名")) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        routeFromHome("data");
+      if (compactText.includes("查看完整世界排名")) {
+        updateRootUrl("data");
         return;
       }
 
@@ -84,19 +70,12 @@ export default function SnookerViewUrlSync({ serverLoadData = false }: { serverL
 
       const label = navButton.querySelector("b")?.textContent?.trim() ?? "";
       const view = viewByLabel[label];
-      if (!view) return;
-      if (serverLoadData && view !== "home") {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        routeFromHome(view);
-        return;
-      }
-      updateRootUrl(view);
+      if (view) updateRootUrl(view);
     };
 
     document.addEventListener("click", handleClick, true);
     return () => document.removeEventListener("click", handleClick, true);
-  }, [router, serverLoadData]);
+  }, []);
 
-  return navigating ? <span className={styles.progress} aria-hidden="true" /> : null;
+  return null;
 }
