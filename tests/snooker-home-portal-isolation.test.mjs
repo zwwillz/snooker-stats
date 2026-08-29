@@ -10,7 +10,7 @@ const about = fs.readFileSync("app/snooker/home-about-card.tsx", "utf8");
 test("homepage-only extras are mounted only by the lightweight home bootstrap", () => {
   assert.match(page, /useHomeBootstrap \? <HomeExtras leaders=\{homeLeaders\} \/> : null/);
   assert.match(extras, /function isHomepage\(\)/);
-  assert.match(extras, /view && view !== "home"/);
+  assert.match(extras, /\(!view \|\| view === "home"\)/);
   assert.match(extras, /params\.has\("player"\)/);
   assert.match(extras, /dataStyles\.detailShell/);
 });
