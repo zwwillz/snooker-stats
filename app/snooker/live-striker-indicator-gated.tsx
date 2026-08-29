@@ -15,28 +15,33 @@ export default function LiveStrikerIndicatorGated() {
   const [active, setActive] = useState(false);
 
   useEffect(() => {
-    let frame = 0;
-    const sync = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(() => {
-        frame = 0;
-        setActive((current) => {
-          const next = matchDetailVisible();
-          return current === next ? current : next;
+    let firstFrame = 0;
+    let secondFrame = 0;
+    const sync = () => setActive((current) => {
+      const next = matchDetailVisible();
+      return current === next ? current : next;
+    });
+    const schedule = () => {
+      if (firstFrame || secondFrame) return;
+      firstFrame = window.requestAnimationFrame(() => {
+        firstFrame = 0;
+        secondFrame = window.requestAnimationFrame(() => {
+          secondFrame = 0;
+          sync();
         });
       });
     };
 
     sync();
-    const observer = new MutationObserver(sync);
-    observer.observe(document.body, { childList: true, subtree: true });
-    window.addEventListener("popstate", sync);
-    window.addEventListener("snooker-view-url-change", sync);
+    document.addEventListener("click", schedule, true);
+    window.addEventListener("popstate", schedule);
+    window.addEventListener("snooker-view-url-change", schedule);
     return () => {
-      observer.disconnect();
-      if (frame) window.cancelAnimationFrame(frame);
-      window.removeEventListener("popstate", sync);
-      window.removeEventListener("snooker-view-url-change", sync);
+      document.removeEventListener("click", schedule, true);
+      window.removeEventListener("popstate", schedule);
+      window.removeEventListener("snooker-view-url-change", schedule);
+      if (firstFrame) window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
     };
   }, []);
 
