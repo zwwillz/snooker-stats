@@ -164,7 +164,7 @@ test("player directory and player detail share one root shell and focused data p
   assert.match(playerCss, /\.directoryToolbar \.filters button\{/);
 });
 
-test("slim homepage keeps fast local tabs while Data can server-load the complete hub", async () => {
+test("slim homepage uses a lightweight navigation shell before server-loaded deep views", async () => {
   const [ui, sync, db, page] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-view-url-sync.tsx"),
@@ -184,8 +184,9 @@ test("slim homepage keeps fast local tabs while Data can server-load the complet
   assert.match(sync, /球员: "players"/);
   assert.match(sync, /数据: "data"/);
   assert.match(sync, /serverLoadData/);
-  assert.match(sync, /serverLoadData && view === "data"/);
-  assert.match(sync, /window\.location\.assign\(rootUrl\("data"\)\)/);
+  assert.match(sync, /serverLoadData && view !== "home"/);
+  assert.match(sync, /router\.push\(rootUrl\(view\)\)/);
+  assert.match(sync, /setNavigating\(true\)/);
   assert.match(sync, /url\.searchParams\.delete\("view"\)/);
   assert.match(sync, /url\.searchParams\.set\("view", view\)/);
   assert.match(sync, /window\.history\.replaceState\(window\.history\.state/);
