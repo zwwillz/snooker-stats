@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getSnookerPlayerDirectory } from "@/lib/snooker/player-data";
-import { loadPlayerCompare } from "@/lib/snooker/player-compare";
-import PlayerCompareClient from "./player-compare-client";
+import PlayerCompareDeferred from "./player-compare-deferred";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -25,7 +24,6 @@ export default async function PlayerComparePage({
   const player2 = player2Candidate === player1
     ? currentTour.find((player) => player.slug !== player1)?.slug ?? fallback2
     : player2Candidate;
-  const initialCompare = await loadPlayerCompare(player1, player2, query.season ?? null);
 
-  return <PlayerCompareClient players={currentTour} initialCompare={initialCompare} />;
+  return <PlayerCompareDeferred players={currentTour} player1={player1} player2={player2} season={query.season ?? null} />;
 }
