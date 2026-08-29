@@ -1,10 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { PlayerCompareSnapshot } from "@/lib/snooker/player-compare";
-import PlayerCompareClient from "./player-compare-client";
 import PlayerCompareLoadingShell from "./player-compare-loading-shell";
+
+const PlayerCompareClient = dynamic(() => import("./player-compare-client"), {
+  loading: () => <PlayerCompareLoadingShell />,
+});
 
 export default function PlayerCompareDeferred({
   players,
