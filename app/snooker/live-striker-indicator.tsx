@@ -155,10 +155,9 @@ export default function LiveStrikerIndicator() {
     let lastFetchedAt = 0;
     let fetching = false;
     let disposed = false;
-    let mutationFrame = 0;
 
     const fetchLive = async () => {
-      if (fetching || disposed) return;
+      if (fetching || disposed || !visibleMatchIdentity()) return;
       fetching = true;
       try {
         const response = await fetch("/api/snooker/v1/dashboard", { cache: "no-store", headers: { Accept: "application/json" } });
@@ -166,6 +165,7 @@ export default function LiveStrikerIndicator() {
         if (response.ok && data.ok && data.snapshot && data.databaseEvents) {
           latest = { snapshot: data.snapshot, databaseEvents: data.databaseEvents };
           lastFetchedAt = Date.now();
+          applyWinnerHighlights();
           applyDot(latest);
         }
       } catch {
@@ -186,19 +186,6 @@ export default function LiveStrikerIndicator() {
       applyDot(latest);
     };
 
-    const syncAfterMutation = () => {
-      if (mutationFrame || disposed) return;
-      mutationFrame = window.requestAnimationFrame(() => {
-        mutationFrame = 0;
-        if (disposed) return;
-        applyWinnerHighlights();
-        applyDot(latest);
-      });
-    };
-
-    const observer = new MutationObserver(syncAfterMutation);
-    observer.observe(document.body, { childList: true, subtree: true });
-
     applyWinnerHighlights();
     void fetchLive();
     const dataTimer = window.setInterval(() => {
@@ -215,8 +202,6 @@ export default function LiveStrikerIndicator() {
 
     return () => {
       disposed = true;
-      observer.disconnect();
-      if (mutationFrame) window.cancelAnimationFrame(mutationFrame);
       window.clearInterval(dataTimer);
       window.clearInterval(domTimer);
       document.removeEventListener("visibilitychange", onVisibility);
