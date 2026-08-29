@@ -61,13 +61,17 @@ test("player compare polish moves season selection below the season tab and keep
   assert.doesNotMatch(client, /className={styles\.heroControls}/);
 });
 
-test("player compare entry cards support optional preload but homepage defers the expensive comparison", async () => {
+test("homepage compare is prefilled lightly while full comparison remains on demand", async () => {
   const teaser = await read("app/snooker/compare/player-compare-teaser.tsx");
   const rootPage = await read("app/page.tsx");
+  const homeBootstrap = await read("lib/snooker/home-bootstrap-v3.ts");
   assert.match(teaser, /initialData\?: PlayerCompareSnapshot/);
   assert.match(teaser, /actionClassName\?: string/);
-  assert.match(teaser, /\/api\/snooker\/v1\/player-compare\?/);
-  assert.match(rootPage, /initialPlayerCompare={null}/);
+  assert.match(teaser, /variant !== "data"/);
+  assert.match(rootPage, /initialPlayerCompare=\{bootstrapCompare\}/);
+  assert.match(homeBootstrap, /snooker_player_season_aggregates/);
+  assert.match(homeBootstrap, /snooker_player_h2h_aggregates/);
+  assert.doesNotMatch(homeBootstrap, /snooker_player_career_aggregates|snooker_matches\?/);
   assert.doesNotMatch(rootPage, /loadPlayerCompare/);
 });
 
