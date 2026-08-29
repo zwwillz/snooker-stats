@@ -184,13 +184,14 @@ async function loadHomePlayerCompare(base: SnookerHomeBootstrap): Promise<Player
     if (!leftUuid || !rightUuid) return null;
 
     const ids = [leftUuid, rightUuid];
+    const [lowUuid, highUuid] = [...ids].sort();
     const [seasonRows, h2hRows] = await Promise.all([
       rest<DbCompareSeason[]>(
         `snooker_player_season_aggregates?select=player_id,season,season_start_year,event_entities_played,matches_played,matches_won,matches_lost,matches_drawn,match_win_rate,walkovers_won,walkovers_lost,frames_won,frames_lost,frame_win_rate,frame_data_coverage_pct,breaks_50_plus,breaks_100_plus,maximums,highest_break,finals,titles_total,ranking_finals,ranking_titles,triple_crown_titles,world_championship_titles,uk_championship_titles,masters_titles,data_through,calculated_at&season_start_year=eq.${seasonStartYear}&player_id=in.${inFilter(ids)}`,
       ),
       rest<DbH2H[]>(
-        `snooker_player_h2h_aggregates?select=player_low_id,player_high_id,match_records,meetings_played,player_low_wins,player_high_wins,draws,player_low_walkovers,player_high_walkovers,player_low_frames,player_high_frames,first_meeting_date,last_meeting_date,calculated_at&or=${encodeURIComponent(`(and(player_low_id.eq.${leftUuid},player_high_id.eq.${rightUuid}),and(player_low_id.eq.${rightUuid},player_high_id.eq.${leftUuid}))`)}&limit=1`,
-      ),
+        `snooker_player_h2h_aggregates?select=player_low_id,player_high_id,match_records,meetings_played,player_low_wins,player_high_wins,draws,player_low_walkovers,player_high_walkovers,player_low_frames,player_high_frames,first_meeting_date,last_meeting_date,calculated_at&player_low_id=eq.${lowUuid}&player_high_id=eq.${highUuid}&limit=1`,
+      ).catch(() => []),
     ]);
 
     const leftSeason = compareSeason(seasonRows.find((row) => row.player_id === leftUuid), season);
