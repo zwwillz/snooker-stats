@@ -1,3 +1,4 @@
+import { currentSnookerSeason } from "./database-public";
 import { loadSnookerHomeBootstrap, type SnookerHomeBootstrap } from "./home-bootstrap";
 import type {
   PlayerCompareH2H,
@@ -5,14 +6,26 @@ import type {
   PlayerCompareSeason,
   PlayerCompareSnapshot,
 } from "./player-compare";
-import type { SnookerPlayer } from "./domain";
 import { getSnookerSupabasePublicConfig } from "./supabase-config";
 import { SNOOKER_CACHE_SECONDS } from "./cache-policy";
 
 const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = getSnookerSupabasePublicConfig();
 const REST_URL = `${SUPABASE_URL}/rest/v1`;
 
-type DbPlayerKey = { id: string; slug: string };
+type DbRankingKey = { player_id: string; rank: number };
+type DbComparePlayer = {
+  id: string;
+  slug: string;
+  name_en: string;
+  name_zh: string;
+  short_name_zh: string | null;
+  nationality_zh: string | null;
+  country_code: string | null;
+  turned_pro: number | null;
+  current_rank: number | null;
+  avatar_url: string | null;
+  is_current_tour: boolean | null;
+};
 type DbCompareSeason = {
   player_id: string;
   season: string;
@@ -85,19 +98,19 @@ function finite(value: number | string | null | undefined) {
   return Number.isFinite(number) ? number : null;
 }
 
-function comparePlayer(player: SnookerPlayer): PlayerComparePlayer {
+function comparePlayer(row: DbComparePlayer): PlayerComparePlayer {
   return {
-    id: player.id,
-    slug: player.slug,
-    nameEn: player.nameEn,
-    nameZh: player.nameZh,
-    shortNameZh: player.shortNameZh,
-    nationalityZh: player.nationalityZh,
-    countryCode: player.countryCode,
-    turnedPro: player.turnedPro ?? null,
-    currentRank: player.currentRank,
-    avatarUrl: player.avatarUrl ?? player.avatar?.url ?? null,
-    isCurrentTour: player.isCurrentTour ?? player.currentRank !== null,
+    id: `db-player-${row.id}`,
+    slug: row.slug,
+    nameEn: row.name_en,
+    nameZh: row.name_zh || row.name_en,
+    shortNameZh: row.short_name_zh || row.name_zh || row.name_en,
+    nationalityZh: row.nationality_zh || "",
+    countryCode: row.country_code || "",
+    turnedPro: row.turned_pro,
+    currentRank: row.current_rank,
+    avatarUrl: row.avatar_url,
+    isCurrentTour: row.is_current_tour ?? row.current_rank !== null,
   };
 }
 
@@ -164,35 +177,35 @@ function emptyH2H(): PlayerCompareH2H {
   };
 }
 
-async function loadHomePlayerCompare(base: SnookerHomeBootstrap): Promise<PlayerCompareSnapshot | null> {
-  const pair = [...base.database.snapshot.players]
-    .filter((player) => player.isCurrentTour ?? player.currentRank !== null)
-    .sort((a, b) => (a.currentRank ?? 9999) - (b.currentRank ?? 9999))
-    .slice(0, 2);
-  if (pair.length < 2) return null;
-
-  const season = base.database.currentSeason;
+async function loadHomePlayerCompare(): Promise<PlayerCompareSnapshot | null> {
+  const season = currentSnookerSeason();
   const seasonStartYear = Number(season.slice(0, 4));
   try {
-    const keys = await rest<DbPlayerKey[]>(
-      `snooker_public_players?select=id,slug&slug=in.${inFilter(pair.map((player) => player.slug))}`,
-      SNOOKER_CACHE_SECONDS.player,
+    const rankingRows = await rest<DbRankingKey[]>(
+      "snooker_latest_rankings?select=player_id,rank&list_key=eq.world_official&order=rank.asc&limit=2",
     );
-    const uuidBySlug = new Map(keys.map((row) => [row.slug, row.id]));
-    const leftUuid = uuidBySlug.get(pair[0].slug);
-    const rightUuid = uuidBySlug.get(pair[1].slug);
-    if (!leftUuid || !rightUuid) return null;
+    if (rankingRows.length < 2) return null;
 
-    const ids = [leftUuid, rightUuid];
-    const [lowUuid, highUuid] = [...ids].sort();
-    const [seasonRows, h2hRows] = await Promise.all([
+    const orderedIds = rankingRows.sort((a, b) => a.rank - b.rank).map((row) => row.player_id).slice(0, 2);
+    const [leftUuid, rightUuid] = orderedIds;
+    const [lowUuid, highUuid] = [...orderedIds].sort();
+    const [playerRows, seasonRows, h2hRows] = await Promise.all([
+      rest<DbComparePlayer[]>(
+        `snooker_public_players?select=id,slug,name_en,name_zh,short_name_zh,nationality_zh,country_code,turned_pro,current_rank,avatar_url,is_current_tour&id=in.${inFilter(orderedIds)}`,
+        SNOOKER_CACHE_SECONDS.player,
+      ),
       rest<DbCompareSeason[]>(
-        `snooker_player_season_aggregates?select=player_id,season,season_start_year,event_entities_played,matches_played,matches_won,matches_lost,matches_drawn,match_win_rate,walkovers_won,walkovers_lost,frames_won,frames_lost,frame_win_rate,frame_data_coverage_pct,breaks_50_plus,breaks_100_plus,maximums,highest_break,finals,titles_total,ranking_finals,ranking_titles,triple_crown_titles,world_championship_titles,uk_championship_titles,masters_titles,data_through,calculated_at&season_start_year=eq.${seasonStartYear}&player_id=in.${inFilter(ids)}`,
+        `snooker_player_season_aggregates?select=player_id,season,season_start_year,event_entities_played,matches_played,matches_won,matches_lost,matches_drawn,match_win_rate,walkovers_won,walkovers_lost,frames_won,frames_lost,frame_win_rate,frame_data_coverage_pct,breaks_50_plus,breaks_100_plus,maximums,highest_break,finals,titles_total,ranking_finals,ranking_titles,triple_crown_titles,world_championship_titles,uk_championship_titles,masters_titles,data_through,calculated_at&season_start_year=eq.${seasonStartYear}&player_id=in.${inFilter(orderedIds)}`,
       ),
       rest<DbH2H[]>(
         `snooker_player_h2h_aggregates?select=player_low_id,player_high_id,match_records,meetings_played,player_low_wins,player_high_wins,draws,player_low_walkovers,player_high_walkovers,player_low_frames,player_high_frames,first_meeting_date,last_meeting_date,calculated_at&player_low_id=eq.${lowUuid}&player_high_id=eq.${highUuid}&limit=1`,
       ).catch(() => []),
     ]);
+
+    const playerByUuid = new Map(playerRows.map((row) => [row.id, row]));
+    const leftPlayer = playerByUuid.get(leftUuid);
+    const rightPlayer = playerByUuid.get(rightUuid);
+    if (!leftPlayer || !rightPlayer) return null;
 
     const leftSeason = compareSeason(seasonRows.find((row) => row.player_id === leftUuid), season);
     const rightSeason = compareSeason(seasonRows.find((row) => row.player_id === rightUuid), season);
@@ -223,7 +236,7 @@ async function loadHomePlayerCompare(base: SnookerHomeBootstrap): Promise<Player
       .at(-1) ?? new Date().toISOString();
 
     return {
-      players: [comparePlayer(pair[0]), comparePlayer(pair[1])],
+      players: [comparePlayer(leftPlayer), comparePlayer(rightPlayer)],
       season,
       availableSeasons: [season],
       seasonStats: [leftSeason, rightSeason],
@@ -244,7 +257,9 @@ async function loadHomePlayerCompare(base: SnookerHomeBootstrap): Promise<Player
 }
 
 export async function loadSnookerHomeBootstrapV3(): Promise<SnookerHomeBootstrapV3> {
-  const base = await loadSnookerHomeBootstrap();
-  const homePlayerCompare = base.database.databaseOnline ? await loadHomePlayerCompare(base) : null;
-  return { ...base, homePlayerCompare };
+  const [base, homePlayerCompare] = await Promise.all([
+    loadSnookerHomeBootstrap(),
+    loadHomePlayerCompare(),
+  ]);
+  return { ...base, homePlayerCompare: base.database.databaseOnline ? homePlayerCompare : null };
 }
