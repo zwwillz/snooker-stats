@@ -164,7 +164,7 @@ test("player directory and player detail share one root shell and focused data p
   assert.match(playerCss, /\.directoryToolbar \.filters button\{/);
 });
 
-test("slim homepage uses a lightweight navigation shell before server-loaded deep views", async () => {
+test("slim homepage keeps root navigation local and updates only the URL mirror", async () => {
   const [ui, sync, db, page] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-view-url-sync.tsx"),
@@ -183,15 +183,13 @@ test("slim homepage uses a lightweight navigation shell before server-loaded dee
   assert.match(sync, /赛事: "matches"/);
   assert.match(sync, /球员: "players"/);
   assert.match(sync, /数据: "data"/);
-  assert.match(sync, /serverLoadData/);
-  assert.match(sync, /serverLoadData && view !== "home"/);
-  assert.match(sync, /router\.push\(rootUrl\(view\)\)/);
-  assert.match(sync, /setNavigating\(true\)/);
   assert.match(sync, /url\.searchParams\.delete\("view"\)/);
   assert.match(sync, /url\.searchParams\.set\("view", view\)/);
   assert.match(sync, /window\.history\.replaceState\(window\.history\.state/);
+  assert.match(sync, /snooker-view-url-change/);
+  assert.doesNotMatch(sync, /serverLoadData|useRouter|router\.push|setNavigating|stopImmediatePropagation/);
   assert.match(page, /import SnookerViewUrlSync from "\.\/snooker\/snooker-view-url-sync"/);
-  assert.match(page, /<SnookerViewUrlSync serverLoadData=\{useHomeBootstrap\} \/>/);
+  assert.match(page, /<SnookerViewUrlSync \/>/);
   assert.match(page, /initialPlayerSlug=\{requestedPlayer\}/);
   assert.match(db, /next: \{ revalidate \}/);
   assert.match(page, /export const dynamic = "force-dynamic"/);
