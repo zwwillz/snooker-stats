@@ -15,14 +15,13 @@ test("player compare teaser reuses page section headers and action buttons", asy
   assert.match(teaser, /variant === "data" \? <>开始球员对比 <span>›<\/span><\/> : "查看完整球员对比"/);
 });
 
-test("player compare route shell is prefetched before the shared action is used", async () => {
+test("player compare avoids automatic route prefetch and only warms on deliberate desktop intent", async () => {
   const teaser = await read("app/snooker/compare/player-compare-teaser.tsx");
   assert.match(teaser, /const warmCompare = \(\) => router\.prefetch\(compareHref\)/);
   assert.match(teaser, /onPointerEnter=\{warmCompare\}/);
-  assert.match(teaser, /onPointerDown=\{warmCompare\}/);
   assert.match(teaser, /onFocus=\{warmCompare\}/);
-  assert.match(teaser, /\n\s*prefetch\n/);
-  assert.doesNotMatch(teaser, /prefetch=\{false\}/);
+  assert.doesNotMatch(teaser, /onPointerDown=\{warmCompare\}/);
+  assert.match(teaser, /prefetch=\{false\}/);
   assert.match(teaser, /import Link from "next\/link"/);
   assert.match(teaser, /href=\{compareHref\}/);
   assert.doesNotMatch(teaser, /router\.push\(compareHref\)/);
