@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { findHomepagePortalTarget } from "./home-portal-target";
+import { findHomepagePortalTarget, findMainNav } from "./home-portal-target";
 import styles from "./home-about-card.module.css";
 
 const RETURN_MARKER = "snooker-about-return";
@@ -12,12 +12,25 @@ function rememberHomepageReturn() {
   try { window.sessionStorage.setItem(RETURN_MARKER, "home"); } catch { /* ignore unavailable storage */ }
 }
 
+function syncHomepageUpdateStatus(homeTarget: HTMLElement | null) {
+  const nav = findMainNav();
+  const content = nav?.previousElementSibling;
+  if (!(content instanceof HTMLElement)) return;
+  const status = Array.from(content.children).find((node) =>
+    node instanceof HTMLElement
+    && node.getAttribute("role") === "status"
+    && node.textContent?.trim().startsWith("更新"),
+  );
+  if (status instanceof HTMLElement) status.hidden = Boolean(homeTarget);
+}
+
 export default function HomeAboutCard() {
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     const sync = () => {
       const next = findHomepagePortalTarget();
+      syncHomepageUpdateStatus(next);
       setPortalTarget((current) => current === next ? current : next);
     };
     sync();
@@ -31,6 +44,7 @@ export default function HomeAboutCard() {
       mutation.disconnect();
       window.removeEventListener("snooker-view-url-change", sync);
       window.removeEventListener("popstate", sync);
+      syncHomepageUpdateStatus(null);
     };
   }, []);
 
