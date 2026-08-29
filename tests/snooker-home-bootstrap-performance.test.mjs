@@ -5,6 +5,7 @@ import test from "node:test";
 const page = readFileSync("app/page.tsx", "utf8");
 const bootstrap = readFileSync("lib/snooker/home-bootstrap.ts", "utf8");
 const bootstrapV3 = readFileSync("lib/snooker/home-bootstrap-v3.ts", "utf8");
+const homeLive = readFileSync("lib/snooker/home-live-read-through.ts", "utf8");
 const leaders = readFileSync("app/snooker/home-season-leaders.tsx", "utf8");
 const about = readFileSync("app/snooker/home-about-card.tsx", "utf8");
 const extras = readFileSync("app/snooker/home-extras.tsx", "utf8");
@@ -40,7 +41,9 @@ test("season leaders are four bounded top-one queries rather than a full season 
   assert.match(bootstrap, /matches_played=gte\.5&average_shot_time=gt\.0/);
 });
 
-test("homepage player compare is server-prefilled from resilient bounded aggregate queries", () => {
+test("homepage player compare runs in parallel with the base bootstrap and uses resilient bounded aggregates", () => {
+  assert.match(bootstrapV3, /Promise\.all\(\[\s*loadSnookerHomeBootstrap\(\),\s*loadHomePlayerCompare\(\)/);
+  assert.match(bootstrapV3, /snooker_latest_rankings\?select=player_id,rank/);
   assert.match(bootstrapV3, /snooker_player_season_aggregates/);
   assert.match(bootstrapV3, /snooker_player_h2h_aggregates/);
   assert.match(bootstrapV3, /player_low_id=eq\.\$\{lowUuid\}&player_high_id=eq\.\$\{highUuid\}/);
@@ -49,6 +52,14 @@ test("homepage player compare is server-prefilled from resilient bounded aggrega
   assert.doesNotMatch(bootstrapV3, /snooker_matches\?/);
   assert.doesNotMatch(compare, /IntersectionObserver/);
   assert.match(compare, /variant !== "data"/);
+});
+
+test("homepage live correction reads only score and status, not frames or match statistics", () => {
+  assert.match(page, /refreshSnookerHomeLiveScore/);
+  assert.match(page, /useHomeBootstrap[\s\S]*refreshSnookerHomeLiveScore\(cachedDatabase\)[\s\S]*refreshSnookerDatabaseViewLive\(cachedDatabase\)/);
+  assert.match(homeLive, /cache: "no-store"/);
+  assert.match(homeLive, /snooker_matches\?select=/);
+  assert.doesNotMatch(homeLive, /snooker_frames|snooker_match_statistics/);
 });
 
 test("homepage links do not automatically prefetch expensive routes", () => {
