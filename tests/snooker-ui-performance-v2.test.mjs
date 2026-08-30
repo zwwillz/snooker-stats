@@ -182,14 +182,9 @@ test("slim homepage keeps all root tabs local and loads complete data only after
   assert.match(ui, /url\.searchParams\.set\("player", target\.slug\)/);
   assert.doesNotMatch(ui, /router\.push\("\/snooker\/players"\)/);
   assert.doesNotMatch(ui, /SnookerRootController/);
-  assert.match(sync, /首页: "home"/);
-  assert.match(sync, /赛事: "matches"/);
-  assert.match(sync, /球员: "players"/);
-  assert.match(sync, /数据: "data"/);
-  assert.doesNotMatch(sync, /serverLoadData|window\.location\.assign/);
-  assert.match(sync, /url\.searchParams\.delete\("view"\)/);
-  assert.match(sync, /url\.searchParams\.set\("view", view\)/);
-  assert.match(sync, /window\.history\.replaceState\(window\.history\.state/);
+  assert.match(sync, /Root-view URL\/history is owned by SnookerDataCenterV2/);
+  assert.match(sync, /return null/);
+  assert.doesNotMatch(sync, /document\.addEventListener|querySelector|pushState|replaceState|window\.location\.assign/);
   assert.match(page, /import SnookerViewUrlSync from "\.\/snooker\/snooker-view-url-sync"/);
   assert.match(page, /<SnookerViewUrlSync \/>/);
   assert.match(page, /initialPlayerSlug=\{requestedPlayer\}/);
