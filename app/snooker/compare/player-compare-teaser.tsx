@@ -90,6 +90,7 @@ export default function PlayerCompareTeaser({
         href={compareHref}
         prefetch={false}
         onPointerEnter={warmCompare}
+        onPointerDown={warmCompare}
         onFocus={warmCompare}
         onClick={rememberReturn}
       >
