@@ -1,0 +1,53 @@
+name: Phase 3 Diagnose Core Tests
+
+on:
+  push:
+    paths:
+      - .github/workflows/phase3-diagnose-core.yml
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: perf/homepage-phase3-redo
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Run each core test file
+        shell: bash
+        run: |
+          : > /tmp/phase3-failures.txt
+          for f in tests/*.test.mjs; do
+            echo "===== TEST FILE: $f ====="
+            if node --test "$f"; then
+              echo "PASS $f"
+            else
+              echo "FAIL $f" | tee -a /tmp/phase3-failures.txt
+            fi
+          done
+          echo "===== FAILURE SUMMARY ====="
+          if [ -s /tmp/phase3-failures.txt ]; then
+            cat /tmp/phase3-failures.txt
+          else
+            echo "ALL TEST FILES PASSED"
+          fi
+      - name: Remove diagnostic workflow
+        if: always()
+        run: |
+          git config user.name willz
+          git config user.email zw.will@outlook.com
+          git rm .github/workflows/phase3-diagnose-core.yml
+          git commit -m "Remove temporary phase 3 diagnostic workflow"
+          git push origin HEAD:perf/homepage-phase3-redo
