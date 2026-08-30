@@ -3,8 +3,7 @@ import { getSnookerPlayerDirectory } from "@/lib/snooker/player-data";
 import { loadPlayerCompare } from "@/lib/snooker/player-compare";
 import PlayerCompareClient from "./player-compare-client";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "球员对比｜147数据局",
