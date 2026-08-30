@@ -86,7 +86,7 @@ test("official world ranking is explicit, top three on home, euro-prefixed and a
     read("lib/snooker/player-data.ts"),
   ]);
 
-  assert.match(ui, /eyebrow="Official World Ranking" title="世界排名" action="TOP 3"/);
+  assert.match(ui, /eyebrow="OFFICIAL WORLD RANKING" title="世界排名" action="TOP 3"/);
   assert.match(ui, /rankingRows\.slice\(0, 3\)/);
   assert.match(ui, /return `€\$\{value\.toLocaleString/);
   assert.match(ui, /className=\{polish\.rankingStaticRow\}/);
@@ -95,7 +95,7 @@ test("official world ranking is explicit, top three on home, euro-prefixed and a
   assert.match(dbV2, /list_key=eq\.world_official/);
   assert.match(dbV2, /rankings: rankings\.length \? rankings/);
   assert.match(playerData, /list_key: "eq\.world_official"/);
-  assert.match(ui, /eyebrow="Official World Ranking" title="中国球员"/);
+  assert.match(ui, /eyebrow="CHINA PLAYERS" title="中国球员"/);
 });
 
 test("event overview typography and public copy are user-facing", async () => {
@@ -149,9 +149,12 @@ test("player directory and player detail share one root shell and focused data p
     read("app/snooker/players/player.module.css"),
   ]);
 
-  assert.match(ui, /activeView === "players" \? <PlayerDirectoryContent players=\{directoryPlayers\}/);
+  assert.match(ui, /activeView === "players" \? directoryLoaded/);
+  assert.match(ui, /<PlayerDirectoryContent players=\{directoryPlayers\}/);
   assert.match(ui, /if \(detail\?\.type === "player"\)/);
   assert.match(ui, /<PlayerDetailInline key=\{detail\.slug\}/);
+  assert.match(ui, /dynamic\(\(\) => import\("\.\/players\/player-directory"\)/);
+  assert.match(ui, /dynamic\(\(\) => import\("\.\/players\/player-detail-inline"\)/);
   assert.match(directory, /type="button"[\s\S]*className=\{styles\.playerRow\}/);
   assert.doesNotMatch(directory, /next\/link/);
   assert.doesNotMatch(detail, /PlayerShell/);
@@ -164,7 +167,7 @@ test("player directory and player detail share one root shell and focused data p
   assert.match(playerCss, /\.directoryToolbar \.filters button\{/);
 });
 
-test("slim homepage keeps fast local tabs while Data can server-load the complete hub", async () => {
+test("slim homepage keeps all root tabs local and loads complete data only after activation", async () => {
   const [ui, sync, db, page] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-view-url-sync.tsx"),
@@ -173,8 +176,8 @@ test("slim homepage keeps fast local tabs while Data can server-load the complet
   ]);
 
   assert.match(ui, /type MainView = "home" \| "matches" \| "players" \| "data"/);
-  assert.match(ui, /activeView === "players" \? <PlayerDirectoryContent/);
-  assert.match(ui, /const changeView = \(view: NavId\) => \{[\s\S]*?setActiveView\(view\)/);
+  assert.match(ui, /activeView === "players" \? directoryLoaded/);
+  assert.match(ui, /const changeView = \(view: NavId\) => \{[\s\S]*?setActiveView\(view\);[\s\S]*?view === "players"[\s\S]*?ensurePlayerDirectory\(\);[\s\S]*?view === "data"[\s\S]*?ensureRankingHub\(\)/);
   assert.match(ui, /url\.searchParams\.set\("view", "players"\)/);
   assert.match(ui, /url\.searchParams\.set\("player", target\.slug\)/);
   assert.doesNotMatch(ui, /router\.push\("\/snooker\/players"\)/);
@@ -183,18 +186,16 @@ test("slim homepage keeps fast local tabs while Data can server-load the complet
   assert.match(sync, /赛事: "matches"/);
   assert.match(sync, /球员: "players"/);
   assert.match(sync, /数据: "data"/);
-  assert.match(sync, /serverLoadData/);
-  assert.match(sync, /serverLoadData && view === "data"/);
-  assert.match(sync, /window\.location\.assign\(rootUrl\("data"\)\)/);
+  assert.doesNotMatch(sync, /serverLoadData|window\.location\.assign/);
   assert.match(sync, /url\.searchParams\.delete\("view"\)/);
   assert.match(sync, /url\.searchParams\.set\("view", view\)/);
   assert.match(sync, /window\.history\.replaceState\(window\.history\.state/);
   assert.match(page, /import SnookerViewUrlSync from "\.\/snooker\/snooker-view-url-sync"/);
-  assert.match(page, /<SnookerViewUrlSync serverLoadData=\{useHomeBootstrap\} \/>/);
+  assert.match(page, /<SnookerViewUrlSync \/>/);
   assert.match(page, /initialPlayerSlug=\{requestedPlayer\}/);
   assert.match(db, /next: \{ revalidate \}/);
-  assert.match(page, /export const dynamic = "force-dynamic"/);
-  assert.match(page, /export const revalidate = 0/);
-  assert.match(page, /refreshSnookerDatabaseViewLive/);
+  assert.doesNotMatch(page, /export const dynamic = "force-dynamic"/);
+  assert.match(page, /export const revalidate = 60/);
+  assert.match(page, /if \(useHomeBootstrap\)[\s\S]*?else[\s\S]*?refreshSnookerDatabaseViewLive\(cachedDatabase\)/);
   assert.doesNotMatch(ui, /behavior: "smooth"/);
 });
