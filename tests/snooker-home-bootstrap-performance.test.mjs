@@ -4,38 +4,52 @@ import test from "node:test";
 
 const page = readFileSync("app/page.tsx", "utf8");
 const bootstrap = readFileSync("lib/snooker/home-bootstrap.ts", "utf8");
+const migration = readFileSync("supabase/migrations/20260829151700_homepage_bootstrap_v1.sql", "utf8");
 const leaders = readFileSync("app/snooker/home-season-leaders.tsx", "utf8");
 const compare = readFileSync("app/snooker/compare/player-compare-teaser.tsx", "utf8");
 const gate = readFileSync("app/snooker/live-striker-indicator-gated.tsx", "utf8");
+const ui = readFileSync("app/snooker/snooker-data-center-v2.tsx", "utf8");
 
 test("homepage uses a dedicated bootstrap while deep views keep the full loaders", () => {
   assert.match(page, /loadSnookerHomeBootstrap/);
   assert.match(page, /useHomeBootstrap/);
   assert.match(page, /loadSnookerDatabaseViewV2/);
   assert.match(page, /loadSnookerRankingHub/);
+  assert.match(page, /if \(useHomeBootstrap\)[\s\S]*?loadSnookerHomeBootstrap\(\)[\s\S]*?else[\s\S]*?loadSnookerDatabaseViewV2\(\)/);
 });
 
-test("home bootstrap scopes event detail and ranking payloads", () => {
-  assert.match(bootstrap, /focusedRows\(eventRows\)/);
-  assert.match(bootstrap, /list_key=eq\.world_official/);
-  assert.match(bootstrap, /limit=16/);
-  assert.doesNotMatch(bootstrap, /snooker_event_series/);
-  assert.doesNotMatch(bootstrap, /snooker_event_prizes/);
-  assert.doesNotMatch(bootstrap, /snooker_match_head_to_head/);
+test("home bootstrap is one bounded RPC instead of a REST waterfall or full player directory", () => {
+  assert.match(bootstrap, /rpc\/snooker_homepage_bootstrap_v1/);
+  assert.match(bootstrap, /cache: "force-cache"/);
+  assert.doesNotMatch(bootstrap, /snooker_public_players\?select=/);
+  assert.doesNotMatch(bootstrap, /Promise\.all\(\[/);
+  assert.match(migration, /create or replace function public\.snooker_homepage_bootstrap_v1/);
+  assert.match(migration, /where r\.list_key = 'world_official'[\s\S]*?r\.rank <= 16/);
+  assert.match(migration, /jsonb_build_object\(\s*'events'/);
+  assert.match(migration, /'players'/);
+  assert.match(migration, /'matches'/);
+  assert.match(migration, /'leaders'/);
+  assert.match(migration, /'compare'/);
 });
 
-test("season leaders are four bounded top-one queries rather than a full season scan", () => {
-  const limits = bootstrap.match(/&limit=1`/g) ?? [];
-  assert.equal(limits.length, 4);
-  assert.match(bootstrap, /season_147s=gt\.0/);
-  assert.match(bootstrap, /matches_played=gte\.5&match_win_rate=not\.is\.null/);
-  assert.match(bootstrap, /matches_played=gte\.5&average_shot_time=gt\.0/);
+test("season leaders are selected inside the single homepage RPC with bounded top-one subqueries", () => {
+  assert.match(migration, /order by s\.season_147s desc[\s\S]*?limit 1/);
+  assert.match(migration, /order by s\.breaks_100_plus desc[\s\S]*?limit 1/);
+  assert.match(migration, /s\.matches_played >= 5[\s\S]*?order by s\.match_win_rate desc[\s\S]*?limit 1/);
+  assert.match(migration, /s\.average_shot_time > 0[\s\S]*?order by s\.average_shot_time asc[\s\S]*?limit 1/);
 });
 
-test("homepage no longer prewarms technical and compare is viewport deferred", () => {
-  assert.doesNotMatch(leaders, /setTimeout|\/api\/snooker\/v1\/technical/);
-  assert.match(compare, /IntersectionObserver/);
+test("homepage no longer prewarms technical or refetches compare data", () => {
+  assert.doesNotMatch(leaders, /setTimeout|\/api\/snooker\/v1\/technical|MutationObserver|createPortal/);
+  assert.doesNotMatch(compare, /IntersectionObserver|\/api\/snooker\/v1\/player-compare/);
+  assert.match(compare, /const data = matchesInitialPair \? initialData : null/);
   assert.match(compare, /prefetch=\{false\}/);
+});
+
+test("home event and match detail stay summary-first and hydrate full detail only after entry", () => {
+  assert.match(bootstrap, /detailPartial: true/);
+  assert.match(ui, /existing && !existing\.detailPartial/);
+  assert.match(ui, /const openMatch = \(matchId: string, eventSlug: string\) => \{[\s\S]*?void ensureEventDetail\(eventSlug\);[\s\S]*?setDetail\(\{ type: "match", matchId, eventSlug \}\)/);
 });
 
 test("live striker dashboard enhancer is gated behind a visible match detail", () => {
