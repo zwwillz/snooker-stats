@@ -643,7 +643,6 @@ async function readHomeRpc(season: string, seasonStartYear: number): Promise<Hom
 function buildFromRpc(payload: HomeRpcPayload): SnookerHomeBootstrap {
   const loadedAt = payload.generated_at || new Date().toISOString();
   const { players, uuidToCanonical } = mapPlayers(payload.players);
-  const playerByUuid = new Map(payload.players.map((row, index) => [row.id, players[index]]));
   const seasonByCanonical = new Map<string, SnookerSeasonStatistics>();
   for (const row of payload.season_stats) {
     const canonical = uuidToCanonical.get(row.player_id);

@@ -717,11 +717,12 @@ export default function SnookerDataCenterV2({
 
   useEffect(() => {
     if (!shouldPollDashboard) return;
-    void refresh();
+    const firstRefreshFrame = window.requestAnimationFrame(() => void refresh());
     const timer = window.setInterval(() => void refresh(), 30_000);
     const onVisibility = () => { if (!document.hidden) void refresh(); };
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
+      window.cancelAnimationFrame(firstRefreshFrame);
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibility);
     };
