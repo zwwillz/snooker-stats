@@ -52,6 +52,14 @@ test("home SSR no longer waits for live read-through and root navigation is not 
   assert.doesNotMatch(urlSync, /router\.push|router\.replace/);
 });
 
+test("root tabs stay usable before hydration and lazy datasets start after the target view is active", () => {
+  assert.match(page, /const useHomeBootstrap = !requestedPlayer && !query\.section && !query\.list && !query\.group/);
+  assert.match(ui, /<nav className=\{`\$\{styles\.bottomNav\} \$\{polish\.fastNav\}`\}>\{navItems\.map\(\(item\) => <a key=\{item\.id\} href=/);
+  assert.match(ui, /onClick=\{\(event\) => \{ event\.preventDefault\(\); window\.history\.replaceState[\s\S]*?changeView\(item\.id\); \}\}/);
+  assert.match(ui, /if \(!initialHomeBootstrap\) return;\s*if \(activeView === "players"\) void ensurePlayerDirectory\(\);\s*if \(activeView === "data"\) void ensureRankingHub\(\)/);
+  assert.match(urlSync, /target\.closest\("nav a, nav button"\)/);
+});
+
 test("deep player and data code is dynamically loaded and full datasets are fetched only after view activation", () => {
   assert.match(ui, /dynamic\(\(\) => import\("\.\/players\/player-directory"\)/);
   assert.match(ui, /dynamic\(\(\) => import\("\.\/players\/player-detail-inline"\)/);
