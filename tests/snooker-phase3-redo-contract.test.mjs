@@ -14,6 +14,8 @@ const comparePage = read("app/snooker/compare/page.tsx");
 const dataHub = read("app/snooker/data/data-ranking-content.tsx");
 const playerDirectoryRoute = read("app/api/snooker/v1/player-directory/route.ts");
 const rankingHubRoute = read("app/api/snooker/v1/ranking-hub/route.ts");
+const homeLiveRoute = read("app/api/snooker/v1/home-live/route.ts");
+const homeLiveOverlay = read("lib/snooker/home-live-overlay.ts");
 
 test("brand identity is real React source rather than a homepage-only DOM or CSS disguise", () => {
   assert.match(ui, /<strong>147数据局<\/strong><small>中文斯诺克数据平台 · CN SNOOKER STATS<\/small>/);
@@ -47,9 +49,25 @@ test("home SSR no longer waits for live read-through and root navigation is not 
   assert.match(page, /if \(useHomeBootstrap\) \{[\s\S]*?loadSnookerHomeBootstrap\(\)[\s\S]*?\} else \{[\s\S]*?refreshSnookerDatabaseViewLive/);
   assert.match(page, /<SnookerViewUrlSync \/>/);
   assert.doesNotMatch(page, /serverLoadData/);
-  assert.match(ui, /if \(!shouldPollDashboard\) return;\s*const firstRefreshFrame = window\.requestAnimationFrame\(\(\) => void refresh\(\)\);\s*const timer = window\.setInterval/);
+  assert.match(ui, /if \(!shouldPollLive\) return;\s*const firstRefreshFrame = window\.requestAnimationFrame\(\(\) => void refresh\(\)\);\s*const timer = window\.setInterval/);
   assert.match(ui, /window\.cancelAnimationFrame\(firstRefreshFrame\)/);
   assert.doesNotMatch(urlSync, /router\.push|router\.replace/);
+});
+
+test("live polling uses a score-only overlay outside match detail and keeps full dashboard reads detail-only", () => {
+  const detailBranch = ui.indexOf('if (liveRefreshState.current.detailType === "match")');
+  const dashboardFetch = ui.indexOf('fetch("/api/snooker/v1/dashboard"', detailBranch);
+  const lightFetch = ui.indexOf('fetch(`/api/snooker/v1/home-live?ids=', dashboardFetch);
+  assert.ok(detailBranch >= 0);
+  assert.ok(dashboardFetch > detailBranch);
+  assert.ok(lightFetch > dashboardFetch);
+  assert.match(homeLiveRoute, /select: SELECT/);
+  assert.match(homeLiveRoute, /cache: "no-store"/);
+  assert.match(homeLiveRoute, /snooker_matches/);
+  assert.doesNotMatch(homeLiveRoute, /frames|match_statistics|event_prizes/);
+  assert.match(homeLiveOverlay, /sourceUpdatedAt && incomingUpdatedAt[\s\S]*?timestamp\(incomingUpdatedAt\) < timestamp\(previous\.sourceUpdatedAt\)/);
+  assert.match(homeLiveOverlay, /previous\.status === "completed" \|\| previous\.status === "walkover"/);
+  assert.match(ui, /实时比分暂时不可用，继续显示最近成功数据。/);
 });
 
 test("root tabs stay usable before hydration and lazy datasets start after the target view is active", () => {
