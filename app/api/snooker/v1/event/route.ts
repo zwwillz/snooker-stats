@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { eventSummary, getPlayerEventStats, SNOOKER_BUILD_MARK, SNOOKER_FOUNDATION_VERSION } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
 import { loadSnookerEventDetail } from "@/lib/snooker/database-public";
-import { loadSnookerEventDetailComplete } from "@/lib/snooker/event-detail-complete";
+import { loadSnookerEventCore } from "@/lib/snooker/event-detail-core";
+import { loadSnookerPlayersForCanonicalIds } from "@/lib/snooker/scoped-player-data";
 import { refreshSingleEventLive } from "@/lib/snooker/live-read-through";
-import type { SnookerEvent } from "@/lib/snooker/domain";
+import type { SnookerEvent, SnookerPlayer } from "@/lib/snooker/domain";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,14 +27,17 @@ export async function GET(request: NextRequest) {
     repositoryMode = database.databaseOnline ? "supabase" : "verified-snapshot";
   }
 
-  let detailedEvent: SnookerEvent | null = null;
+  let baseEvent: SnookerEvent | null = null;
+  let scopedPlayers: SnookerPlayer[] = [];
   try {
-    detailedEvent = await loadSnookerEventDetailComplete(slug);
+    const core = await loadSnookerEventCore(slug);
+    baseEvent = core?.event ?? null;
+    scopedPlayers = core?.players ?? [];
   } catch (error) {
-    console.error("[snooker-event] complete fresh event detail failed; falling back to cached/base detail", error);
+    console.error("[snooker-event] lightweight event core failed; falling back to cached/base detail", error);
   }
 
-  let baseEvent = detailedEvent ?? cachedEvent;
+  baseEvent = baseEvent ?? cachedEvent;
   if (!baseEvent) {
     try {
       baseEvent = await loadSnookerEventDetail(slug);
@@ -45,6 +49,13 @@ export async function GET(request: NextRequest) {
 
   const event = await refreshSingleEventLive(baseEvent);
   const participantIds = [...new Set(event.rounds.flatMap((round) => round.matches.flatMap((match) => [match.player1Id, match.player2Id])))];
+  if (!scopedPlayers.length && participantIds.length) {
+    try {
+      scopedPlayers = await loadSnookerPlayersForCanonicalIds(participantIds);
+    } catch (error) {
+      console.error("[snooker-event] participant profile fallback failed", error);
+    }
+  }
   const playerStats = participantIds
     .map((playerId) => getPlayerEventStats(playerId, event))
     .filter(Boolean);
@@ -55,6 +66,7 @@ export async function GET(request: NextRequest) {
     buildMark: SNOOKER_BUILD_MARK,
     repositoryMode,
     event,
+    players: scopedPlayers,
     summary: eventSummary(event),
     playerStats,
   }, {
