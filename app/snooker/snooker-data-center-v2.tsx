@@ -700,6 +700,7 @@ export default function SnookerDataCenterV2({
     events: databaseEvents,
     detailType: detail?.type ?? null,
   });
+  const liveRefreshInFlight = useRef(false);
 
   useEffect(() => {
     liveRefreshState.current = { events: databaseEvents, detailType: detail?.type ?? null };
@@ -707,6 +708,8 @@ export default function SnookerDataCenterV2({
 
   const refresh = useCallback(async () => {
     if (typeof document !== "undefined" && document.hidden) return;
+    if (liveRefreshInFlight.current) return;
+    liveRefreshInFlight.current = true;
     setRefreshing(true);
     try {
       const currentEvents = liveRefreshState.current.events;
@@ -798,6 +801,7 @@ export default function SnookerDataCenterV2({
         message: "实时比分暂时不可用，继续显示最近成功数据。",
       } : current);
     } finally {
+      liveRefreshInFlight.current = false;
       setRefreshing(false);
     }
   }, []);

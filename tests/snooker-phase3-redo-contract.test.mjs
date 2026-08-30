@@ -70,6 +70,8 @@ test("live polling uses a score-only overlay outside match detail and keeps full
   assert.match(homeLiveOverlay, /function monotonicScore/);
   assert.match(homeLiveOverlay, /Math\.max\(previous, incoming\)/);
   assert.match(ui, /pollingMatches[\s\S]*?\.slice\(0, 64\)/);
+  assert.match(ui, /if \(liveRefreshInFlight\.current\) return;\s*liveRefreshInFlight\.current = true;/);
+  assert.match(ui, /finally \{\s*liveRefreshInFlight\.current = false;\s*setRefreshing\(false\);/);
   assert.match(ui, /实时比分暂时不可用，继续显示最近成功数据。/);
 });
 
