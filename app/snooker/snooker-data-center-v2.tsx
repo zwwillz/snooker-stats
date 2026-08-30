@@ -64,6 +64,10 @@ type DetailState =
   | { type: "player"; slug: string; returnView: MainView }
   | { type: "ranking"; section: SnookerRankingSection; key: SnookerCurrentRankingKey };
 
+type MatchReturnState =
+  | { kind: "event"; slug: string; tab: EventTab; scrollY: number }
+  | { kind: "root"; view: MainView; scrollY: number };
+
 type SourceHealth = {
   online: boolean;
   accepted: boolean;
@@ -73,17 +77,16 @@ type SourceHealth = {
   cacheSeconds?: number;
 };
 
-type DashboardResponse = {
-  ok?: boolean;
-  snapshot?: SnookerDashboardSnapshot;
-  databaseEvents?: SnookerEvent[];
-  currentSeason?: string;
-  sourceHealth?: SourceHealth;
-};
-
 type HomeLiveResponse = {
   ok?: boolean;
   matches?: HomeLiveMatchRow[];
+  fetchedAt?: string;
+};
+
+type MatchDetailResponse = {
+  ok?: boolean;
+  match?: Partial<SnookerMatch> & { id: string };
+  players?: SnookerPlayer[];
   fetchedAt?: string;
 };
 
@@ -92,12 +95,24 @@ type CalendarResponse = {
   calendar?: SnookerCalendarEvent[];
 };
 
+type SnookerHistoryState = {
+  snookerView?: MainView;
+  snookerOrigin?: boolean;
+  snookerReturnView?: MainView;
+  snookerReturnDetail?: DetailState | null;
+  snookerPlayerDetail?: string;
+  snookerRankingDetail?: boolean;
+  snookerTechnicalDetail?: string;
+};
+
 const navItems: Array<{ id: NavId; label: string; icon: string }> = [
   { id: "home", label: "首页", icon: "⌂" },
   { id: "matches", label: "赛事", icon: "◫" },
   { id: "players", label: "球员", icon: "◎" },
   { id: "data", label: "数据", icon: "▥" },
 ];
+
+const rootDetailParams = ["player", "section", "list", "group", "metric", "honour"] as const;
 
 function rankingKeyFromParam(value: string | null | undefined): SnookerCurrentRankingKey {
   return CURRENT_RANKING_KEYS.find((key) => key === value) ?? "world_official";
@@ -299,6 +314,20 @@ function playerMap(snapshot: SnookerDashboardSnapshot) {
   return new Map(snapshot.players.map((player) => [player.id, player]));
 }
 
+function fallbackPlayer(id: string): SnookerPlayer {
+  return {
+    id,
+    slug: "",
+    nameEn: "Player",
+    nameZh: "球员信息加载中",
+    shortNameZh: "待加载",
+    nationalityZh: "未知",
+    countryCode: "",
+    currentRank: null,
+    rankingPoints: null,
+  };
+}
+
 function matchSignature(match: SnookerMatch) {
   return JSON.stringify({
     score1: match.score1,
@@ -306,6 +335,37 @@ function matchSignature(match: SnookerMatch) {
     status: match.status,
     frames: match.frames?.map((frame) => [frame.frameNo, frame.score1, frame.score2, frame.break1, frame.break2]) ?? [],
   });
+}
+
+function shouldPollMatch(match: SnookerMatch, now: number) {
+  if (match.status === "live" || match.status === "session-break") return true;
+  const scheduled = match.scheduledAt ? Date.parse(match.scheduledAt) : 0;
+  if (match.status === "upcoming" && scheduled && scheduled >= now && scheduled - now <= UPCOMING_PREHEAT_MS) return true;
+  const completedAt = resolveCompletedAt(match, now);
+  return (match.status === "completed" || match.status === "walkover")
+    && completedAt > 0
+    && now - completedAt <= COMPLETED_PROTECTION_MS;
+}
+
+function mergeMatchPatchIntoEvent(event: SnookerEvent, patch: Partial<SnookerMatch> & { id: string }) {
+  let changed = false;
+  const rounds = event.rounds.map((round) => ({
+    ...round,
+    matches: round.matches.map((match) => {
+      if (match.id !== patch.id) return match;
+      changed = true;
+      return { ...match, ...patch };
+    }),
+  }));
+  return changed ? { ...event, rounds, snapshotAt: patch.sourceUpdatedAt ?? event.snapshotAt } : event;
+}
+
+function rootUrl(view: MainView) {
+  const url = new URL(window.location.href);
+  if (view === "home") url.searchParams.delete("view");
+  else url.searchParams.set("view", view);
+  rootDetailParams.forEach((key) => url.searchParams.delete(key));
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 function currentEventStats(playerId: string, event: SnookerEvent): PlayerEventStats | null {
@@ -382,9 +442,8 @@ function StatusPill({ status, label }: { status: string; label: string }) {
 }
 
 function MatchListRow({ match, players, onOpen }: { match: SnookerMatch; players: Map<string, SnookerPlayer>; onOpen: () => void }) {
-  const p1 = players.get(match.player1Id);
-  const p2 = players.get(match.player2Id);
-  if (!p1 || !p2) return null;
+  const p1 = players.get(match.player1Id) ?? fallbackPlayer(match.player1Id);
+  const p2 = players.get(match.player2Id) ?? fallbackPlayer(match.player2Id);
   const score = match.status === "walkover" ? "W : O" : `${match.score1 ?? "-"} : ${match.score2 ?? "-"}`;
   return (
     <button className={`${styles.matchRow} ${priority.horizontalMatchRow}`} data-schedule-match-id={match.id} onClick={onOpen}>
@@ -489,6 +548,7 @@ export default function SnookerDataCenterV2({
       : null;
   const [snapshot, setSnapshot] = useState(initialSnapshot);
   const [databaseEvents, setDatabaseEvents] = useState(initialDatabaseEvents);
+  const [eventScopedPlayers, setEventScopedPlayers] = useState<SnookerPlayer[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<SnookerCalendarEvent[]>(initialSnapshot.calendar);
   const [calendarLoaded, setCalendarLoaded] = useState(false);
   const [calendarLoading, setCalendarLoading] = useState(false);
@@ -496,6 +556,8 @@ export default function SnookerDataCenterV2({
   const [selectedSeason, setSelectedSeason] = useState(initialCurrentSeason);
   const [loadingEventSlug, setLoadingEventSlug] = useState<string | null>(null);
   const [eventLoadError, setEventLoadError] = useState<string | null>(null);
+  const [loadingMatchId, setLoadingMatchId] = useState<string | null>(null);
+  const [matchLoadError, setMatchLoadError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<MainView>(initialPlayerSlug ? "players" : initialDataSection === "rankings" ? "data" : initialView);
   const [detail, setDetail] = useState<DetailState | null>(initialDetail);
   const [theme, setTheme] = useState<Theme>("green");
@@ -520,8 +582,9 @@ export default function SnookerDataCenterV2({
   const signatures = useRef(new Map(initialDatabaseEvents.flatMap((event) => allMatches(event)).map((match) => [match.id, matchSignature(match)])));
   const playerDirectoryScrollY = useRef(0);
   const eventReturnState = useRef<{ view: MainView; mode: EventListMode; season: string; scrollY: number } | null>(null);
-  const eventDetailReturn = useRef<{ slug: string; tab: EventTab; scrollY: number } | null>(null);
+  const matchReturnState = useRef<MatchReturnState | null>(null);
   const scheduleAutoFocusedEvents = useRef(new Set<string>());
+  const matchDetailInFlight = useRef(new Set<string>());
 
   const ensureCalendar = useCallback(async () => {
     if (calendarLoaded || calendarLoading) return;
@@ -580,9 +643,8 @@ export default function SnookerDataCenterV2({
 
       const playerSlug = target.searchParams.get("player")?.trim();
       const viewParam = target.searchParams.get("view");
-      const returnState = window.history.state as { snookerReturnView?: MainView } | null;
       if (playerSlug) {
-        const returnView = returnState?.snookerReturnView ?? "players";
+        const returnView: MainView = viewParam === "matches" || viewParam === "data" ? viewParam : "players";
         frame = window.requestAnimationFrame(() => {
           setActiveView("players");
           setDetail({ type: "player", slug: playerSlug, returnView });
@@ -601,7 +663,23 @@ export default function SnookerDataCenterV2({
     return () => { if (frame) window.cancelAnimationFrame(frame); };
   }, []);
 
-  const players = useMemo(() => playerMap(snapshot), [snapshot]);
+  const mergeScopedPlayers = useCallback((incoming: SnookerPlayer[] | undefined) => {
+    if (!incoming?.length) return;
+    setEventScopedPlayers((current) => {
+      const byId = new Map(current.map((player) => [player.id, player]));
+      for (const player of incoming) byId.set(player.id, { ...(byId.get(player.id) ?? {}), ...player } as SnookerPlayer);
+      return [...byId.values()];
+    });
+  }, []);
+
+  const players = useMemo(() => {
+    const map = playerMap(snapshot);
+    for (const player of eventScopedPlayers) {
+      const existing = map.get(player.id);
+      map.set(player.id, existing ? { ...player, ...existing } : player);
+    }
+    return map;
+  }, [snapshot, eventScopedPlayers]);
   const snapshotDirectoryPlayers = useMemo<SnookerPlayerListItem[]>(() => snapshot.players
     .map((player) => ({
       id: player.id,
@@ -623,6 +701,44 @@ export default function SnookerDataCenterV2({
     .sort((a, b) => (a.currentRank ?? 9999) - (b.currentRank ?? 9999) || a.nameEn.localeCompare(b.nameEn)), [snapshot.players]);
   const directoryPlayers = loadedDirectory ?? snapshotDirectoryPlayers;
   const eventBySlug = useMemo(() => new Map(databaseEvents.map((event) => [event.slug, event])), [databaseEvents]);
+
+  const applyMatchDetail = useCallback((data: MatchDetailResponse) => {
+    if (!data.match) return;
+    mergeScopedPlayers(data.players);
+    const patch = data.match;
+    const changedAt = data.fetchedAt ?? patch.sourceUpdatedAt ?? new Date().toISOString();
+    setDatabaseEvents((current) => current.map((event) => mergeMatchPatchIntoEvent(event, patch)));
+    setSnapshot((current) => ({ ...current, event: mergeMatchPatchIntoEvent(current.event, patch), builtAt: changedAt }));
+    setMatchUpdatedAt((previous) => ({ ...previous, [patch.id]: patch.sourceUpdatedAt ?? changedAt }));
+    setSourceHealth((current) => ({
+      online: true,
+      accepted: true,
+      fetchedAt: changedAt,
+      message: "比赛详情已按单场加载。",
+      sourceLabel: current?.sourceLabel ?? "Supabase · 单场详情",
+      cacheSeconds: 0,
+    }));
+  }, [mergeScopedPlayers]);
+
+  const ensureMatchDetail = useCallback(async (matchId: string, options: { silent?: boolean } = {}) => {
+    if (!matchId.startsWith("db-") || matchDetailInFlight.current.has(matchId)) return;
+    matchDetailInFlight.current.add(matchId);
+    if (!options.silent) {
+      setLoadingMatchId(matchId);
+      setMatchLoadError((current) => current === matchId ? null : current);
+    }
+    try {
+      const response = await fetch(`/api/snooker/v1/match?id=${encodeURIComponent(matchId)}`, { cache: "no-store", headers: { Accept: "application/json" } });
+      const data = await response.json() as MatchDetailResponse;
+      if (!response.ok || !data.ok || !data.match) throw new Error("MATCH_DETAIL_UNAVAILABLE");
+      applyMatchDetail(data);
+    } catch {
+      if (!options.silent) setMatchLoadError(matchId);
+    } finally {
+      matchDetailInFlight.current.delete(matchId);
+      if (!options.silent) setLoadingMatchId((current) => current === matchId ? null : current);
+    }
+  }, [applyMatchDetail]);
 
   const ensurePlayerDirectory = useCallback(async () => {
     if (directoryLoaded || directoryLoading) return;
@@ -688,23 +804,23 @@ export default function SnookerDataCenterV2({
 
     return () => window.cancelAnimationFrame(frame);
   }, [detail, eventBySlug]);
-  const pollReferenceTime = sourceHealth?.fetchedAt ? Date.parse(sourceHealth.fetchedAt) : 0;
-  const shouldPollLive = databaseEvents.some((event) => allMatches(event).some((match) => {
-    if (match.status === "live" || match.status === "session-break") return true;
-    const scheduled = match.scheduledAt ? Date.parse(match.scheduledAt) : 0;
-    if (match.status === "upcoming" && scheduled && scheduled >= pollReferenceTime && scheduled - pollReferenceTime <= UPCOMING_PREHEAT_MS) return true;
-    const completedAt = resolveCompletedAt(match, pollReferenceTime);
-    return (match.status === "completed" || match.status === "walkover") && completedAt > 0 && pollReferenceTime - completedAt <= COMPLETED_PROTECTION_MS;
-  }));
-  const liveRefreshState = useRef<{ events: SnookerEvent[]; detailType: DetailState["type"] | null }>({
+
+  const pollReferenceTime = sourceHealth?.fetchedAt && Number.isFinite(Date.parse(sourceHealth.fetchedAt)) ? Date.parse(sourceHealth.fetchedAt) : Date.now();
+  const selectedMatchForPolling = detail?.type === "match"
+    ? eventBySlug.get(detail.eventSlug)?.rounds.flatMap((round) => round.matches).find((match) => match.id === detail.matchId)
+    : undefined;
+  const shouldPollLive = detail?.type === "match"
+    ? Boolean(selectedMatchForPolling && shouldPollMatch(selectedMatchForPolling, pollReferenceTime))
+    : databaseEvents.some((event) => allMatches(event).some((match) => shouldPollMatch(match, pollReferenceTime)));
+  const liveRefreshState = useRef<{ events: SnookerEvent[]; detail: DetailState | null }>({
     events: databaseEvents,
-    detailType: detail?.type ?? null,
+    detail,
   });
   const liveRefreshInFlight = useRef(false);
 
   useEffect(() => {
-    liveRefreshState.current = { events: databaseEvents, detailType: detail?.type ?? null };
-  }, [databaseEvents, detail?.type]);
+    liveRefreshState.current = { events: databaseEvents, detail };
+  }, [databaseEvents, detail]);
 
   const refresh = useCallback(async () => {
     if (typeof document !== "undefined" && document.hidden) return;
@@ -713,87 +829,59 @@ export default function SnookerDataCenterV2({
     setRefreshing(true);
     try {
       const currentEvents = liveRefreshState.current.events;
-      if (liveRefreshState.current.detailType === "match") {
-        const response = await fetch("/api/snooker/v1/dashboard", { cache: "no-store", headers: { Accept: "application/json" } });
-        const data = await response.json() as DashboardResponse;
-        if (!response.ok || !data.ok || !data.snapshot) throw new Error("DASHBOARD_UNAVAILABLE");
-        setSnapshot((current) => ({
-          ...data.snapshot!,
-          event: mergeEventSnapshotsMonotonic([current.event], [data.snapshot!.event])[0] ?? data.snapshot!.event,
-        }));
-        if (data.databaseEvents) {
-          const changedAt = data.sourceHealth?.fetchedAt ?? new Date().toISOString();
-          setDatabaseEvents((current) => {
-            const merged = mergeEventSnapshotsMonotonic(current, data.databaseEvents!);
-            const next = new Map(merged.flatMap((event) => allMatches(event)).map((match) => [match.id, matchSignature(match)]));
-            const changed: string[] = [];
-            for (const [id, signature] of next) if (signatures.current.get(id) !== signature) changed.push(id);
-            signatures.current = next;
-            if (changed.length) {
-              const updatedById = new Map(merged.flatMap((event) => allMatches(event)).map((match) => [match.id, match.sourceUpdatedAt ?? changedAt]));
-              setMatchUpdatedAt((previous) => ({ ...previous, ...Object.fromEntries(changed.map((id) => [id, updatedById.get(id) ?? changedAt])) }));
-            }
-            return merged;
-          });
-        }
-        if (data.sourceHealth) setSourceHealth(data.sourceHealth);
-      } else {
-        const now = Date.now();
-        const pollingMatches = currentEvents.flatMap((event) => allMatches(event)).filter((match) => {
-          if (match.status === "live" || match.status === "session-break") return true;
-          const scheduled = match.scheduledAt ? Date.parse(match.scheduledAt) : 0;
-          if (match.status === "upcoming" && scheduled > now && scheduled - now <= UPCOMING_PREHEAT_MS) return true;
-          const completedAt = resolveCompletedAt(match, now);
-          return (match.status === "completed" || match.status === "walkover")
-            && completedAt > 0
-            && now - completedAt <= COMPLETED_PROTECTION_MS;
-        }).sort((a, b) => {
-          const priorityFor = (match: SnookerMatch) => match.status === "live" || match.status === "session-break" ? 0 : match.status === "upcoming" ? 1 : 2;
-          return priorityFor(a) - priorityFor(b) || (scheduledTime(a) ?? Number.POSITIVE_INFINITY) - (scheduledTime(b) ?? Number.POSITIVE_INFINITY);
-        });
-        const matchIds = [...new Set(pollingMatches
-          .map((match) => dbMatchUuid(match))
-          .filter((id): id is string => Boolean(id)))].slice(0, 64);
-        if (!matchIds.length) return;
-
-        const response = await fetch(`/api/snooker/v1/home-live?ids=${encodeURIComponent(matchIds.join(","))}`, {
-          cache: "no-store",
-          headers: { Accept: "application/json" },
-        });
-        const data = await response.json() as HomeLiveResponse;
-        if (!response.ok || !data.ok || !data.matches) throw new Error("HOME_LIVE_UNAVAILABLE");
-
-        const changedAt = data.fetchedAt ?? new Date().toISOString();
-        const clientIdByDbId = new Map<string, string>();
-        for (const event of currentEvents) {
-          for (const match of allMatches(event)) {
-            const uuid = dbMatchUuid(match);
-            if (uuid) clientIdByDbId.set(uuid, match.id);
-          }
-        }
-        const updatedEntries = data.matches.flatMap((row) => {
-          const clientId = clientIdByDbId.get(row.id);
-          return clientId ? [[clientId, row.source_updated_at ?? changedAt] as const] : [];
-        });
-
-        setDatabaseEvents((current) => current.map((event) => mergeHomeLiveEvent(event, data.matches!)));
-        setSnapshot((current) => ({
-          ...current,
-          event: mergeHomeLiveEvent(current.event, data.matches!),
-          builtAt: changedAt,
-        }));
-        if (updatedEntries.length) {
-          setMatchUpdatedAt((previous) => ({ ...previous, ...Object.fromEntries(updatedEntries) }));
-        }
-        setSourceHealth({
-          online: true,
-          accepted: true,
-          fetchedAt: changedAt,
-          message: "轻量实时比分已同步；完整逐局和统计仅在比赛详情读取。",
-          sourceLabel: "Supabase · 轻量实时比分",
-          cacheSeconds: 0,
-        });
+      const currentDetail = liveRefreshState.current.detail;
+      if (currentDetail?.type === "match") {
+        await ensureMatchDetail(currentDetail.matchId, { silent: true });
+        return;
       }
+
+      const now = Date.now();
+      const pollingMatches = currentEvents.flatMap((event) => allMatches(event)).filter((match) => shouldPollMatch(match, now)).sort((a, b) => {
+        const priorityFor = (match: SnookerMatch) => match.status === "live" || match.status === "session-break" ? 0 : match.status === "upcoming" ? 1 : 2;
+        return priorityFor(a) - priorityFor(b) || (scheduledTime(a) ?? Number.POSITIVE_INFINITY) - (scheduledTime(b) ?? Number.POSITIVE_INFINITY);
+      });
+      const matchIds = [...new Set(pollingMatches
+        .map((match) => dbMatchUuid(match))
+        .filter((id): id is string => Boolean(id)))].slice(0, 64);
+      if (!matchIds.length) return;
+
+      const response = await fetch(`/api/snooker/v1/home-live?ids=${encodeURIComponent(matchIds.join(","))}`, {
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      });
+      const data = await response.json() as HomeLiveResponse;
+      if (!response.ok || !data.ok || !data.matches) throw new Error("HOME_LIVE_UNAVAILABLE");
+
+      const changedAt = data.fetchedAt ?? new Date().toISOString();
+      const clientIdByDbId = new Map<string, string>();
+      for (const event of currentEvents) {
+        for (const match of allMatches(event)) {
+          const uuid = dbMatchUuid(match);
+          if (uuid) clientIdByDbId.set(uuid, match.id);
+        }
+      }
+      const updatedEntries = data.matches.flatMap((row) => {
+        const clientId = clientIdByDbId.get(row.id);
+        return clientId ? [[clientId, row.source_updated_at ?? changedAt] as const] : [];
+      });
+
+      setDatabaseEvents((current) => current.map((event) => mergeHomeLiveEvent(event, data.matches!)));
+      setSnapshot((current) => ({
+        ...current,
+        event: mergeHomeLiveEvent(current.event, data.matches!),
+        builtAt: changedAt,
+      }));
+      if (updatedEntries.length) {
+        setMatchUpdatedAt((previous) => ({ ...previous, ...Object.fromEntries(updatedEntries) }));
+      }
+      setSourceHealth({
+        online: true,
+        accepted: true,
+        fetchedAt: changedAt,
+        message: "轻量实时比分已同步；完整逐局和统计仅在比赛详情读取。",
+        sourceLabel: "Supabase · 轻量实时比分",
+        cacheSeconds: 0,
+      });
     } catch {
       setSourceHealth((current) => current ? {
         ...current,
@@ -804,7 +892,7 @@ export default function SnookerDataCenterV2({
       liveRefreshInFlight.current = false;
       setRefreshing(false);
     }
-  }, []);
+  }, [ensureMatchDetail]);
 
   useEffect(() => {
     if (!shouldPollLive) return;
@@ -825,9 +913,10 @@ export default function SnookerDataCenterV2({
       const playerSlug = params.get("player")?.trim();
       const viewParam = params.get("view");
       const urlView: MainView = viewParam === "matches" || viewParam === "players" || viewParam === "data" ? viewParam : "home";
-      const state = event.state as { snookerReturnView?: MainView; snookerReturnDetail?: DetailState | null } | null;
+      const state = event.state as SnookerHistoryState | null;
 
       if (playerSlug) {
+        setRequestedTechnicalMetric(null);
         setActiveView("players");
         setDetail({ type: "player", slug: playerSlug, returnView: "players" });
         window.scrollTo({ top: 0, behavior: "auto" });
@@ -837,6 +926,7 @@ export default function SnookerDataCenterV2({
       if (urlView === "data" && params.get("section") === "rankings") {
         const key = rankingKeyFromParam(params.get("list"));
         const section = rankingSectionFromParam(params.get("group"));
+        setRequestedTechnicalMetric(null);
         setSelectedRankingKey(key);
         setRankingSection(section);
         setActiveView("data");
@@ -845,23 +935,34 @@ export default function SnookerDataCenterV2({
         return;
       }
 
-      if (state?.snookerReturnDetail && state.snookerReturnDetail.type !== "player") {
-        setActiveView(state.snookerReturnView ?? urlView);
+      if (urlView === "data" && params.get("section") === "technical") {
+        setDetail(null);
+        setRequestedTechnicalMetric((params.get("metric") || null) as SnookerTechnicalMetricKey | null);
+        setActiveView("data");
+        void ensureRankingHub();
+        window.scrollTo({ top: 0, behavior: "auto" });
+        return;
+      }
+
+      if (state?.snookerOrigin && state.snookerReturnDetail) {
+        setRequestedTechnicalMetric(null);
+        setActiveView(state.snookerReturnView ?? state.snookerView ?? urlView);
         setDetail(state.snookerReturnDetail);
         window.scrollTo({ top: 0, behavior: "auto" });
         return;
       }
 
-      setDetail((current) => current?.type === "player" || current?.type === "ranking" ? null : current);
-      setActiveView(state?.snookerReturnView ?? urlView);
-      if ((state?.snookerReturnView ?? urlView) === "players") {
+      setRequestedTechnicalMetric(null);
+      setDetail(null);
+      setActiveView(urlView);
+      if (urlView === "players") {
         window.requestAnimationFrame(() => window.scrollTo({ top: playerDirectoryScrollY.current, behavior: "auto" }));
       }
     };
 
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [ensureRankingHub]);
 
   const today = chinaToday();
   const seasonCalendar = useMemo(() => [...snapshot.calendar].filter((item) => item.season === initialCurrentSeason).sort((a, b) => a.startDate.localeCompare(b.startDate)), [snapshot.calendar, initialCurrentSeason]);
@@ -897,8 +998,9 @@ export default function SnookerDataCenterV2({
     setEventLoadError((current) => current === slug ? null : current);
     try {
       const response = await fetch(`/api/snooker/v1/event?slug=${encodeURIComponent(slug)}`, { cache: "no-store", headers: { Accept: "application/json" } });
-      const data = await response.json() as { ok?: boolean; event?: SnookerEvent };
+      const data = await response.json() as { ok?: boolean; event?: SnookerEvent; players?: SnookerPlayer[] };
       if (!response.ok || !data.ok || !data.event) throw new Error("EVENT_DETAIL_UNAVAILABLE");
+      mergeScopedPlayers(data.players);
       setDatabaseEvents((current) => {
         const index = current.findIndex((event) => event.slug === slug);
         if (index < 0) return [...current, data.event!];
@@ -932,58 +1034,60 @@ export default function SnookerDataCenterV2({
       window.requestAnimationFrame(() => window.scrollTo({ top: restore.scrollY, behavior: "auto" }));
     }
     eventReturnState.current = null;
-    eventDetailReturn.current = null;
+    matchReturnState.current = null;
   };
   const openMatch = (matchId: string, eventSlug: string) => {
     if (detail?.type === "event" && detail.slug === eventSlug) {
-      eventDetailReturn.current = { slug: eventSlug, tab: detail.tab, scrollY: window.scrollY };
+      matchReturnState.current = { kind: "event", slug: eventSlug, tab: detail.tab, scrollY: window.scrollY };
     } else {
-      eventDetailReturn.current = null;
+      matchReturnState.current = { kind: "root", view: activeView, scrollY: window.scrollY };
     }
     void ensureEventDetail(eventSlug);
+    void ensureMatchDetail(matchId);
     setMatchDataTab("match");
     setDetail({ type: "match", matchId, eventSlug });
     window.scrollTo({ top: 0, behavior: "auto" });
   };
   const closeMatch = (eventSlug: string) => {
-    const restore = eventDetailReturn.current;
-    if (restore?.slug === eventSlug) {
+    const restore = matchReturnState.current;
+    if (restore?.kind === "event" && restore.slug === eventSlug) {
       setDetail({ type: "event", slug: eventSlug, tab: restore.tab });
       window.requestAnimationFrame(() => window.scrollTo({ top: restore.scrollY, behavior: "auto" }));
+    } else if (restore?.kind === "root") {
+      setDetail(null);
+      setActiveView(restore.view);
+      window.requestAnimationFrame(() => window.scrollTo({ top: restore.scrollY, behavior: "auto" }));
     } else {
-      setDetail({ type: "event", slug: eventSlug, tab: "schedule" });
+      setDetail(null);
+      setActiveView("home");
       window.scrollTo({ top: 0, behavior: "auto" });
     }
-    eventDetailReturn.current = null;
+    matchReturnState.current = null;
   };
   const openPlayer = (playerId: string) => {
     const target = players.get(playerId);
-    if (!target?.slug) {
-      setDetail(null);
-      setActiveView("players");
-      return;
-    }
+    if (!target?.slug) return;
 
     if (activeView === "players" && detail === null) playerDirectoryScrollY.current = window.scrollY;
     prefetchPlayerExperience(target.slug, target.avatarUrl || target.avatar?.url || null, "high");
 
     const returnDetail = detail;
     const returnView = activeView;
-    const currentState = { ...(window.history.state ?? {}), snookerReturnView: returnView, snookerReturnDetail: returnDetail };
+    const currentState: SnookerHistoryState = { snookerView: returnView, snookerOrigin: true, snookerReturnView: returnView, snookerReturnDetail: returnDetail };
     window.history.replaceState(currentState, "", window.location.href);
 
     const url = new URL(window.location.href);
     url.searchParams.set("view", "players");
     url.searchParams.set("player", target.slug);
     const nextUrl = url.pathname + url.search + url.hash;
-    window.history.pushState({ ...currentState, snookerPlayerDetail: target.slug }, "", nextUrl);
+    window.history.pushState({ snookerView: "players", snookerPlayerDetail: target.slug }, "", nextUrl);
 
     setActiveView("players");
     setDetail({ type: "player", slug: target.slug, returnView });
     window.scrollTo({ top: 0, behavior: "auto" });
   };
   const openPlayerBySlug = (slug: string) => {
-    const target = snapshot.players.find((player) => player.slug === slug);
+    const target = [...players.values()].find((player) => player.slug === slug);
     if (target) {
       openPlayer(target.id);
       return;
@@ -991,12 +1095,12 @@ export default function SnookerDataCenterV2({
     const directoryTarget = directoryPlayers.find((player) => player.slug === slug);
     const returnDetail = detail;
     const returnView = activeView;
-    const currentState = { ...(window.history.state ?? {}), snookerReturnView: returnView, snookerReturnDetail: returnDetail };
+    const currentState: SnookerHistoryState = { snookerView: returnView, snookerOrigin: true, snookerReturnView: returnView, snookerReturnDetail: returnDetail };
     window.history.replaceState(currentState, "", window.location.href);
     const url = new URL(window.location.href);
     url.searchParams.set("view", "players");
     url.searchParams.set("player", slug);
-    window.history.pushState({ ...currentState, snookerPlayerDetail: slug }, "", url.pathname + url.search + url.hash);
+    window.history.pushState({ snookerView: "players", snookerPlayerDetail: slug }, "", url.pathname + url.search + url.hash);
     if (directoryTarget) prefetchPlayerExperience(slug, directoryTarget.avatarUrl, "high");
     setActiveView("players");
     setDetail({ type: "player", slug, returnView });
@@ -1004,7 +1108,7 @@ export default function SnookerDataCenterV2({
   };
   const closePlayer = () => {
     if (detail?.type !== "player") return;
-    const state = window.history.state as { snookerPlayerDetail?: string } | null;
+    const state = window.history.state as SnookerHistoryState | null;
     if (state?.snookerPlayerDetail === detail.slug && window.history.length > 1) {
       window.history.back();
       return;
@@ -1013,7 +1117,7 @@ export default function SnookerDataCenterV2({
     const url = new URL(window.location.href);
     url.searchParams.set("view", "players");
     url.searchParams.delete("player");
-    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    window.history.replaceState({ snookerView: "players" }, "", url.pathname + url.search + url.hash);
     setDetail(null);
     setActiveView("players");
     window.requestAnimationFrame(() => window.scrollTo({ top: playerDirectoryScrollY.current, behavior: "auto" }));
@@ -1021,15 +1125,14 @@ export default function SnookerDataCenterV2({
   const openRankings = (key: SnookerCurrentRankingKey) => {
     setSelectedRankingKey(key);
     setRankingSection("current");
-    const currentState = { ...(window.history.state ?? {}), snookerReturnView: "data" as MainView, snookerReturnDetail: null };
-    window.history.replaceState(currentState, "", window.location.href);
+    window.history.replaceState({ snookerView: activeView }, "", window.location.href);
     const url = new URL(window.location.href);
     url.searchParams.set("view", "data");
     url.searchParams.delete("player");
     url.searchParams.set("section", "rankings");
     url.searchParams.set("list", key);
     url.searchParams.set("group", "current");
-    window.history.pushState({ ...currentState, snookerRankingDetail: true }, "", url.pathname + url.search + url.hash);
+    window.history.pushState({ snookerView: "data", snookerRankingDetail: true }, "", url.pathname + url.search + url.hash);
     setActiveView("data");
     setDetail({ type: "ranking", section: "current", key });
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -1043,11 +1146,11 @@ export default function SnookerDataCenterV2({
     url.searchParams.set("section", "rankings");
     url.searchParams.set("list", key);
     url.searchParams.set("group", section);
-    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    window.history.replaceState({ snookerView: "data", snookerRankingDetail: true }, "", url.pathname + url.search + url.hash);
     window.scrollTo({ top: 0, behavior: "auto" });
   };
   const closeRankings = () => {
-    const state = window.history.state as { snookerRankingDetail?: boolean } | null;
+    const state = window.history.state as SnookerHistoryState | null;
     if (state?.snookerRankingDetail && window.history.length > 1) {
       window.history.back();
       return;
@@ -1057,11 +1160,12 @@ export default function SnookerDataCenterV2({
     url.searchParams.delete("section");
     url.searchParams.delete("list");
     url.searchParams.delete("group");
-    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    window.history.replaceState({ snookerView: "data" }, "", url.pathname + url.search + url.hash);
     setDetail(null);
     setActiveView("data");
   };
   const openTechnicalFromHome = (key: HomeLeaderMetricKey) => {
+    window.history.replaceState({ snookerView: activeView }, "", window.location.href);
     const url = new URL(window.location.href);
     url.searchParams.set("view", "data");
     url.searchParams.delete("player");
@@ -1070,7 +1174,7 @@ export default function SnookerDataCenterV2({
     url.searchParams.delete("honour");
     url.searchParams.delete("list");
     url.searchParams.delete("group");
-    window.history.pushState({ ...(window.history.state ?? {}), snookerTechnicalDetail: key, snookerReturnView: "home" }, "", url.pathname + url.search + url.hash);
+    window.history.pushState({ snookerView: "data", snookerTechnicalDetail: key }, "", url.pathname + url.search + url.hash);
     setRequestedTechnicalMetric(key);
     setDetail(null);
     setActiveView("data");
@@ -1080,9 +1184,13 @@ export default function SnookerDataCenterV2({
 
   const changeView = (view: NavId) => {
     eventReturnState.current = null;
-    eventDetailReturn.current = null;
+    matchReturnState.current = null;
     setRequestedTechnicalMetric(null);
     setDetail(null);
+    const nextUrl = rootUrl(view);
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (currentUrl !== nextUrl) window.history.pushState({ snookerView: view }, "", nextUrl);
+    else window.history.replaceState({ snookerView: view }, "", nextUrl);
     setActiveView(view);
     if (view === "players") void ensurePlayerDirectory();
     if (view === "data") void ensureRankingHub();
@@ -1090,7 +1198,7 @@ export default function SnookerDataCenterV2({
   };
 
   if (detail?.type === "player") {
-    const summaryPlayer = snapshot.players.find((player) => player.slug === detail.slug);
+    const summaryPlayer = [...players.values()].find((player) => player.slug === detail.slug);
     return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
       <header className={styles.detailHeader}><button onClick={closePlayer}>‹</button><strong>{summaryPlayer?.nameZh ?? "球员详情"}</strong><span>PLAYER</span></header>
       <PlayerDetailInline key={detail.slug} summaryPlayer={summaryPlayer} slug={detail.slug} />
@@ -1113,12 +1221,22 @@ export default function SnookerDataCenterV2({
   }
 
   if (detail?.type === "match") {
-    const selectedEvent = eventBySlug.get(detail.eventSlug) ?? snapshot.event;
-    const match = allMatches(selectedEvent).find((item) => item.id === detail.matchId) ?? finalOf(selectedEvent);
-    if (!match) return null;
-    const p1 = players.get(match.player1Id);
-    const p2 = players.get(match.player2Id);
-    if (!p1 || !p2) return null;
+    const selectedEvent = eventBySlug.get(detail.eventSlug);
+    if (!selectedEvent) {
+      return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
+        <header className={styles.detailHeader}><button onClick={() => closeMatch(detail.eventSlug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
+        <section className={styles.card}><div className={styles.emptyState}>{eventLoadError === detail.eventSlug ? "比赛所属赛事加载失败，请稍后重试。" : "正在加载比赛信息…"}</div>{eventLoadError === detail.eventSlug ? <button className={styles.fullButton} onClick={() => void ensureEventDetail(detail.eventSlug)}>重新加载</button> : null}</section>
+      </div></main>;
+    }
+    const match = allMatches(selectedEvent).find((item) => item.id === detail.matchId);
+    if (!match) {
+      return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
+        <header className={styles.detailHeader}><button onClick={() => closeMatch(detail.eventSlug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
+        <section className={styles.card}><div className={styles.emptyState}>{loadingEventSlug === detail.eventSlug ? "正在加载比赛信息…" : "未找到这场比赛，请返回赛程重新选择。"}</div></section>
+      </div></main>;
+    }
+    const p1 = players.get(match.player1Id) ?? fallbackPlayer(match.player1Id);
+    const p2 = players.get(match.player2Id) ?? fallbackPlayer(match.player2Id);
     const s1 = match.statistics?.find((stat) => stat.playerId === p1.id);
     const s2 = match.statistics?.find((stat) => stat.playerId === p2.id);
     const season1 = p1.seasonStatistics;
@@ -1148,7 +1266,7 @@ export default function SnookerDataCenterV2({
       second: "2-digit",
       timeZone: "Asia/Shanghai",
     });
-    const localized = (name?: string) => snapshot.players.find((player) => player.nameEn.toLowerCase() === String(name ?? "").toLowerCase())?.nameZh ?? name ?? "";
+    const localized = (name?: string) => [...players.values()].find((player) => player.nameEn.toLowerCase() === String(name ?? "").toLowerCase())?.nameZh ?? name ?? "";
     const statRows: Array<[string, keyof SnookerMatchPlayerStatistics, string]> = [
       ["总得分", "totalPoints", ""],
       ["平均出杆", "averageShotTimeSeconds", "秒"],
@@ -1202,7 +1320,7 @@ export default function SnookerDataCenterV2({
             <strong className={`${rightWon ? liveIndicator.frameWinnerScore : ""} ${rightStriking ? liveIndicator.scoreAnchor : ""}`}>{frame.score2}{rightStriking ? <i className={liveIndicator.strikerDot} data-side="away" aria-hidden="true" title={`${p2.nameZh}正在击球`} /> : null}</strong>
             <span>{frame.break2 ?? "-"}</span>
           </div>;
-        }) : <div className={styles.emptyFrames}>{match.status === "upcoming" ? "比赛尚未开始，开赛后可查看逐局比分。" : "暂无逐局比分，当前仅显示比赛总比分。"}</div>}
+        }) : <div className={styles.emptyFrames}>{loadingMatchId === match.id ? "正在加载逐局比分…" : matchLoadError === match.id ? "逐局比分加载失败，当前先显示比赛总比分。" : match.status === "upcoming" ? "比赛尚未开始，开赛后可查看逐局比分。" : "暂无逐局比分，当前仅显示比赛总比分。"}</div>}
       </section>
 
       {hasMatchupData ? <section className={polish.matchupCard}>
@@ -1258,7 +1376,7 @@ export default function SnookerDataCenterV2({
       completed: eventMatches.filter((match) => match.status === "completed" || match.status === "walkover").length,
       partial: eventDetails.some((event) => event.schedulePartial),
     } : null;
-    const chinaStats = full ? snapshot.players.filter(isChina).map((player) => {
+    const chinaStats = full ? [...players.values()].filter(isChina).map((player) => {
       const stats = currentEventStats(player.id, full);
       return stats ? { player, stats: { wins: stats.wins, losses: stats.losses, bestRoundLabelZh: stats.bestRoundLabelZh } } : null;
     }).filter((item): item is { player: SnookerPlayer; stats: { wins: number; losses: number; bestRoundLabelZh: string } } => Boolean(item)) : [];
@@ -1351,7 +1469,7 @@ export default function SnookerDataCenterV2({
         <span>更新 {formatUpdatedAt(sourceHealth?.fetchedAt)}</span>
       </div> : null}
     </div>
-    <nav className={`${styles.bottomNav} ${polish.fastNav}`}>{navItems.map((item) => <a key={item.id} href={item.id === "home" ? "/" : `/?view=${item.id}`} className={`${polish.fastNavLink} ${item.id === activeView ? styles.activeNav : ""}`} onClick={(event) => { event.preventDefault(); window.history.replaceState(window.history.state, "", event.currentTarget.href); changeView(item.id); }}><span>{item.icon}</span><b>{item.label}</b></a>)}</nav>
+    <nav className={`${styles.bottomNav} ${polish.fastNav}`}>{navItems.map((item) => <a key={item.id} href={item.id === "home" ? "/" : `/?view=${item.id}`} className={`${polish.fastNavLink} ${item.id === activeView ? styles.activeNav : ""}`} onClick={(event) => { event.preventDefault(); changeView(item.id); }}><span>{item.icon}</span><b>{item.label}</b></a>)}</nav>
     <span className={styles.buildMark}>{buildMark}</span>
   </div></main>;
 }
