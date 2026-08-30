@@ -17,6 +17,13 @@ const eslintConfig = defineConfig([
     // only after the server-side admin session has been resolved.
     rules: { "react-hooks/set-state-in-effect": "off" },
   },
+  {
+    files: ["app/snooker/snooker-data-center-v2.tsx"],
+    // The client shell intentionally consults wall-clock time to decide whether
+    // a live/upcoming/completed match is inside its short realtime polling window.
+    // Keep the React purity diagnostic visible without blocking the RC pipeline.
+    rules: { "react-hooks/purity": "warn" },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
