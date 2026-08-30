@@ -1,4 +1,4 @@
-import type { SnookerMatch, SnookerMatchStatus } from "./domain";
+import type { SnookerEvent, SnookerMatch, SnookerMatchStatus } from "./domain";
 
 export type HomeLiveMatchRow = {
   id: string;
@@ -87,4 +87,22 @@ export function mergeHomeLiveMatch(previous: SnookerMatch, row: HomeLiveMatchRow
   else delete next.currentPlayerSide;
   if (row.current_break === null) delete next.currentBreak;
   return next;
+}
+
+export function mergeHomeLiveEvent(event: SnookerEvent, rows: HomeLiveMatchRow[]) {
+  if (!rows.length) return event;
+  const rowById = new Map(rows.map((row) => [row.id, row]));
+  let changed = false;
+  const rounds = event.rounds.map((round) => ({
+    ...round,
+    matches: round.matches.map((match) => {
+      const uuid = dbMatchUuid(match);
+      const row = uuid ? rowById.get(uuid) : undefined;
+      if (!row) return match;
+      const merged = mergeHomeLiveMatch(match, row);
+      if (merged !== match) changed = true;
+      return merged;
+    }),
+  }));
+  return changed ? { ...event, rounds } : event;
 }
