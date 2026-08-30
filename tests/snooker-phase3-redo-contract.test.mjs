@@ -47,7 +47,8 @@ test("home SSR no longer waits for live read-through and root navigation is not 
   assert.match(page, /if \(useHomeBootstrap\) \{[\s\S]*?loadSnookerHomeBootstrap\(\)[\s\S]*?\} else \{[\s\S]*?refreshSnookerDatabaseViewLive/);
   assert.match(page, /<SnookerViewUrlSync \/>/);
   assert.doesNotMatch(page, /serverLoadData/);
-  assert.match(ui, /if \(!shouldPollDashboard\) return;\s*void refresh\(\);\s*const timer = window\.setInterval/);
+  assert.match(ui, /if \(!shouldPollDashboard\) return;\s*const firstRefreshFrame = window\.requestAnimationFrame\(\(\) => void refresh\(\)\);\s*const timer = window\.setInterval/);
+  assert.match(ui, /window\.cancelAnimationFrame\(firstRefreshFrame\)/);
   assert.doesNotMatch(urlSync, /router\.push|router\.replace/);
 });
 
