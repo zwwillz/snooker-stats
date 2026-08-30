@@ -25,20 +25,23 @@ function notifyViewUrlChange() {
   window.dispatchEvent(new Event("snooker-view-url-change"));
 }
 
-function updateRootUrl(view: RootView) {
+function rootUrl(view: RootView) {
   const url = new URL(window.location.href);
   if (view === "home") url.searchParams.delete("view");
   else url.searchParams.set("view", view);
 
   if (view !== "data") detailParams.forEach((key) => url.searchParams.delete(key));
   else url.searchParams.delete("player");
+  return `${url.pathname}${url.search}${url.hash}`;
+}
 
-  const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+function updateRootUrl(view: RootView) {
+  const nextUrl = rootUrl(view);
   window.history.replaceState(window.history.state, "", nextUrl);
   notifyViewUrlChange();
 }
 
-export default function SnookerViewUrlSync() {
+export default function SnookerViewUrlSync({ serverLoadData = false }: { serverLoadData?: boolean }) {
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       const target = event.target instanceof Element ? event.target : null;
@@ -50,19 +53,33 @@ export default function SnookerViewUrlSync() {
         return;
       }
 
-      const button = target.closest("nav button");
-      const nav = button?.closest("nav");
-      if (!button || !nav || !(nav instanceof HTMLElement) || !isMainNavigation(nav)) return;
+      const button = target.closest<HTMLButtonElement>("button");
+      if (serverLoadData && button?.textContent?.replace(/\s+/g, "").includes("查看完整世界排名")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        window.location.assign(rootUrl("data"));
+        return;
+      }
 
-      const label = button.querySelector("b")?.textContent?.trim() ?? "";
+      const navButton = target.closest("nav button");
+      const nav = navButton?.closest("nav");
+      if (!navButton || !nav || !(nav instanceof HTMLElement) || !isMainNavigation(nav)) return;
+
+      const label = navButton.querySelector("b")?.textContent?.trim() ?? "";
       const view = viewByLabel[label];
       if (!view) return;
+      if (serverLoadData && view === "data") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        window.location.assign(rootUrl("data"));
+        return;
+      }
       updateRootUrl(view);
     };
 
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
-  }, []);
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
+  }, [serverLoadData]);
 
   return null;
 }

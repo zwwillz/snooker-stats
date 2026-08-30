@@ -50,9 +50,6 @@ begin
     and coalesce(new.score1, 0) + coalesce(new.score2, 0) = 4
     and greatest(coalesce(new.score1, 0), coalesce(new.score2, 0)) < v_win_target;
 
-  -- WST can keep the same match id for a multi-session match while moving
-  -- startDateTime forward to the next session. If frames have already been won
-  -- and that resume time is still in the future, the match is between sessions.
   v_future_session_resume :=
     new.scheduled_at is not null
     and new.scheduled_at > clock_timestamp()

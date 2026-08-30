@@ -172,6 +172,7 @@ export function DataHubContent({
   onOpenRankings,
   onOpenPlayer,
   initialPlayerCompare,
+  initialTechnicalMetric = null,
 }: {
   hub: SnookerRankingHub;
   players: SnookerPlayerListItem[];
@@ -180,10 +181,11 @@ export function DataHubContent({
   onOpenRankings: (key: SnookerCurrentRankingKey) => void;
   onOpenPlayer: (slug: string) => void;
   initialPlayerCompare?: PlayerCompareSnapshot | null;
+  initialTechnicalMetric?: SnookerTechnicalMetricKey | null;
 }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const [technicalHub, setTechnicalHub] = useState<SnookerTechnicalHub | null>(() => technicalCache);
-  const [technicalKey, setTechnicalKey] = useState<SnookerTechnicalMetricKey | null>(null);
+  const [technicalKey, setTechnicalKey] = useState<SnookerTechnicalMetricKey | null>(() => initialTechnicalMetric);
   const [honoursHub, setHonoursHub] = useState<SnookerHonoursHub | null>(() => honoursCache);
   const [honoursKey, setHonoursKey] = useState<SnookerHonoursMetricKey | null>(null);
   const playerBySlug = useMemo(() => playerBySlugMap(players), [players]);

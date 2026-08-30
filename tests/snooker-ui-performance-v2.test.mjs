@@ -164,7 +164,7 @@ test("player directory and player detail share one root shell and focused data p
   assert.match(playerCss, /\.directoryToolbar \.filters button\{/);
 });
 
-test("bottom navigation keeps all four main tabs local while the root owns player detail URL state", async () => {
+test("slim homepage keeps fast local tabs while Data can server-load the complete hub", async () => {
   const [ui, sync, db, page] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-view-url-sync.tsx"),
@@ -183,11 +183,14 @@ test("bottom navigation keeps all four main tabs local while the root owns playe
   assert.match(sync, /赛事: "matches"/);
   assert.match(sync, /球员: "players"/);
   assert.match(sync, /数据: "data"/);
+  assert.match(sync, /serverLoadData/);
+  assert.match(sync, /serverLoadData && view === "data"/);
+  assert.match(sync, /window\.location\.assign\(rootUrl\("data"\)\)/);
   assert.match(sync, /url\.searchParams\.delete\("view"\)/);
   assert.match(sync, /url\.searchParams\.set\("view", view\)/);
   assert.match(sync, /window\.history\.replaceState\(window\.history\.state/);
   assert.match(page, /import SnookerViewUrlSync from "\.\/snooker\/snooker-view-url-sync"/);
-  assert.match(page, /<SnookerViewUrlSync \/>/);
+  assert.match(page, /<SnookerViewUrlSync serverLoadData=\{useHomeBootstrap\} \/>/);
   assert.match(page, /initialPlayerSlug=\{requestedPlayer\}/);
   assert.match(db, /next: \{ revalidate \}/);
   assert.match(page, /export const dynamic = "force-dynamic"/);
