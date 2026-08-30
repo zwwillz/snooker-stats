@@ -30,13 +30,23 @@ test("phase 3a shares the expensive database view across requests", async () => 
 });
 
 test("phase 3a keeps live polling bounded and cache-aware", async () => {
-  const ui = await read("app/snooker/snooker-data-center-v2.tsx");
+  const [ui, eventRoute, matchRoute, homeLiveRoute] = await Promise.all([
+    read("app/snooker/snooker-data-center-v2.tsx"),
+    read("app/api/snooker/v1/event/route.ts"),
+    read("app/api/snooker/v1/match/route.ts"),
+    read("app/api/snooker/v1/home-live/route.ts"),
+  ]);
   assert.match(ui, /if \(!shouldPollLive\) return/);
   assert.match(ui, /setInterval\(\(\) => void refresh\(\), 30_000\)/);
-  assert.match(ui, /fetch\("\/api\/snooker\/v1\/dashboard", \{ cache: "no-store", headers: \{ Accept: "application\/json" \} \}\)/);
+  assert.doesNotMatch(ui, /fetch\("\/api\/snooker\/v1\/dashboard"/);
+  assert.match(ui, /currentDetail\?\.type === "match"[\s\S]*?ensureMatchDetail\(currentDetail\.matchId, \{ silent: true \}\)/);
   assert.match(ui, /fetch\(`\/api\/snooker\/v1\/home-live\?ids=/);
   assert.match(ui, /\.slice\(0, 64\)/);
-  assert.doesNotMatch(ui, /Date\.now\(\).*dashboard/);
+  for (const route of [eventRoute, matchRoute, homeLiveRoute]) {
+    assert.match(route, /export const dynamic = "force-dynamic"/);
+    assert.match(route, /export const revalidate = 0/);
+    assert.match(route, /Cache-Control[\s\S]*?no-store/);
+  }
   assert.match(ui, /formatUpdatedAt\(sourceHealth\?\.fetchedAt\)/);
   assert.match(ui, /className=\{styles\.dataStatus\}/);
   assert.doesNotMatch(ui, /sourceHealth\?\.sourceLabel/);
