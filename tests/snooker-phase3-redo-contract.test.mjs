@@ -56,7 +56,7 @@ test("root tabs stay usable before hydration and lazy datasets start after the t
   assert.match(page, /const useHomeBootstrap = !requestedPlayer && !query\.section && !query\.list && !query\.group/);
   assert.match(ui, /<nav className=\{`\$\{styles\.bottomNav\} \$\{polish\.fastNav\}`\}>\{navItems\.map\(\(item\) => <a key=\{item\.id\} href=/);
   assert.match(ui, /onClick=\{\(event\) => \{ event\.preventDefault\(\); window\.history\.replaceState[\s\S]*?changeView\(item\.id\); \}\}/);
-  assert.match(ui, /if \(!initialHomeBootstrap\) return;\s*if \(activeView === "players"\) void ensurePlayerDirectory\(\);\s*if \(activeView === "data"\) void ensureRankingHub\(\)/);
+  assert.match(ui, /if \(!initialHomeBootstrap\) return;\s*const frame = window\.requestAnimationFrame\(\(\) => \{\s*if \(activeView === "players"\) void ensurePlayerDirectory\(\);\s*if \(activeView === "data"\) void ensureRankingHub\(\);\s*\}\);\s*return \(\) => window\.cancelAnimationFrame\(frame\)/);
   assert.match(urlSync, /target\.closest\("nav a, nav button"\)/);
 });
 
@@ -80,6 +80,8 @@ test("home season leader opens the requested technical metric in one state trans
 test("home compare is bootstrap-driven and the full compare route stays stable without a green deferred shell", () => {
   assert.doesNotMatch(teaser, /IntersectionObserver|\/api\/snooker\/v1\/player-compare/);
   assert.match(teaser, /const data = matchesInitialPair \? initialData : null/);
+  assert.match(comparePage, /export const revalidate = 60/);
+  assert.doesNotMatch(comparePage, /force-dynamic|revalidate = 0/);
   assert.match(comparePage, /const initialCompare = await loadPlayerCompare/);
   assert.match(comparePage, /<PlayerCompareClient players=\{currentTour\} initialCompare=\{initialCompare\} \/>/);
   assert.doesNotMatch(comparePage, /PlayerCompareDeferred|LoadingShell/);
@@ -87,4 +89,5 @@ test("home compare is bootstrap-driven and the full compare route stays stable w
 
 test("match detail switches immediately while full frames and statistics hydrate in the background", () => {
   assert.match(ui, /const openMatch = \(matchId: string, eventSlug: string\) => \{[\s\S]*?void ensureEventDetail\(eventSlug\);\s*setMatchDataTab\("match"\);\s*setDetail\(\{ type: "match", matchId, eventSlug \}\)/);
+  assert.match(ui, /暂无逐局比分，当前仅显示比赛总比分。/);
 });
