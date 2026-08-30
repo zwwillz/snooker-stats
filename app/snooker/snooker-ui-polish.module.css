@@ -55,3 +55,33 @@
 .rankingStaticRow{min-height:58px;border-top:1px solid var(--line);display:grid;grid-template-columns:26px 36px minmax(0,1fr) auto;gap:9px;align-items:center;text-align:left}.rankingStaticRow:first-child{border-top:0}.rankingStaticRow>strong{text-align:center;font-size:13px}.rankingStaticRow>span{min-width:0}.rankingStaticRow>span b{display:block;font-size:11px}.rankingStaticRow>span small{display:block;margin-top:2px;color:var(--muted);font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rankingStaticRow>em{font-style:normal;font-size:10px;font-weight:850;font-variant-numeric:tabular-nums}.rankingAvatarButton{width:36px;height:36px;padding:0;border:0;border-radius:50%;background:transparent;display:grid;place-items:center;cursor:pointer;touch-action:manipulation}.rankingAvatarButton:active{transform:scale(.96)}
 
 @media(max-width:420px){.homePlayerName{max-width:92px}.matchPlayerCell{gap:6px}.matchPlayerCell>span{font-size:9px}.compareGrid{grid-template-columns:minmax(0,1fr) 82px minmax(0,1fr)}.championCard{padding:12px 13px}.championText strong{font-size:15px}.matchupCard{padding:16px}.matchupPlayers{grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:7px;margin-top:9px}.matchupPortrait{width:66px;height:84px;flex-basis:66px}.matchupPlayer{gap:7px}.matchupPlayerText strong{font-size:11px}.matchupCard .compareGrid{grid-template-columns:minmax(0,1fr) 86px minmax(0,1fr)}.matchupCard .compareGrid>div>div{height:36px;min-height:36px;padding:5px 2px;font-size:12px}.matchupCard .compareLeft{padding-left:2px}.matchupCard .compareRight{padding-right:2px}}
+
+/* RESPONSIVE_READABILITY_PHASE1 */
+@media (max-width:767px){
+  .winBadge,.matchWin,.withdrawnBadge,.withdrawnAvatarBadge{font-size:var(--snooker-type-auxiliary)}
+  .homePlayerName{font-size:var(--snooker-type-list-title)!important}
+  .fastNavLink>b{font-size:var(--snooker-type-secondary)}
+  .matchPlayerCell>span{font-size:var(--snooker-type-list-title)}
+  .dataTabs button{font-size:var(--snooker-type-compact-data)}
+  .dataTabs button small{font-size:var(--snooker-type-decorative)}
+  .compareNames small{font-size:var(--snooker-type-secondary)}
+  .compareGrid>div{font-size:var(--snooker-type-feature-name)}
+  .compareGrid .compareLabel{font-size:var(--snooker-type-secondary)}
+  .dataHint{font-size:var(--snooker-type-auxiliary)}
+  .championAvatar>span:last-child{font-size:var(--snooker-type-auxiliary)}
+  .championText small,.championScore small{font-size:var(--snooker-type-decorative)}
+  .championText span{font-size:var(--snooker-type-secondary)}
+  .prizeRow span{font-size:var(--snooker-type-compact-data)}
+  .prizeRow b{font-size:var(--snooker-type-body-small)}
+  .partialText{font-size:var(--snooker-type-secondary)}
+  .matchupHeader small{font-size:var(--snooker-type-decorative)}
+  .matchupCard .dataTabs button{font-size:var(--snooker-type-compact-data)}
+  .matchupCard .dataTabs button small{font-size:var(--snooker-type-decorative)}
+  .matchupPlayerText strong{font-size:var(--snooker-type-list-title)}
+  .matchupPlayerText small{font-size:var(--snooker-type-secondary)}
+  .matchupVs{font-size:var(--snooker-type-auxiliary)}
+  .matchupCard .compareGrid .compareLabel{font-size:var(--snooker-type-secondary)}
+  .rankingStaticRow>span b{font-size:var(--snooker-type-list-title)}
+  .rankingStaticRow>span small{font-size:var(--snooker-type-secondary)}
+  .rankingStaticRow>em{font-size:var(--snooker-type-compact-data)}
+}

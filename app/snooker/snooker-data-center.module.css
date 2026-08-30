@@ -38,3 +38,78 @@
 
 /* USER_FACING_UPDATE_ONLY_V3 */
 .dataStatus{grid-template-columns:8px minmax(0,1fr)}.dataStatus>span{color:#8d9691;font-size:7px;font-weight:700}
+
+/* RESPONSIVE_READABILITY_PHASE1 */
+@media (max-width:767px){
+  .brand strong{font-size:var(--snooker-type-feature-name)}
+  .brand small{font-size:var(--snooker-type-decorative)}
+  .detailHeader span,.versionBadge{font-size:var(--snooker-type-auxiliary)}
+  .sectionHeader small,.hero>small,.pageIntro small{font-size:var(--snooker-type-decorative)}
+  .sectionHeader h2{font-size:var(--snooker-type-card-title)}
+  .sectionHeader>span,.statusPill{font-size:var(--snooker-type-auxiliary)}
+  .heroTop{font-size:var(--snooker-type-secondary)}
+  .hero p,.heroActions button{font-size:var(--snooker-type-body-small)}
+  .liveHeader small{font-size:var(--snooker-type-secondary)}
+  .homeScore>button span:last-child{font-size:var(--snooker-type-list-title)}
+  .homeScore>div small{font-size:var(--snooker-type-auxiliary)}
+  .fullButton{font-size:var(--snooker-type-body-small)}
+  .sourceLine b{font-size:var(--snooker-type-secondary)}
+  .sourceLine small{font-size:var(--snooker-type-auxiliary)}
+  .nextEvent strong{font-size:var(--snooker-type-feature-name)}
+  .nextEvent small,.nextEvent p{font-size:var(--snooker-type-secondary)}
+  .rankingList>button>span b{font-size:var(--snooker-type-list-title)}
+  .rankingList>button>span small{font-size:var(--snooker-type-secondary)}
+  .rankingList>button>em{font-size:var(--snooker-type-compact-data)}
+  .chinaTopGrid span,.chinaTopGrid small{font-size:var(--snooker-type-auxiliary)}
+  .chinaTopGrid strong{font-size:var(--snooker-type-compact-data)}
+  .pageIntro h1{font-size:var(--snooker-type-page-title)}
+  .pageIntro p{font-size:var(--snooker-type-body-small)}
+  .currentEventBanner>div>small{font-size:var(--snooker-type-auxiliary)}
+  .currentEventBanner h2{font-size:var(--snooker-type-event-title)}
+  .currentEventBanner p,.currentEventBanner>span{font-size:var(--snooker-type-body-small)}
+  .seasonChip{font-size:var(--snooker-type-secondary)}
+  .filterHeader button,.playerFilters button{font-size:var(--snooker-type-compact-data)}
+  .calendarDate b{font-size:var(--snooker-type-list-title)}
+  .calendarDate small{font-size:var(--snooker-type-auxiliary)}
+  .calendarList strong{font-size:var(--snooker-type-feature-name)}
+  .calendarList small,.calendarList p{font-size:var(--snooker-type-secondary)}
+  .searchBox input{font-size:16px}
+  .playerDirectory strong{font-size:var(--snooker-type-list-title)}
+  .playerDirectory small{font-size:var(--snooker-type-secondary)}
+  .playerDirectory>button>b{font-size:var(--snooker-type-list-title)}
+  .futureGrid small,.statGrid small,.profileFacts span{font-size:var(--snooker-type-auxiliary)}
+  .futureGrid span,.statGrid span{font-size:var(--snooker-type-secondary)}
+  .bottomNav button>b{font-size:var(--snooker-type-secondary)}
+  .dataStatus,.dataStatus>span,.dataStatus small{font-size:var(--snooker-type-auxiliary)}
+  .eventDetailTop>span{font-size:var(--snooker-type-auxiliary)}
+  .eventDetailHero>p,.eventDetailMeta{font-size:var(--snooker-type-secondary)}
+  .eventTabs button{font-size:var(--snooker-type-body-small)}
+  .overviewList span{font-size:var(--snooker-type-secondary)}
+  .overviewList b{font-size:var(--snooker-type-body-small)}
+  .dataNote{font-size:var(--snooker-type-secondary)}
+  .emptyState,.emptyFrames{font-size:var(--snooker-type-body-small)}
+  .matchRowMeta>span:not(.statusPill){font-size:var(--snooker-type-auxiliary)}
+  .matchLine span{font-size:var(--snooker-type-list-title)}
+  .winnerName em,.tapHint{font-size:var(--snooker-type-auxiliary)}
+  .chinaResultList>button>span b{font-size:var(--snooker-type-list-title)}
+  .chinaResultList>button>span small{font-size:var(--snooker-type-secondary)}
+  .chinaResultList>button>strong{font-size:var(--snooker-type-compact-data)}
+  .chinaResultList>button>em{font-size:var(--snooker-type-secondary)}
+  .matchHeroMeta,.matchHeroMeta b{font-size:var(--snooker-type-secondary)}
+  .avatarWrap em{font-size:var(--snooker-type-auxiliary)}
+  .versusPlayer>strong{font-size:var(--snooker-type-feature-name)}
+  .versusPlayer>small{font-size:var(--snooker-type-secondary)}
+  .bigScore>small,.sessionTimes span{font-size:var(--snooker-type-secondary)}
+  .frameHead{font-size:var(--snooker-type-secondary)}
+  .frameRow span{font-size:var(--snooker-type-list-title)}
+  .detailInfoCard span{font-size:var(--snooker-type-secondary)}
+  .detailInfoCard b{font-size:var(--snooker-type-compact-data)}
+  .detailInfoCard p{font-size:var(--snooker-type-secondary)}
+  .liveFooter span{font-size:var(--snooker-type-secondary)}
+  .liveFooter small{font-size:var(--snooker-type-auxiliary)}
+  .playerHero>div:nth-child(2)>small{font-size:var(--snooker-type-decorative)}
+  .playerHero p{font-size:var(--snooker-type-secondary)}
+  .rankBubble small,.playerMatches small{font-size:var(--snooker-type-auxiliary)}
+  .playerMatches span,.playerMatches b{font-size:var(--snooker-type-list-title)}
+  .avatarCredit{font-size:var(--snooker-type-decorative)}
+}

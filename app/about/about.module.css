@@ -7,3 +7,25 @@
 @media (max-width:360px){.brand small{font-size:5.7px;letter-spacing:0}.back{padding:8px 8px}.hero h1{font-size:36px}.statsGrid{grid-template-columns:1fr}.coverageCard{grid-column:auto}}
 @media (max-width:580px){.brand{gap:10px}.brandMark{width:38px;height:38px;font-size:18px}.brand strong{font-size:14px}.brand small{font-size:7px;letter-spacing:.08em}}
 @media (max-width:360px){.brand small{font-size:7px;letter-spacing:.08em}}
+
+/* RESPONSIVE_READABILITY_PHASE1 */
+@media (max-width:767px){
+  .brand strong{font-size:var(--snooker-type-feature-name)}
+  .brand small{font-size:var(--snooker-type-decorative)}
+  .back{font-size:var(--snooker-type-secondary)}
+  .eyebrow,.sectionHead small,.noteCard>small,.futureNote small,.supportCopy>small{font-size:var(--snooker-type-decorative)}
+  .heroText,.sourceCopy p,.noteCard p,.futureNote p,.supportCopy p,.contactCard p{font-size:var(--snooker-type-body-small)}
+  .heroTags span,.supportTags span{font-size:var(--snooker-type-auxiliary)}
+  .heroQuote span{font-size:var(--snooker-type-decorative)}
+  .sectionHead h2,.noteCard h2{font-size:var(--snooker-type-card-title)}
+  .sectionHead>p{font-size:var(--snooker-type-secondary)}
+  .statCard>span{font-size:var(--snooker-type-compact-data)}
+  .statCard>small{font-size:var(--snooker-type-decorative)}
+  .sourceCards article>span,.pipeline>div>small{font-size:var(--snooker-type-decorative)}
+  .sourceCards strong,.pipeline>div>strong{font-size:var(--snooker-type-compact-data)}
+  .sourceCards small,.pipeline>div>span{font-size:var(--snooker-type-secondary)}
+  .statement>span{font-size:var(--snooker-type-auxiliary)}
+  .statement>p,.ruleEmphasis{font-size:var(--snooker-type-compact-data)}
+  .independent p{font-size:var(--snooker-type-secondary)}
+  .footer span,.footer strong{font-size:var(--snooker-type-secondary)}
+}

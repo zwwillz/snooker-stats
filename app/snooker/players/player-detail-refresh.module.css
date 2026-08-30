@@ -241,3 +241,20 @@
   .statListTwoColumn span{font-size:8px}
   .statListTwoColumn b{font-size:10px}
 }
+
+/* RESPONSIVE_READABILITY_PHASE1 */
+@media (max-width:767px){
+  .careerGridFour article small,
+  .metricCardGrid article small,
+  .tripleGridRefined article small{font-size:var(--snooker-type-decorative)}
+  .careerGridFour article span,
+  .tripleGridRefined article>span:last-child,
+  .metricCardGrid article span{font-size:var(--snooker-type-secondary)}
+  .statListTwoColumn span{font-size:var(--snooker-type-secondary)}
+  .statListTwoColumn b{font-size:var(--snooker-type-body-small)}
+  .trendHeader>span{font-size:var(--snooker-type-secondary)!important}
+  .trendTabs button{font-size:var(--snooker-type-secondary)}
+  .trendRowRefined>span{font-size:var(--snooker-type-secondary)}
+  .trendRowRefined b{font-size:var(--snooker-type-compact-data)}
+  .trendLegendRefined{font-size:var(--snooker-type-auxiliary)}
+}

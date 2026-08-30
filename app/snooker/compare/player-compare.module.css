@@ -1210,3 +1210,22 @@
 .topbar>button.backLink{justify-self:start;display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:50%;color:#202522;background:#f2f4f3;font-size:30px;line-height:1;box-shadow:none}
 .topbar>button.backLink:hover{background:#eaeeec}
 @media(max-width:620px){.topbar>button.backLink{width:34px;height:34px;padding:0;font-size:28px}}
+
+/* RESPONSIVE_READABILITY_PHASE1 */
+@media (max-width:767px) {
+  .heroTitle small,.sectionHeader small,.summaryHead small{font-size:var(--snooker-type-decorative)}
+  .heroTitle h1{font-size:var(--snooker-type-page-title)}
+  .heroTitle p{font-size:var(--snooker-type-body-small)}
+  .tabs button span{font-size:var(--snooker-type-body-small)}
+  .summaryHead h2,.sectionHeader h2{font-size:var(--snooker-type-card-title)}
+  .metricRow>strong{font-size:var(--snooker-type-stat-value)}
+  .metricRow>span b{font-size:var(--snooker-type-body-small)}
+  .metricRow>span small{font-size:var(--snooker-type-secondary)}
+  .summaryText,.h2hNote{font-size:var(--snooker-type-body-small)}
+  .vsControl>small{font-size:var(--snooker-type-decorative)}
+  .seasonToolbar label{font-size:var(--snooker-type-secondary)}
+  .seasonToolbar small{font-size:var(--snooker-type-decorative)}
+  .meetingList time,.meetingList article div small{font-size:var(--snooker-type-secondary)}
+  .meetingList article div strong{font-size:var(--snooker-type-list-title)}
+  .dataFooter{font-size:var(--snooker-type-secondary)}
+}

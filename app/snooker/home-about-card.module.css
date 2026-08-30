@@ -1,1 +1,9 @@
 .card{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:18px;border:1px solid var(--line,#e7ece9);border-radius:20px;background:linear-gradient(135deg,var(--surface,#fff),var(--accent-faint,#f5faf7));box-shadow:0 11px 30px rgba(35,45,41,.045)}.copy{min-width:0}.copy small{display:block;margin-bottom:5px;color:var(--accent,#0b7a55);font-size:8px;font-weight:850;letter-spacing:.13em}.copy strong{display:block;font-size:14px;letter-spacing:-.025em}.copy p{max-width:650px;margin:5px 0 0;color:var(--muted,#747b78);font-size:8.5px;line-height:1.6}.action{display:flex;flex:0 0 auto;align-items:center;gap:7px;padding:10px 12px;border-radius:12px;background:var(--accent-soft,#eaf6f1);color:var(--accent-strong,#075b40);font-size:9px;font-weight:850;text-decoration:none;white-space:nowrap;transition:transform .14s ease,background .14s ease}.action span{font-size:11px}.card+*{margin-top:0}@media (hover:hover){.action:hover{transform:translateX(1px);background:color-mix(in srgb,var(--accent-soft,#eaf6f1) 78%,var(--accent,#0b7a55) 22%)}}@media (max-width:560px){.card{display:block;padding:18px}.copy p{font-size:8px}.action{justify-content:center;width:100%;margin-top:12px;padding:11px}.copy strong{font-size:13px}}
+
+/* RESPONSIVE_READABILITY_PHASE1 */
+@media (max-width:767px){
+  .copy small{font-size:var(--snooker-type-decorative)}
+  .copy strong{font-size:var(--snooker-type-list-title)}
+  .copy p{font-size:var(--snooker-type-secondary)}
+  .action{font-size:var(--snooker-type-body-small)}
+}

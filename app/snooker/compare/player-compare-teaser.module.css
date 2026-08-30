@@ -200,3 +200,14 @@
   font-size: inherit;
   font-weight: inherit;
 }
+
+/* RESPONSIVE_READABILITY_PHASE1 */
+@media (max-width:767px) {
+  .header p { font-size: var(--snooker-type-body-small); }
+  .header > span { font-size: var(--snooker-type-secondary); }
+  .players strong { font-size: var(--snooker-type-feature-name); }
+  .players small { font-size: var(--snooker-type-secondary); }
+  .metrics strong { font-size: var(--snooker-type-stat-value); }
+  .metrics span { font-size: var(--snooker-type-body-small); }
+  .action { font-size: var(--snooker-type-body-small); }
+}

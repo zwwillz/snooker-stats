@@ -41,3 +41,47 @@
 @media (max-width:430px){.content{padding:13px}.header{padding:0 13px}.versionBadge{display:none}.pageIntro{padding-left:2px}.playerHero{min-height:286px}.heroCopy{width:63%;min-height:286px;padding:21px 0 19px 20px}.heroCopy h1{font-size:27px}.heroPortrait{right:-14%;width:63%}.heroRank strong{font-size:31px}.statList{grid-template-columns:1fr}.tripleGrid article{padding-left:3px;padding-right:3px}.directoryToolbar{top:68px}}
 
 .compareAction{display:flex;align-items:center;justify-content:space-between;gap:14px;color:inherit;text-decoration:none}.compareAction span{min-width:0;display:flex;flex-direction:column}.compareAction small{color:var(--accent);font-size:8px;font-weight:850;letter-spacing:.13em}.compareAction strong{margin-top:5px;font-size:15px}.compareAction em{margin-top:4px;color:var(--muted);font-size:8px;font-style:normal;line-height:1.5}.compareAction b{color:var(--accent);font-size:24px;font-weight:500}.compareAction:hover strong{color:var(--accent-strong)}
+
+/* RESPONSIVE_READABILITY_PHASE1 */
+@media (max-width:767px){
+  .brand strong{font-size:var(--snooker-type-feature-name)}
+  .brand small{font-size:var(--snooker-type-decorative)}
+  .versionBadge{font-size:var(--snooker-type-auxiliary)}
+  .pageIntro small,.sectionHeader small,.heroCopy>small,.compareAction small{font-size:var(--snooker-type-decorative)}
+  .pageIntro h1{font-size:var(--snooker-type-page-title)}
+  .pageIntro p{font-size:var(--snooker-type-body-small)}
+  .sectionHeader h2{font-size:var(--snooker-type-card-title)}
+  .sectionHeader>span{font-size:var(--snooker-type-auxiliary)}
+  .directoryToolbar .searchBox input{font-size:16px}
+  .directoryToolbar .filters button{font-size:var(--snooker-type-secondary)}
+  .directorySummary,.directorySummary b{font-size:var(--snooker-type-secondary)}
+  .rowMain b{font-size:var(--snooker-type-list-title)}
+  .rowMain small,.rowMain p{font-size:var(--snooker-type-secondary)}
+  .rowMain p i{font-size:var(--snooker-type-auxiliary)}
+  .rankBlock small{font-size:var(--snooker-type-auxiliary)}
+  .emptyState{font-size:var(--snooker-type-body-small)}
+  .backLink{font-size:var(--snooker-type-secondary)}
+  .heroCopy>p{font-size:var(--snooker-type-secondary)}
+  .countryPill{font-size:var(--snooker-type-secondary)}
+  .heroRank small{font-size:var(--snooker-type-auxiliary)}
+  .heroFacts{font-size:var(--snooker-type-auxiliary)}
+  .careerGrid span{font-size:var(--snooker-type-secondary)}
+  .careerRows div{font-size:var(--snooker-type-secondary)}
+  .careerRows b{font-size:var(--snooker-type-body-small)}
+  .tripleGrid span{font-size:var(--snooker-type-auxiliary)}
+  .seasonTabs button{font-size:var(--snooker-type-compact-data)}
+  .seasonPrimary small,.seasonPrimary span{font-size:var(--snooker-type-auxiliary)}
+  .statList span{font-size:var(--snooker-type-secondary)}
+  .statList b{font-size:var(--snooker-type-body-small)}
+  .trendRow>span{font-size:var(--snooker-type-secondary)}
+  .trendRow b{font-size:var(--snooker-type-compact-data)}
+  .trendLegend{font-size:var(--snooker-type-auxiliary)}
+  .bioText{font-size:var(--snooker-type-body-small)}
+  .quote{font-size:var(--snooker-type-compact-data)}
+  .expandButton{font-size:var(--snooker-type-secondary)}
+  .timelineYear{font-size:var(--snooker-type-secondary)}
+  .timelineText{font-size:var(--snooker-type-compact-data)}
+  .languageNote{font-size:var(--snooker-type-decorative)}
+  .bottomNav button>b{font-size:var(--snooker-type-secondary)}
+  .compareAction em{font-size:var(--snooker-type-secondary)}
+}

@@ -10,3 +10,16 @@
 
 @media (hover:hover){.item:not(:disabled):hover{border-color:#dce2df;background:#f8f9f8}}
 @media (max-width:380px){.card{padding:16px}.item{min-height:128px;padding:11px}.copy{width:63%;min-height:104px}.value{font-size:23px}.portrait{right:-8px;width:48%;height:116px}.player strong{font-size:10px}:global(main[data-theme]):has(.card) > :global(div > header:first-child > button:first-child > div > small){font-size:6.5px;letter-spacing:.015em}}
+
+/* RESPONSIVE_READABILITY_PHASE1 */
+@media (max-width:767px){
+  .header small{font-size:var(--snooker-type-decorative)}
+  .header h2{font-size:var(--snooker-type-card-title)}
+  .header>span{font-size:var(--snooker-type-auxiliary)}
+  .metric{font-size:var(--snooker-type-secondary)}
+  .player strong{font-size:var(--snooker-type-list-title)}
+  .player small{font-size:var(--snooker-type-secondary)}
+  .caption{font-size:var(--snooker-type-auxiliary)}
+  .action{font-size:var(--snooker-type-body-small)}
+  :global(main[data-theme]):has(.card) > :global(div > header:first-child > button:first-child > div > small){font-size:var(--snooker-type-decorative);letter-spacing:.035em}
+}
