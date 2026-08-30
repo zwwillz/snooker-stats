@@ -17,7 +17,7 @@ test("player compare teaser reuses page section headers and action buttons", asy
 
 test("player compare route warms only when the shared action is approached or used", async () => {
   const teaser = await read("app/snooker/compare/player-compare-teaser.tsx");
-  assert.match(teaser, /const warmCompare = \(\) => \{/);
+  assert.match(teaser, /const warmCompare = \(\) => router\.prefetch\(compareHref\)/);
   assert.match(teaser, /router\.prefetch\(compareHref\)/);
   assert.match(teaser, /onPointerEnter=\{warmCompare\}/);
   assert.match(teaser, /onPointerDown=\{warmCompare\}/);

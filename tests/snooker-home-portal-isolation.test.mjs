@@ -2,27 +2,21 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 
-const helper = fs.readFileSync("app/snooker/home-portal-target.ts", "utf8");
+const ui = fs.readFileSync("app/snooker/snooker-data-center-v2.tsx", "utf8");
 const leaders = fs.readFileSync("app/snooker/home-season-leaders.tsx", "utf8");
 const about = fs.readFileSync("app/snooker/home-about-card.tsx", "utf8");
 
-test("homepage portals require the actual active bottom navigation item to be 首页", () => {
-  assert.match(helper, /activeMainNavLabel\(nav\) !== "首页"/);
-  assert.match(helper, /return null/);
-  assert.match(helper, /previousElementSibling/);
+test("homepage-only modules are native children of the home React branch", () => {
+  assert.match(ui, /activeView === "home" \? <>[\s\S]*?<HomeSeasonLeaders[\s\S]*?<HomeAboutCard \/>[\s\S]*?<\/> : null/);
 });
 
-test("both homepage-only modules share the same guarded portal target", () => {
-  assert.match(leaders, /findHomepagePortalTarget/);
-  assert.match(about, /findHomepagePortalTarget/);
-  assert.doesNotMatch(leaders, /isHomeUrl|homeActive/);
-  assert.doesNotMatch(about, /isHomeUrl|homeActive/);
-});
-
-test("portal lifecycle resynchronizes after root view and history changes", () => {
+test("homepage-only modules do not depend on portals or DOM view discovery", () => {
   for (const source of [leaders, about]) {
-    assert.match(source, /new MutationObserver\(sync\)/);
-    assert.match(source, /snooker-view-url-change/);
-    assert.match(source, /popstate/);
+    assert.doesNotMatch(source, /findHomepagePortalTarget|createPortal|MutationObserver|querySelector|snooker-view-url-change/);
   }
+});
+
+test("home cards disappear and return with the root home state", () => {
+  assert.match(ui, /activeView === "home" \? <>/);
+  assert.match(ui, /activeView !== "home" \? <div className=\{styles\.dataStatus\}/);
 });

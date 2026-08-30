@@ -13,7 +13,7 @@ test("V2 keeps player directory and detail inside the root SnookerDataCenterV2 f
   ]);
 
   assert.match(ui, /type MainView = "home" \| "matches" \| "players" \| "data"/);
-  assert.match(ui, /activeView === "players" \? <PlayerDirectoryContent players=\{directoryPlayers\}/);
+  assert.match(ui, /activeView === "players" \? directoryLoaded[\s\S]*?<PlayerDirectoryContent players=\{directoryPlayers\}/);
   assert.match(ui, /\| \{ type: "player"; slug: string; returnView: MainView \}/);
   assert.match(ui, /searchParams\.set\("view", "players"\)/);
   assert.match(ui, /searchParams\.set\("player", target\.slug\)/);

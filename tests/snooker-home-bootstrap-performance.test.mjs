@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 const page = readFileSync("app/page.tsx", "utf8");
@@ -7,7 +7,6 @@ const bootstrap = readFileSync("lib/snooker/home-bootstrap.ts", "utf8");
 const migration = readFileSync("supabase/migrations/20260829233500_add_homepage_bootstrap_v1.sql", "utf8");
 const leaders = readFileSync("app/snooker/home-season-leaders.tsx", "utf8");
 const compare = readFileSync("app/snooker/compare/player-compare-teaser.tsx", "utf8");
-const gate = readFileSync("app/snooker/live-striker-indicator-gated.tsx", "utf8");
 const ui = readFileSync("app/snooker/snooker-data-center-v2.tsx", "utf8");
 
 test("homepage uses a dedicated bootstrap while deep views keep the full loaders", () => {
@@ -53,8 +52,11 @@ test("home event and match detail stay summary-first and hydrate full detail onl
   assert.match(ui, /const openMatch = \(matchId: string, eventSlug: string\) => \{[\s\S]*?void ensureEventDetail\(eventSlug\);[\s\S]*?setDetail\(\{ type: "match", matchId, eventSlug \}\)/);
 });
 
-test("live striker dashboard enhancer is gated behind a visible match detail", () => {
-  assert.match(page, /LiveStrikerIndicatorGated/);
-  assert.match(gate, /matchDetailVisible/);
-  assert.match(gate, /return active \? <LiveStrikerIndicator \/> : null/);
+test("live striker state renders inside match detail without a second dashboard poller", () => {
+  assert.doesNotMatch(page, /LiveStrikerIndicator/);
+  assert.match(ui, /match\.currentPlayerSide === "home"/);
+  assert.match(ui, /match\.currentPlayerSide === "away"/);
+  assert.match(ui, /liveIndicator\.strikerDot/);
+  assert.equal(existsSync("app/snooker/live-striker-indicator-gated.tsx"), false);
+  assert.equal(existsSync("app/snooker/live-striker-indicator.tsx"), false);
 });

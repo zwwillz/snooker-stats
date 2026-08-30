@@ -41,7 +41,7 @@ function updateRootUrl(view: RootView) {
   notifyViewUrlChange();
 }
 
-export default function SnookerViewUrlSync({ serverLoadData = false }: { serverLoadData?: boolean }) {
+export default function SnookerViewUrlSync() {
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       const target = event.target instanceof Element ? event.target : null;
@@ -53,14 +53,6 @@ export default function SnookerViewUrlSync({ serverLoadData = false }: { serverL
         return;
       }
 
-      const button = target.closest<HTMLButtonElement>("button");
-      if (serverLoadData && button?.textContent?.replace(/\s+/g, "").includes("查看完整世界排名")) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        window.location.assign(rootUrl("data"));
-        return;
-      }
-
       const navItem = target.closest("nav a, nav button");
       const nav = navItem?.closest("nav");
       if (!navItem || !nav || !(nav instanceof HTMLElement) || !isMainNavigation(nav)) return;
@@ -68,18 +60,12 @@ export default function SnookerViewUrlSync({ serverLoadData = false }: { serverL
       const label = navItem.querySelector("b")?.textContent?.trim() ?? "";
       const view = viewByLabel[label];
       if (!view) return;
-      if (serverLoadData && view === "data") {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        window.location.assign(rootUrl("data"));
-        return;
-      }
       updateRootUrl(view);
     };
 
     document.addEventListener("click", handleClick, true);
     return () => document.removeEventListener("click", handleClick, true);
-  }, [serverLoadData]);
+  }, []);
 
   return null;
 }

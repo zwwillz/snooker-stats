@@ -67,7 +67,18 @@ test("live polling uses a score-only overlay outside match detail and keeps full
   assert.doesNotMatch(homeLiveRoute, /frames|match_statistics|event_prizes/);
   assert.match(homeLiveOverlay, /sourceUpdatedAt && incomingUpdatedAt[\s\S]*?timestamp\(incomingUpdatedAt\) < timestamp\(previous\.sourceUpdatedAt\)/);
   assert.match(homeLiveOverlay, /previous\.status === "completed" \|\| previous\.status === "walkover"/);
+  assert.match(homeLiveOverlay, /function monotonicScore/);
+  assert.match(homeLiveOverlay, /Math\.max\(previous, incoming\)/);
+  assert.match(ui, /pollingMatches[\s\S]*?\.slice\(0, 64\)/);
   assert.match(ui, /实时比分暂时不可用，继续显示最近成功数据。/);
+});
+
+test("current striker and frame winners are rendered declaratively in match detail", () => {
+  assert.match(ui, /const leftStriking = liveFrame && match\.currentPlayerSide === "home"/);
+  assert.match(ui, /const rightStriking = liveFrame && match\.currentPlayerSide === "away"/);
+  assert.match(ui, /liveIndicator\.frameWinnerScore/);
+  assert.match(ui, /liveIndicator\.strikerDot/);
+  assert.doesNotMatch(page, /LiveStrikerIndicator/);
 });
 
 test("root tabs stay usable before hydration and lazy datasets start after the target view is active", () => {

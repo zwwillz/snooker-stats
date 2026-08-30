@@ -50,6 +50,7 @@ import styles from "./snooker-data-center.module.css";
 import priority from "./snooker-priority.module.css";
 import insight from "./snooker-insights.module.css";
 import polish from "./snooker-ui-polish.module.css";
+import liveIndicator from "./live-striker-indicator.module.css";
 
 type MainView = "home" | "matches" | "players" | "data";
 type NavId = MainView;
@@ -734,9 +735,22 @@ export default function SnookerDataCenterV2({
         }
         if (data.sourceHealth) setSourceHealth(data.sourceHealth);
       } else {
-        const matchIds = [...new Set(currentEvents.flatMap((event) => allMatches(event))
+        const now = Date.now();
+        const pollingMatches = currentEvents.flatMap((event) => allMatches(event)).filter((match) => {
+          if (match.status === "live" || match.status === "session-break") return true;
+          const scheduled = match.scheduledAt ? Date.parse(match.scheduledAt) : 0;
+          if (match.status === "upcoming" && scheduled > now && scheduled - now <= UPCOMING_PREHEAT_MS) return true;
+          const completedAt = resolveCompletedAt(match, now);
+          return (match.status === "completed" || match.status === "walkover")
+            && completedAt > 0
+            && now - completedAt <= COMPLETED_PROTECTION_MS;
+        }).sort((a, b) => {
+          const priorityFor = (match: SnookerMatch) => match.status === "live" || match.status === "session-break" ? 0 : match.status === "upcoming" ? 1 : 2;
+          return priorityFor(a) - priorityFor(b) || (scheduledTime(a) ?? Number.POSITIVE_INFINITY) - (scheduledTime(b) ?? Number.POSITIVE_INFINITY);
+        });
+        const matchIds = [...new Set(pollingMatches
           .map((match) => dbMatchUuid(match))
-          .filter((id): id is string => Boolean(id)))];
+          .filter((id): id is string => Boolean(id)))].slice(0, 64);
         if (!matchIds.length) return;
 
         const response = await fetch(`/api/snooker/v1/home-live?ids=${encodeURIComponent(matchIds.join(","))}`, {
@@ -1122,6 +1136,8 @@ export default function SnookerDataCenterV2({
     const hasMatchupData = isCurrentSeasonMatch ? hasStats || hasSeason || hasH2h : hasStats;
     const statusLabel = matchDisplayStatus(match);
     const realtime = match.status === "live" || match.status === "session-break";
+    const completedFrameCount = Number(match.score1 ?? 0) + Number(match.score2 ?? 0);
+    const liveFrameNo = match.liveFrameNo ?? match.frames?.at(-1)?.frameNo ?? null;
     const updated = new Date(match.sourceUpdatedAt ?? matchUpdatedAt[match.id] ?? selectedEvent.snapshotAt).toLocaleTimeString("zh-CN", {
       hour: "2-digit",
       minute: "2-digit",
@@ -1168,7 +1184,21 @@ export default function SnookerDataCenterV2({
 
       <section className={styles.frameSection}>
         <div className={styles.frameHead}><span>单杆<br />(50+)</span><span>分数</span><b>局</b><span>分数</span><span>单杆<br />(50+)</span></div>
-        {match.frames?.length ? match.frames.map((frame) => <div className={styles.frameRow} style={{ minHeight: 50 }} key={frame.frameNo}><span>{frame.break1 ?? "-"}</span><strong>{frame.score1}</strong><b>{frame.frameNo}</b><strong>{frame.score2}</strong><span>{frame.break2 ?? "-"}</span></div>) : <div className={styles.emptyFrames}>{match.status === "upcoming" ? "比赛尚未开始，开赛后可查看逐局比分。" : "暂无逐局比分，当前仅显示比赛总比分。"}</div>}
+        {match.frames?.length ? match.frames.map((frame) => {
+          const frameComplete = frame.frameNo <= completedFrameCount && frame.score1 !== frame.score2;
+          const leftWon = frameComplete && frame.score1 > frame.score2;
+          const rightWon = frameComplete && frame.score2 > frame.score1;
+          const liveFrame = match.status === "live" && frame.frameNo === liveFrameNo;
+          const leftStriking = liveFrame && match.currentPlayerSide === "home";
+          const rightStriking = liveFrame && match.currentPlayerSide === "away";
+          return <div className={styles.frameRow} style={{ minHeight: 50 }} key={frame.frameNo}>
+            <span>{frame.break1 ?? "-"}</span>
+            <strong className={`${leftWon ? liveIndicator.frameWinnerScore : ""} ${leftStriking ? liveIndicator.scoreAnchor : ""}`}>{frame.score1}{leftStriking ? <i className={liveIndicator.strikerDot} data-side="home" aria-hidden="true" title={`${p1.nameZh}正在击球`} /> : null}</strong>
+            <b>{frame.frameNo}</b>
+            <strong className={`${rightWon ? liveIndicator.frameWinnerScore : ""} ${rightStriking ? liveIndicator.scoreAnchor : ""}`}>{frame.score2}{rightStriking ? <i className={liveIndicator.strikerDot} data-side="away" aria-hidden="true" title={`${p2.nameZh}正在击球`} /> : null}</strong>
+            <span>{frame.break2 ?? "-"}</span>
+          </div>;
+        }) : <div className={styles.emptyFrames}>{match.status === "upcoming" ? "比赛尚未开始，开赛后可查看逐局比分。" : "暂无逐局比分，当前仅显示比赛总比分。"}</div>}
       </section>
 
       {hasMatchupData ? <section className={polish.matchupCard}>

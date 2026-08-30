@@ -33,8 +33,8 @@ test("event route upgrades every explicit event open without preloading the full
 
 test("root and dashboard reuse the already enriched focused event and lazy-load historical events", () => {
   assert.doesNotMatch(page, /loadSnookerEventDetailComplete/);
-  assert.match(page, /const focusedEvent = database\.snapshot\.event/);
-  assert.match(page, /initialDatabaseEvents=\{focusedEvents\}/);
+  assert.match(page, /const initialDatabaseEvents = useHomeBootstrap \? database\.eventDetails : \[snapshot\.event\]/);
+  assert.match(page, /initialDatabaseEvents=\{initialDatabaseEvents\}/);
   assert.doesNotMatch(dashboard, /loadSnookerEventDetailComplete/);
   assert.doesNotMatch(dashboard, /refreshSingleEventLive/);
   assert.match(dashboard, /const focusedEvent = database\.snapshot\.event/);

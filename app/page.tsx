@@ -1,5 +1,4 @@
 import SnookerDataCenterV2 from "./snooker/snooker-data-center-v2";
-import LiveStrikerIndicatorGated from "./snooker/live-striker-indicator-gated";
 import SnookerViewUrlSync from "./snooker/snooker-view-url-sync";
 import { SNOOKER_BUILD_MARK } from "@/lib/snooker/foundation";
 import { loadSnookerDatabaseViewV2 } from "@/lib/snooker/database-public-v2";
@@ -95,7 +94,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
         initialHomeLeaders={homeLeaders}
         initialHomeBootstrap={useHomeBootstrap}
       />
-      <LiveStrikerIndicatorGated />
     </>
   );
 }

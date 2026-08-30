@@ -59,6 +59,12 @@ function statusLabel(status: SnookerMatchStatus) {
   return "待开始";
 }
 
+function monotonicScore(previous: number | null, incoming: number | null) {
+  if (incoming === null) return previous;
+  if (previous === null) return incoming;
+  return Math.max(previous, incoming);
+}
+
 export function mergeHomeLiveMatch(previous: SnookerMatch, row: HomeLiveMatchRow): SnookerMatch {
   const incomingUpdatedAt = row.source_updated_at ?? undefined;
   if (previous.sourceUpdatedAt && incomingUpdatedAt && timestamp(incomingUpdatedAt) < timestamp(previous.sourceUpdatedAt)) return previous;
@@ -66,8 +72,8 @@ export function mergeHomeLiveMatch(previous: SnookerMatch, row: HomeLiveMatchRow
   const status = normalizedStatus(row, previous);
   if ((previous.status === "completed" || previous.status === "walkover") && status !== previous.status) return previous;
 
-  const score1 = row.score1 ?? previous.score1;
-  const score2 = row.score2 ?? previous.score2;
+  const score1 = monotonicScore(previous.score1, row.score1);
+  const score2 = monotonicScore(previous.score2, row.score2);
   const next: SnookerMatch = {
     ...previous,
     score1,

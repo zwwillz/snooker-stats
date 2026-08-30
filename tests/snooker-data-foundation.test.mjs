@@ -46,13 +46,13 @@ test("snooker frontend is database-first and only relevant headline matches poll
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-priority.module.css"),
   ]);
-  assert.match(pageSource, /loadSnookerDatabaseView/);
+  assert.match(pageSource, /loadSnookerHomeBootstrap/);
+  assert.match(pageSource, /loadSnookerDatabaseViewV2/);
   assert.doesNotMatch(pageSource, /loadSnookerEventDetailComplete/);
-  assert.match(pageSource, /const focusedEvent = database\.snapshot\.event/);
-  assert.match(pageSource, /initialDatabaseEvents=\{focusedEvents\}/);
+  assert.match(pageSource, /initialDatabaseEvents=\{initialDatabaseEvents\}/);
   assert.doesNotMatch(pageSource, /getCachedDashboardWithLiveOverlay/);
-  assert.match(pageSource, /export const revalidate = 0/);
-  assert.match(pageSource, /dynamic = "force-dynamic"/);
+  assert.match(pageSource, /export const revalidate = 60/);
+  assert.doesNotMatch(pageSource, /dynamic = "force-dynamic"/);
   assert.match(dbSource, /getSnookerSupabasePublicConfig/);
   assert.match(dbSource, /snooker_events\?select=/);
   assert.match(dbSource, /snooker_matches\?select=/);
@@ -64,7 +64,7 @@ test("snooker frontend is database-first and only relevant headline matches poll
   assert.match(dashboardSource, /searchParams\.has\("monitor"\)/);
   assert.match(dashboardSource, /getCachedDashboardWithLiveOverlay/);
   assert.match(dashboardSource, /const databaseEvents = \[focusedEvent\]/);
-  assert.match(uiSource, /if \(!shouldPollDashboard\) return/);
+  assert.match(uiSource, /if \(!shouldPollLive\) return/);
   assert.match(uiSource, /setInterval\(\(\) => void refresh\(\), 30_000\)/);
   assert.doesNotMatch(uiSource, /15_000/);
   assert.match(uiSource, /UPCOMING_PREHEAT_MS/);
@@ -125,9 +125,9 @@ test("home result card marks the winner and persists until the next event begins
 
 test("player main view stays a directory and detail opens on click", async () => {
   const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
-  assert.match(uiSource, /activeView === "players" \? <PlayerDirectoryContent/);
+  assert.match(uiSource, /activeView === "players" \? directoryLoaded/);
   assert.match(uiSource, /onQueryChange=\{setPlayerQuery\}/);
-  assert.match(uiSource, /openPlayer\(player\.id\)/);
+  assert.match(uiSource, /openPlayerBySlug\(player\.slug\)/);
   assert.match(uiSource, /setDetail\(\{ type: "player", slug: target\.slug, returnView \}\)/);
   assert.doesNotMatch(uiSource, /useState\("p-zhao-xintong"\)/);
 });

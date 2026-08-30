@@ -30,7 +30,7 @@ test("ranking rows stay available when optional mapping or metadata reads fail",
 
 test("data view keeps the existing root shell and opens rankings as a root detail state", () => {
   assert.match(root, /\{ type: "ranking"; section: SnookerRankingSection; key: SnookerCurrentRankingKey \}/);
-  assert.match(root, /<DataHubContent hub=\{initialRankingHub\}/);
+  assert.match(root, /<DataHubContent hub=\{rankingHub\}/);
   assert.match(root, /<RankingDetailContent/);
   assert.match(root, /url\.searchParams\.set\("section", "rankings"\)/);
   assert.match(root, /url\.searchParams\.set\("list", key\)/);

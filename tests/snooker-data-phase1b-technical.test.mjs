@@ -35,8 +35,9 @@ test("technical data is loaded only when the Data Hub is mounted and is cached",
   assert.match(data, /let technicalInflight: Promise<SnookerTechnicalHub \| null> \| null = null/);
   assert.match(api, /s-maxage=300/);
   assert.match(api, /stale-while-revalidate=1800/);
-  assert.doesNotMatch(root, /technical-hub/);
-  assert.doesNotMatch(root, /TechnicalDetail/);
+  assert.match(root, /import type \{ SnookerTechnicalMetricKey \} from "@\/lib\/snooker\/technical-hub"/);
+  assert.doesNotMatch(root, /fetch\("\/api\/snooker\/v1\/technical"/);
+  assert.doesNotMatch(root, /import .*data-technical-content/);
 });
 
 test("data home shows four season leaders and technical detail stays single-level", () => {
