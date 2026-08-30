@@ -656,8 +656,11 @@ export default function SnookerDataCenterV2({
 
   useEffect(() => {
     if (!initialHomeBootstrap) return;
-    if (activeView === "players") void ensurePlayerDirectory();
-    if (activeView === "data") void ensureRankingHub();
+    const frame = window.requestAnimationFrame(() => {
+      if (activeView === "players") void ensurePlayerDirectory();
+      if (activeView === "data") void ensureRankingHub();
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [activeView, ensurePlayerDirectory, ensureRankingHub, initialHomeBootstrap]);
 
   useEffect(() => {
