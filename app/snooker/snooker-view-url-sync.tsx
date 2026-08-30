@@ -15,7 +15,7 @@ const expectedLabels = Object.keys(viewByLabel);
 const detailParams = ["player", "section", "list", "group", "metric", "honour"] as const;
 
 function isMainNavigation(nav: HTMLElement) {
-  const labels = Array.from(nav.querySelectorAll(":scope > button b"))
+  const labels = Array.from(nav.querySelectorAll(":scope > :is(a, button) b"))
     .map((node) => node.textContent?.trim() ?? "")
     .filter(Boolean);
   return expectedLabels.every((label) => labels.includes(label));
@@ -61,11 +61,11 @@ export default function SnookerViewUrlSync({ serverLoadData = false }: { serverL
         return;
       }
 
-      const navButton = target.closest("nav button");
-      const nav = navButton?.closest("nav");
-      if (!navButton || !nav || !(nav instanceof HTMLElement) || !isMainNavigation(nav)) return;
+      const navItem = target.closest("nav a, nav button");
+      const nav = navItem?.closest("nav");
+      if (!navItem || !nav || !(nav instanceof HTMLElement) || !isMainNavigation(nav)) return;
 
-      const label = navButton.querySelector("b")?.textContent?.trim() ?? "";
+      const label = navItem.querySelector("b")?.textContent?.trim() ?? "";
       const view = viewByLabel[label];
       if (!view) return;
       if (serverLoadData && view === "data") {
