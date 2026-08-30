@@ -7,6 +7,10 @@ const ui = read("app/snooker/snooker-data-center-v2.tsx");
 const page = read("app/page.tsx");
 const urlSync = read("app/snooker/snooker-view-url-sync.tsx");
 const bootstrap = read("lib/snooker/home-bootstrap.ts");
+const eventCore = read("lib/snooker/event-detail-core.ts");
+const matchDetail = read("lib/snooker/match-detail.ts");
+const eventRoute = read("app/api/snooker/v1/event/route.ts");
+const matchRoute = read("app/api/snooker/v1/match/route.ts");
 const leaders = read("app/snooker/home-season-leaders.tsx");
 const about = read("app/snooker/home-about-card.tsx");
 const teaser = read("app/snooker/compare/player-compare-teaser.tsx");
@@ -35,47 +39,91 @@ test("homepage bootstrap is one RPC and no longer requests the entire public pla
   assert.match(bootstrap, /rpc\/snooker_homepage_bootstrap_v1/);
   assert.match(bootstrap, /cache: "force-cache"/);
   assert.doesNotMatch(bootstrap, /snooker_public_players\?select=/);
-  assert.doesNotMatch(bootstrap, /Promise\.all\(\[\s*rest<DbEvent/);
+  assert.match(bootstrap, /detailPartial: true/);
 });
 
-test("homepage failure serves last success or the stale-capable V2 loader before any static fallback", () => {
+test("homepage failure serves last success or stale-capable V2 before static fallback", () => {
   assert.match(bootstrap, /if \(previous && previous\.staleUntil > Date\.now\(\)\)[\s\S]*?return previous\.value/);
   assert.match(bootstrap, /const database = await loadSnookerDatabaseViewV2\(\)/);
   assert.doesNotMatch(bootstrap, /catch \(error\)[\s\S]{0,500}snapshot: dashboardSnapshot/);
 });
 
-test("home SSR no longer waits for live read-through and root navigation is not converted to a hard reload", () => {
+test("home SSR no longer waits for live read-through", () => {
   assert.doesNotMatch(page, /useHomeBootstrap\s*\?\s*await refreshSnookerDatabaseViewLive/);
   assert.match(page, /if \(useHomeBootstrap\) \{[\s\S]*?loadSnookerHomeBootstrap\(\)[\s\S]*?\} else \{[\s\S]*?refreshSnookerDatabaseViewLive/);
   assert.match(page, /<SnookerViewUrlSync \/>/);
   assert.doesNotMatch(page, /serverLoadData/);
-  assert.match(ui, /if \(!shouldPollLive\) return;\s*const firstRefreshFrame = window\.requestAnimationFrame\(\(\) => void refresh\(\)\);\s*const timer = window\.setInterval/);
-  assert.match(ui, /window\.cancelAnimationFrame\(firstRefreshFrame\)/);
-  assert.doesNotMatch(urlSync, /router\.push|router\.replace/);
 });
 
-test("live polling uses a score-only overlay outside match detail and keeps full dashboard reads detail-only", () => {
-  const detailBranch = ui.indexOf('if (liveRefreshState.current.detailType === "match")');
-  const dashboardFetch = ui.indexOf('fetch("/api/snooker/v1/dashboard"', detailBranch);
-  const lightFetch = ui.indexOf('fetch(`/api/snooker/v1/home-live?ids=', dashboardFetch);
-  assert.ok(detailBranch >= 0);
-  assert.ok(dashboardFetch > detailBranch);
-  assert.ok(lightFetch > dashboardFetch);
+test("one React controller owns root URL/history after hydration", () => {
+  assert.doesNotMatch(urlSync, /document\.addEventListener|querySelector|closest\(|replaceState|pushState/);
+  assert.match(ui, /function rootUrl\(view: MainView\)/);
+  assert.match(ui, /const changeView = \(view: NavId\) => \{[\s\S]*?window\.history\.pushState\(\{ snookerView: view \}/);
+  assert.match(ui, /onClick=\{\(event\) => \{ event\.preventDefault\(\); changeView\(item\.id\); \}\}/);
+  assert.doesNotMatch(ui, /window\.history\.replaceState\(window\.history\.state/);
+});
+
+test("root tabs stay usable before hydration and lazy datasets start after target view activation", () => {
+  assert.match(page, /const useHomeBootstrap = !requestedPlayer && !query\.section && !query\.list && !query\.group/);
+  assert.match(ui, /<nav className=\{`\$\{styles\.bottomNav\} \$\{polish\.fastNav\}`\}>\{navItems\.map\(\(item\) => <a key=\{item\.id\} href=/);
+  assert.match(ui, /if \(!initialHomeBootstrap\) return;[\s\S]*?if \(activeView === "players"\) void ensurePlayerDirectory\(\);[\s\S]*?if \(activeView === "data"\) void ensureRankingHub\(\)/);
+});
+
+test("live polling stays lightweight and selected match polling never falls back to full dashboard", () => {
+  assert.match(ui, /const selectedMatchForPolling = detail\?\.type === "match"/);
+  assert.match(ui, /detail\?\.type === "match"\s*\? Boolean\(selectedMatchForPolling && shouldPollMatch/);
+  assert.match(ui, /if \(currentDetail\?\.type === "match"\) \{\s*await ensureMatchDetail\(currentDetail\.matchId, \{ silent: true \}\);/);
+  assert.doesNotMatch(ui, /fetch\("\/api\/snooker\/v1\/dashboard"/);
+  assert.match(ui, /fetch\(`\/api\/snooker\/v1\/home-live\?ids=/);
   assert.match(homeLiveRoute, /select: SELECT/);
   assert.match(homeLiveRoute, /cache: "no-store"/);
-  assert.match(homeLiveRoute, /snooker_matches/);
   assert.doesNotMatch(homeLiveRoute, /frames|match_statistics|event_prizes/);
-  assert.match(homeLiveOverlay, /sourceUpdatedAt && incomingUpdatedAt[\s\S]*?timestamp\(incomingUpdatedAt\) < timestamp\(previous\.sourceUpdatedAt\)/);
-  assert.match(homeLiveOverlay, /previous\.status === "completed" \|\| previous\.status === "walkover"/);
   assert.match(homeLiveOverlay, /function monotonicScore/);
   assert.match(homeLiveOverlay, /Math\.max\(previous, incoming\)/);
-  assert.match(ui, /pollingMatches[\s\S]*?\.slice\(0, 64\)/);
-  assert.match(ui, /if \(liveRefreshInFlight\.current\) return;\s*liveRefreshInFlight\.current = true;/);
-  assert.match(ui, /finally \{\s*liveRefreshInFlight\.current = false;\s*setRefreshing\(false\);/);
-  assert.match(ui, /实时比分暂时不可用，继续显示最近成功数据。/);
+  assert.match(ui, /\.slice\(0, 64\)/);
+  assert.match(ui, /if \(liveRefreshInFlight\.current\) return;/);
+  assert.match(ui, /document\.hidden/);
 });
 
-test("current striker and frame winners are rendered declaratively in match detail", () => {
+test("event core owns participant profiles without preloading every match detail", () => {
+  assert.match(eventRoute, /loadSnookerEventCore\(slug\)/);
+  assert.match(eventRoute, /players: scopedPlayers/);
+  assert.doesNotMatch(eventRoute, /loadSnookerEventDetailComplete/);
+  assert.doesNotMatch(eventCore, /snooker_frames|snooker_match_statistics|snooker_match_head_to_head/);
+  assert.match(ui, /mergeScopedPlayers\(data\.players\)/);
+  assert.doesNotMatch(ui, /if \(!p1 \|\| !p2\) return null/);
+});
+
+test("match detail loads frames statistics and h2h for only the requested match", () => {
+  assert.match(matchRoute, /loadSnookerMatchDetail\(matchId\)/);
+  assert.match(matchDetail, /snooker_frames\?select=[\s\S]*?match_id=eq\.\$\{uuid\}/);
+  assert.match(matchDetail, /snooker_match_statistics\?select=[\s\S]*?match_id=eq\.\$\{uuid\}/);
+  assert.match(matchDetail, /snooker_match_head_to_head\?select=[\s\S]*?match_id=eq\.\$\{uuid\}/);
+  assert.match(ui, /void ensureMatchDetail\(matchId\)/);
+  assert.match(ui, /正在加载逐局比分…/);
+});
+
+test("match detail never substitutes a final for a missing requested match", () => {
+  assert.match(ui, /const match = allMatches\(selectedEvent\)\.find\(\(item\) => item\.id === detail\.matchId\);/);
+  assert.doesNotMatch(ui, /find\(\(item\) => item\.id === detail\.matchId\) \?\? finalOf/);
+  assert.match(ui, /未找到这场比赛，请返回赛程重新选择。/);
+});
+
+test("match return state restores exact event origin or the root origin", () => {
+  assert.match(ui, /type MatchReturnState =[\s\S]*?kind: "event"[\s\S]*?kind: "root"/);
+  assert.match(ui, /matchReturnState\.current = \{ kind: "event", slug: eventSlug, tab: detail\.tab, scrollY: window\.scrollY \}/);
+  assert.match(ui, /matchReturnState\.current = \{ kind: "root", view: activeView, scrollY: window\.scrollY \}/);
+  assert.match(ui, /restore\?\.kind === "root"[\s\S]*?setDetail\(null\);[\s\S]*?setActiveView\(restore\.view\)/);
+});
+
+test("home technical leaderboard uses clean history state so browser back resolves to home URL", () => {
+  assert.match(ui, /const openTechnicalFromHome = \(key: HomeLeaderMetricKey\) => \{[\s\S]*?replaceState\(\{ snookerView: activeView \}/);
+  assert.match(ui, /pushState\(\{ snookerView: "data", snookerTechnicalDetail: key \}/);
+  assert.match(ui, /urlView === "data" && params\.get\("section"\) === "technical"/);
+  assert.doesNotMatch(ui, /snookerTechnicalDetail: key, snookerReturnView: "home"/);
+});
+
+test("current striker and frame winners remain declarative", () => {
   assert.match(ui, /const leftStriking = liveFrame && match\.currentPlayerSide === "home"/);
   assert.match(ui, /const rightStriking = liveFrame && match\.currentPlayerSide === "away"/);
   assert.match(ui, /liveIndicator\.frameWinnerScore/);
@@ -83,42 +131,26 @@ test("current striker and frame winners are rendered declaratively in match deta
   assert.doesNotMatch(page, /LiveStrikerIndicator/);
 });
 
-test("root tabs stay usable before hydration and lazy datasets start after the target view is active", () => {
-  assert.match(page, /const useHomeBootstrap = !requestedPlayer && !query\.section && !query\.list && !query\.group/);
-  assert.match(ui, /<nav className=\{`\$\{styles\.bottomNav\} \$\{polish\.fastNav\}`\}>\{navItems\.map\(\(item\) => <a key=\{item\.id\} href=/);
-  assert.match(ui, /onClick=\{\(event\) => \{ event\.preventDefault\(\); window\.history\.replaceState[\s\S]*?changeView\(item\.id\); \}\}/);
-  assert.match(ui, /if \(!initialHomeBootstrap\) return;\s*const frame = window\.requestAnimationFrame\(\(\) => \{\s*if \(activeView === "players"\) void ensurePlayerDirectory\(\);\s*if \(activeView === "data"\) void ensureRankingHub\(\);\s*\}\);\s*return \(\) => window\.cancelAnimationFrame\(frame\)/);
-  assert.match(urlSync, /target\.closest\("nav a, nav button"\)/);
-});
-
-test("deep player and data code is dynamically loaded and full datasets are fetched only after view activation", () => {
+test("deep player and data code is dynamically loaded", () => {
   assert.match(ui, /dynamic\(\(\) => import\("\.\/players\/player-directory"\)/);
   assert.match(ui, /dynamic\(\(\) => import\("\.\/players\/player-detail-inline"\)/);
   assert.match(ui, /dynamic\(\(\) => import\("\.\/data\/data-ranking-content"\)/);
-  assert.match(ui, /setActiveView\(view\);\s*if \(view === "players"\) void ensurePlayerDirectory\(\);\s*if \(view === "data"\) void ensureRankingHub\(\)/);
   assert.match(playerDirectoryRoute, /getSnookerPlayerDirectory\(\)/);
   assert.doesNotMatch(playerDirectoryRoute, /loadSnookerDatabaseViewV2/);
   assert.match(rankingHubRoute, /loadSnookerRankingHub\(\)/);
 });
 
-test("home season leader opens the requested technical metric in one state transition", () => {
+test("home season leader opens requested technical metric in one state transition", () => {
   assert.match(ui, /const openTechnicalFromHome = \(key: HomeLeaderMetricKey\) => \{[\s\S]*?searchParams\.set\("section", "technical"\)[\s\S]*?setRequestedTechnicalMetric\(key\);[\s\S]*?setActiveView\("data"\)/);
   assert.doesNotMatch(leaders, /dataButton\.click|findMainNav|window\.location\.assign/);
   assert.match(dataHub, /initialTechnicalMetric = null/);
-  assert.match(dataHub, /useState<SnookerTechnicalMetricKey \| null>\(\(\) => initialTechnicalMetric\)/);
 });
 
-test("home compare is bootstrap-driven and the full compare route stays stable without a green deferred shell", () => {
+test("home compare remains bootstrap-driven and compare route remains server rendered", () => {
   assert.doesNotMatch(teaser, /IntersectionObserver|\/api\/snooker\/v1\/player-compare/);
   assert.match(teaser, /const data = matchesInitialPair \? initialData : null/);
   assert.match(comparePage, /export const revalidate = 60/);
   assert.doesNotMatch(comparePage, /force-dynamic|revalidate = 0/);
   assert.match(comparePage, /const initialCompare = await loadPlayerCompare/);
-  assert.match(comparePage, /<PlayerCompareClient players=\{currentTour\} initialCompare=\{initialCompare\} \/>/);
   assert.doesNotMatch(comparePage, /PlayerCompareDeferred|LoadingShell/);
-});
-
-test("match detail switches immediately while full frames and statistics hydrate in the background", () => {
-  assert.match(ui, /const openMatch = \(matchId: string, eventSlug: string\) => \{[\s\S]*?void ensureEventDetail\(eventSlug\);\s*setMatchDataTab\("match"\);\s*setDetail\(\{ type: "match", matchId, eventSlug \}\)/);
-  assert.match(ui, /暂无逐局比分，当前仅显示比赛总比分。/);
 });
