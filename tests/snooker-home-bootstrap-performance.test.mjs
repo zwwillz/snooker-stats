@@ -4,7 +4,7 @@ import test from "node:test";
 
 const page = readFileSync("app/page.tsx", "utf8");
 const bootstrap = readFileSync("lib/snooker/home-bootstrap.ts", "utf8");
-const migration = readFileSync("supabase/migrations/20260829151700_homepage_bootstrap_v1.sql", "utf8");
+const migration = readFileSync("supabase/migrations/20260829233500_add_homepage_bootstrap_v1.sql", "utf8");
 const leaders = readFileSync("app/snooker/home-season-leaders.tsx", "utf8");
 const compare = readFileSync("app/snooker/compare/player-compare-teaser.tsx", "utf8");
 const gate = readFileSync("app/snooker/live-striker-indicator-gated.tsx", "utf8");
@@ -24,19 +24,20 @@ test("home bootstrap is one bounded RPC instead of a REST waterfall or full play
   assert.doesNotMatch(bootstrap, /snooker_public_players\?select=/);
   assert.doesNotMatch(bootstrap, /Promise\.all\(\[/);
   assert.match(migration, /create or replace function public\.snooker_homepage_bootstrap_v1/);
-  assert.match(migration, /where r\.list_key = 'world_official'[\s\S]*?r\.rank <= 16/);
-  assert.match(migration, /jsonb_build_object\(\s*'events'/);
+  assert.match(migration, /from public\.snooker_latest_rankings where list_key='world_official' order by rank asc limit 16/);
+  assert.match(migration, /jsonb_build_object\([\s\S]*?'events'/);
   assert.match(migration, /'players'/);
   assert.match(migration, /'matches'/);
   assert.match(migration, /'leaders'/);
-  assert.match(migration, /'compare'/);
+  assert.match(migration, /'compare_season'/);
+  assert.match(migration, /'h2h'/);
 });
 
 test("season leaders are selected inside the single homepage RPC with bounded top-one subqueries", () => {
   assert.match(migration, /order by s\.season_147s desc[\s\S]*?limit 1/);
   assert.match(migration, /order by s\.breaks_100_plus desc[\s\S]*?limit 1/);
-  assert.match(migration, /s\.matches_played >= 5[\s\S]*?order by s\.match_win_rate desc[\s\S]*?limit 1/);
-  assert.match(migration, /s\.average_shot_time > 0[\s\S]*?order by s\.average_shot_time asc[\s\S]*?limit 1/);
+  assert.match(migration, /s\.matches_played>=5[\s\S]*?order by s\.match_win_rate desc[\s\S]*?limit 1/);
+  assert.match(migration, /s\.average_shot_time>0[\s\S]*?order by s\.average_shot_time asc[\s\S]*?limit 1/);
 });
 
 test("homepage no longer prewarms technical or refetches compare data", () => {
