@@ -5,6 +5,9 @@ import test from "node:test";
 const helper = fs.readFileSync(new URL("../lib/snooker/event-detail-complete.ts", import.meta.url), "utf8");
 const freshHelper = fs.readFileSync(new URL("../lib/snooker/event-detail-fresh.ts", import.meta.url), "utf8");
 const route = fs.readFileSync(new URL("../app/api/snooker/v1/event/route.ts", import.meta.url), "utf8");
+const eventCore = fs.readFileSync(new URL("../lib/snooker/event-detail-core.ts", import.meta.url), "utf8");
+const matchRoute = fs.readFileSync(new URL("../app/api/snooker/v1/match/route.ts", import.meta.url), "utf8");
+const matchDetail = fs.readFileSync(new URL("../lib/snooker/match-detail.ts", import.meta.url), "utf8");
 const page = fs.readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
 const dashboard = fs.readFileSync(new URL("../app/api/snooker/v1/dashboard/route.ts", import.meta.url), "utf8");
 
@@ -22,12 +25,15 @@ test("historical event detail keeps match stats but skips head-to-head loading",
   assert.match(helper, /: Promise\.resolve\(\[\] as DbHeadToHead\[\]\)/);
 });
 
-test("event route upgrades every explicit event open without preloading the full dashboard", () => {
-  assert.match(route, /detailedEvent = await loadSnookerEventDetailComplete\(slug\)/);
-  assert.doesNotMatch(route, /cachedEvent\.status === "completed"/);
-  assert.match(route, /let baseEvent = detailedEvent \?\? cachedEvent/);
+test("event route uses the lightweight event core and defers match-only reads", () => {
+  assert.match(route, /loadSnookerEventCore\(slug\)/);
+  assert.doesNotMatch(route, /loadSnookerEventDetailComplete/);
+  assert.doesNotMatch(eventCore, /snooker_frames|snooker_match_statistics|snooker_match_head_to_head/);
+  assert.match(matchRoute, /loadSnookerMatchDetail\(matchId\)/);
+  assert.match(matchDetail, /snooker_frames\?select=[\s\S]*?match_id=eq\.\$\{uuid\}/);
   assert.match(route, /if \(!slug\)[\s\S]*loadSnookerDatabaseViewV2\(\)/);
   assert.match(route, /const participantIds = \[\.\.\.new Set/);
+  assert.match(route, /players: scopedPlayers/);
   assert.match(route, /no-store, no-cache, must-revalidate/);
 });
 
