@@ -32,7 +32,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
       : query.view === "matches" || query.view === "players" || query.view === "data"
         ? query.view
         : "home";
-  const useHomeBootstrap = initialView === "home" && !requestedPlayer;
+  const useHomeBootstrap = !requestedPlayer && !query.section && !query.list && !query.group;
 
   let database;
   let rankingHub;
@@ -71,7 +71,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
       : hasLiveMatch ? 0 : database.databaseOnline ? SNOOKER_CACHE_SECONDS.recent : SNOOKER_CACHE_SECONDS.history,
     message: database.databaseOnline
       ? useHomeBootstrap
-        ? "首页使用单次轻量数据入口；直播比分进入页面后立即校正并按30秒刷新，完整球员、排名和赛事详情按需读取。"
+        ? "根视图使用单次轻量数据入口；直播比分进入页面后立即校正并按30秒刷新，完整球员、排名和赛事详情按需读取。"
         : "前端读取独立斯诺克数据库；赛事详情按站完整读取，直播比分使用 no-store 实时直读。"
       : "首页数据源暂不可用，当前优先使用最近一次成功缓存。",
   };
