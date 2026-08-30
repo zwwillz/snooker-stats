@@ -45,7 +45,12 @@ export async function GET(request: NextRequest) {
       console.error("[snooker-event] base event detail failed", error);
     }
   }
-  if (!baseEvent) return NextResponse.json({ ok: false, error: "EVENT_NOT_FOUND" }, { status: 404 });
+  if (!baseEvent) {
+    return NextResponse.json(
+      { ok: false, error: "EVENT_NOT_FOUND" },
+      { status: 404, headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } },
+    );
+  }
 
   const event = await refreshSingleEventLive(baseEvent);
   const participantIds = [...new Set(event.rounds.flatMap((round) => round.matches.flatMap((match) => [match.player1Id, match.player2Id])))];
