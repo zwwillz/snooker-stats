@@ -328,15 +328,6 @@ function fallbackPlayer(id: string): SnookerPlayer {
   };
 }
 
-function matchSignature(match: SnookerMatch) {
-  return JSON.stringify({
-    score1: match.score1,
-    score2: match.score2,
-    status: match.status,
-    frames: match.frames?.map((frame) => [frame.frameNo, frame.score1, frame.score2, frame.break1, frame.break2]) ?? [],
-  });
-}
-
 function shouldPollMatch(match: SnookerMatch, now: number) {
   if (match.status === "live" || match.status === "session-break") return true;
   const scheduled = match.scheduledAt ? Date.parse(match.scheduledAt) : 0;
@@ -579,7 +570,7 @@ export default function SnookerDataCenterV2({
   const [rankingHubLoading, setRankingHubLoading] = useState(false);
   const [rankingHubLoadError, setRankingHubLoadError] = useState(false);
   const [requestedTechnicalMetric, setRequestedTechnicalMetric] = useState<SnookerTechnicalMetricKey | null>(null);
-  const signatures = useRef(new Map(initialDatabaseEvents.flatMap((event) => allMatches(event)).map((match) => [match.id, matchSignature(match)])));
+  const [clientNow, setClientNow] = useState(() => Date.now());
   const playerDirectoryScrollY = useRef(0);
   const eventReturnState = useRef<{ view: MainView; mode: EventListMode; season: string; scrollY: number } | null>(null);
   const matchReturnState = useRef<MatchReturnState | null>(null);
@@ -805,7 +796,14 @@ export default function SnookerDataCenterV2({
     return () => window.cancelAnimationFrame(frame);
   }, [detail, eventBySlug]);
 
-  const pollReferenceTime = sourceHealth?.fetchedAt && Number.isFinite(Date.parse(sourceHealth.fetchedAt)) ? Date.parse(sourceHealth.fetchedAt) : Date.now();
+  useEffect(() => {
+    const updateClientNow = () => setClientNow(Date.now());
+    updateClientNow();
+    const timer = window.setInterval(updateClientNow, 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const pollReferenceTime = sourceHealth?.fetchedAt && Number.isFinite(Date.parse(sourceHealth.fetchedAt)) ? Date.parse(sourceHealth.fetchedAt) : clientNow;
   const selectedMatchForPolling = detail?.type === "match"
     ? eventBySlug.get(detail.eventSlug)?.rounds.flatMap((round) => round.matches).find((match) => match.id === detail.matchId)
     : undefined;
