@@ -655,6 +655,12 @@ export default function SnookerDataCenterV2({
   }, [rankingHubLoaded, rankingHubLoading]);
 
   useEffect(() => {
+    if (!initialHomeBootstrap) return;
+    if (activeView === "players") void ensurePlayerDirectory();
+    if (activeView === "data") void ensureRankingHub();
+  }, [activeView, ensurePlayerDirectory, ensureRankingHub, initialHomeBootstrap]);
+
+  useEffect(() => {
     if (detail?.type !== "event" || detail.tab !== "schedule") return;
     const event = eventBySlug.get(detail.slug);
     if (!event || event.status !== "live" || scheduleAutoFocusedEvents.current.has(event.id)) return;
@@ -1244,7 +1250,7 @@ export default function SnookerDataCenterV2({
         <span>更新 {formatUpdatedAt(sourceHealth?.fetchedAt)}</span>
       </div> : null}
     </div>
-    <nav className={`${styles.bottomNav} ${polish.fastNav}`}>{navItems.map((item) => <button key={item.id} className={item.id === activeView ? styles.activeNav : ""} onClick={() => changeView(item.id)}><span>{item.icon}</span><b>{item.label}</b></button>)}</nav>
+    <nav className={`${styles.bottomNav} ${polish.fastNav}`}>{navItems.map((item) => <a key={item.id} href={item.id === "home" ? "/" : `/?view=${item.id}`} className={`${polish.fastNavLink} ${item.id === activeView ? styles.activeNav : ""}`} onClick={(event) => { event.preventDefault(); window.history.replaceState(window.history.state, "", event.currentTarget.href); changeView(item.id); }}><span>{item.icon}</span><b>{item.label}</b></a>)}</nav>
     <span className={styles.buildMark}>{buildMark}</span>
   </div></main>;
 }
