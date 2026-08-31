@@ -61,12 +61,16 @@ test("player compare polish moves season selection below the season tab and keep
   assert.doesNotMatch(client, /className={styles\.heroControls}/);
 });
 
-test("player compare entry cards support optional preload but homepage defers the expensive comparison", async () => {
+test("player compare entry cards recover only when bootstrap comparison data is absent", async () => {
   const teaser = await read("app/snooker/compare/player-compare-teaser.tsx");
   const rootPage = await read("app/page.tsx");
   assert.match(teaser, /initialData\?: PlayerCompareSnapshot/);
   assert.match(teaser, /actionClassName\?: string/);
-  assert.doesNotMatch(teaser, /\/api\/snooker\/v1\/player-compare\?/);
+  assert.match(teaser, /initialData\?\.seasonStats\[0\] && initialData\.seasonStats\[1\]/);
+  assert.match(teaser, /if \(hasUsableInitialData \|\| !leftSlug \|\| !rightSlug\) return/);
+  assert.match(teaser, /setRecoveredData\(compare\)/);
+  assert.match(teaser, /window\.setTimeout\(\(\) => \{ void recover\(1\); \}, 1500\)/);
+  assert.match(teaser, /controller\?\.abort\(\)/);
   assert.match(rootPage, /initialPlayerCompare=\{bootstrapCompare\}/);
   assert.doesNotMatch(rootPage, /loadPlayerCompare/);
 });
