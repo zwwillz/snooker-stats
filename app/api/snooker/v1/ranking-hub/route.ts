@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 import { loadSnookerRankingHub, reconcileRankingHubPlayerSlugs } from "@/lib/snooker/ranking-hub";
-import { getSnookerPlayerDirectory } from "@/lib/snooker/player-data";
+import { getSnookerPlayersByIds } from "@/lib/snooker/player-data";
 
 export const revalidate = 300;
 
 export async function GET() {
   try {
-    const [loadedHub, players] = await Promise.all([
-      loadSnookerRankingHub(),
-      getSnookerPlayerDirectory(),
-    ]);
+    const loadedHub = await loadSnookerRankingHub({ includePlayerSlugs: false });
+    const playerIds = loadedHub.lists.flatMap((list) => list.rows.map((row) => row.playerUuid));
+    const players = await getSnookerPlayersByIds(playerIds);
     const hub = reconcileRankingHubPlayerSlugs(loadedHub, players);
     return NextResponse.json(
       { ok: hub.online, hub, players },

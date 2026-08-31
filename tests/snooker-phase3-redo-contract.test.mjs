@@ -138,9 +138,10 @@ test("deep player and data code is dynamically loaded", () => {
   assert.match(ui, /dynamic\(\(\) => import\("\.\/players\/player-detail-inline"\)/);
   assert.match(ui, /loadDataContentModule = \(\) => import\("\.\/data\/data-ranking-content"\)/);
   assert.match(ui, /dynamic\(\(\) => loadDataContentModule\(\)/);
-  assert.match(playerDirectoryRoute, /getSnookerPlayerDirectory\(\)/);
+  assert.match(playerDirectoryRoute, /getSnookerPlayerDirectoryPage/);
+  assert.match(playerDirectoryRoute, /scope.*archive/);
   assert.doesNotMatch(playerDirectoryRoute, /loadSnookerDatabaseViewV2/);
-  assert.match(rankingHubRoute, /loadSnookerRankingHub\(\)/);
+  assert.match(rankingHubRoute, /loadSnookerRankingHub\(\{ includePlayerSlugs: false \}\)/);
 });
 
 test("home season leader opens requested technical metric in one state transition", () => {

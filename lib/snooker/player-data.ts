@@ -24,6 +24,14 @@ export type SnookerPlayerListItem = {
   playerStatus: SnookerPlayerStatus;
 };
 
+export type SnookerPlayerDirectoryScope = "tour" | "archive";
+
+export type SnookerPlayerDirectoryPage = {
+  players: SnookerPlayerListItem[];
+  nextCursor: string | null;
+  hasMore: boolean;
+};
+
 export type SnookerPlayerCareerStats = {
   rankingTitles: number | null;
   rankingFinals: number | null;
@@ -273,6 +281,123 @@ function officialRankingParams(extra: Record<string, string> = {}) {
     order: "rank.asc",
     ...extra,
   });
+}
+
+const PLAYER_PAGE_LIMIT = 64;
+
+function pageLimit(value: number | undefined) {
+  if (!Number.isFinite(value)) return 32;
+  return Math.max(1, Math.min(PLAYER_PAGE_LIMIT, Math.trunc(value ?? 32)));
+}
+
+function encodeCursor(value: Record<string, string | number>) {
+  return Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
+}
+
+function decodeCursor(value: string | null | undefined) {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as Record<string, unknown>;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function quotedPostgrestValue(value: string) {
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+function playerIdsFilter(ids: string[]) {
+  return `in.(${ids.join(",")})`;
+}
+
+async function mapPlayersWithOfficialRanking(rows: PlayerRow[], revalidate = 300) {
+  if (!rows.length) return [];
+  const rankedIds = rows.filter((row) => row.is_current_tour).map((row) => row.id);
+  const rankingRows = rankedIds.length
+    ? await rest<OfficialRankingRow[]>("snooker_latest_rankings", officialRankingParams({
+        player_id: playerIdsFilter(rankedIds),
+        limit: String(rankedIds.length),
+      }), Math.min(revalidate, 60))
+    : [];
+  const rankingByPlayer = new Map(rankingRows.map((row) => [row.player_id, row]));
+  return rows
+    .filter(isDirectoryPlayerRow)
+    .map((row) => withOfficialRanking(mapPlayer(row), rankingByPlayer.get(row.id)));
+}
+
+export async function getSnookerPlayerDirectoryPage({
+  scope,
+  cursor,
+  limit,
+}: {
+  scope: SnookerPlayerDirectoryScope;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<SnookerPlayerDirectoryPage> {
+  const size = pageLimit(limit);
+  const decoded = decodeCursor(cursor);
+  const params = new URLSearchParams({
+    select: PLAYER_SELECT,
+    is_current_tour: scope === "tour" ? "eq.true" : "eq.false",
+    order: scope === "tour" ? "current_rank.asc,name_en.asc,id.asc" : "name_en.asc,id.asc",
+    limit: String(size + 1),
+  });
+
+  if (scope === "tour" && typeof decoded?.rank === "number") {
+    params.set("current_rank", `gt.${decoded.rank}`);
+  }
+  if (scope === "archive" && typeof decoded?.name === "string" && typeof decoded?.id === "string") {
+    const name = quotedPostgrestValue(decoded.name);
+    params.set("or", `(name_en.gt.${name},and(name_en.eq.${name},id.gt.${decoded.id}))`);
+  }
+
+  const rows = await rest<PlayerRow[]>("snooker_players", params, scope === "tour" ? 300 : 1800);
+  const pageRows = rows.slice(0, size);
+  const last = pageRows.at(-1);
+  const players = await mapPlayersWithOfficialRanking(pageRows, scope === "tour" ? 300 : 1800);
+  const nextCursor = last
+    ? scope === "tour"
+      ? encodeCursor({ rank: last.current_rank ?? 0 })
+      : encodeCursor({ name: last.name_en, id: last.id })
+    : null;
+  return { players, nextCursor, hasMore: rows.length > size };
+}
+
+export async function searchSnookerPlayerDirectory({
+  query,
+  chinaOnly = false,
+  limit = 128,
+}: {
+  query?: string | null;
+  chinaOnly?: boolean;
+  limit?: number;
+}): Promise<SnookerPlayerListItem[]> {
+  const safeQuery = query?.replace(/[,*()]/g, " ").trim().slice(0, 80) ?? "";
+  const params = new URLSearchParams({
+    select: PLAYER_SELECT,
+    order: "current_rank.asc.nullslast,name_en.asc,id.asc",
+    limit: String(Math.max(1, Math.min(128, Math.trunc(limit)))),
+  });
+  if (safeQuery) {
+    params.set("or", `(name_en.ilike.*${safeQuery}*,name_zh.ilike.*${safeQuery}*,short_name_zh.ilike.*${safeQuery}*,nationality_zh.ilike.*${safeQuery}*)`);
+  }
+  if (chinaOnly) params.set("country_code", "in.(CN,CHN)");
+  const rows = await rest<PlayerRow[]>("snooker_players", params, 300);
+  return mapPlayersWithOfficialRanking(rows, 300);
+}
+
+export async function getSnookerPlayersByIds(ids: string[]): Promise<SnookerPlayerListItem[]> {
+  const unique = [...new Set(ids.filter((id) => /^[0-9a-f-]{36}$/i.test(id)))];
+  if (!unique.length) return [];
+  const batches: string[][] = [];
+  for (let index = 0; index < unique.length; index += 100) batches.push(unique.slice(index, index + 100));
+  const rows = (await Promise.all(batches.map((batch) => rest<PlayerRow[]>("snooker_players", new URLSearchParams({
+    select: PLAYER_SELECT,
+    id: playerIdsFilter(batch),
+  }), 300)))).flat();
+  return mapPlayersWithOfficialRanking(rows, 300);
 }
 
 export async function getSnookerPlayerDirectory(): Promise<SnookerPlayerListItem[]> {

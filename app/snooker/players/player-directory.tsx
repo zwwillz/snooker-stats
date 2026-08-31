@@ -59,6 +59,9 @@ export function PlayerDirectoryContent({
   onFilterChange,
   onOpenPlayer,
   onPrefetchPlayer,
+  hasMore = false,
+  loadingMore = false,
+  onLoadMore,
 }: {
   players: SnookerPlayerListItem[];
   query: string;
@@ -67,8 +70,12 @@ export function PlayerDirectoryContent({
   onFilterChange: (value: PlayerFilter) => void;
   onOpenPlayer: (player: SnookerPlayerListItem) => void;
   onPrefetchPlayer?: (player: SnookerPlayerListItem) => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }) {
   const directoryRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const filtered = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase("zh-CN");
     return players.filter(isConcretePlayer).filter((player) => {
@@ -109,6 +116,17 @@ export function PlayerDirectoryContent({
     root.querySelectorAll<HTMLElement>("[data-player-slug]").forEach((row) => observer.observe(row));
     return () => observer.disconnect();
   }, [filtered, onPrefetchPlayer]);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !hasMore || loadingMore || !onLoadMore) return;
+    if (typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) onLoadMore();
+    }, { rootMargin: "720px 0px", threshold: 0.01 });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, onLoadMore]);
 
   const warmHighPriority = (player: SnookerPlayerListItem) => {
     prefetchPlayerExperience(player.slug, player.avatarUrl, "high");
@@ -183,6 +201,9 @@ export function PlayerDirectoryContent({
               </button>
             );
           }) : <div className={styles.emptyState}>没有找到匹配的球员。<br />可以尝试中文名、英文名或切换筛选条件。</div>}
+          {hasMore ? <div className={styles.emptyState} ref={loadMoreRef}>
+            {loadingMore ? "正在加载更多球员…" : <button type="button" onClick={onLoadMore}>继续加载历史球员</button>}
+          </div> : null}
         </div>
       </section>
     </>

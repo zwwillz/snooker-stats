@@ -28,8 +28,11 @@ test("honours hub is future-proof for former players and stays a focused read mo
 
 test("honours data is loaded on the Data Hub only and uses independent caching", () => {
   assert.match(data, /fetch\("\/api\/snooker\/v1\/honours"/);
-  assert.match(data, /let honoursCache: SnookerHonoursHub \| null = null/);
-  assert.match(data, /let honoursInflight: Promise<SnookerHonoursHub \| null> \| null = null/);
+  assert.match(data, /let honoursCache: DeferredHubPayload<SnookerHonoursHub> \| null = null/);
+  assert.match(data, /let honoursInflight: Promise<DeferredHubPayload<SnookerHonoursHub> \| null> \| null = null/);
+  assert.match(api, /getSnookerPlayersByIds/);
+  assert.match(api, /hub\.lists\.flatMap/);
+  assert.match(data, /setDeferredPlayers/);
   assert.match(api, /s-maxage=1800/);
   assert.match(api, /stale-while-revalidate=21600/);
   assert.doesNotMatch(root, /honours-hub/);

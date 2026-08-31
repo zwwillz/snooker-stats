@@ -114,17 +114,16 @@ function moneyOf(row: RankingRow) {
   return Number.isFinite(value) ? value : 0;
 }
 
-export async function loadSnookerRankingHub(): Promise<SnookerRankingHub> {
+export async function loadSnookerRankingHub({ includePlayerSlugs = true }: { includePlayerSlugs?: boolean } = {}): Promise<SnookerRankingHub> {
   const loadedAt = new Date().toISOString();
   try {
     const keys = `(${CURRENT_RANKING_KEYS.join(",")})`;
-    const [rankingResult, playerResult, metaResult] = await Promise.allSettled([
+    const [rankingResult, metaResult] = await Promise.allSettled([
       rest<RankingRow[]>("snooker_latest_rankings", new URLSearchParams({
         select: "list_key,player_id,source_player_name,rank,points,ranking_money,previous_rank,rank_change,captured_at,title_zh,title_en,source_name,source_url",
         list_key: `in.${keys}`,
         order: "list_key.asc,rank.asc",
       }), 300),
-      rest<PlayerKeyRow[]>("snooker_players", new URLSearchParams({ select: "id,slug" }), 300),
       rest<RankingListMetaRow[]>("snooker_ranking_lists", new URLSearchParams({
         select: "list_key,title_zh,title_en,description_zh,source_name,source_url,sync_status,latest_captured_at",
         list_key: `in.${keys}`,
@@ -133,9 +132,19 @@ export async function loadSnookerRankingHub(): Promise<SnookerRankingHub> {
 
     if (rankingResult.status !== "fulfilled") throw rankingResult.reason;
     const rankingRows = rankingResult.value;
-    const playerRows = playerResult.status === "fulfilled" ? playerResult.value : [];
+    const playerIds = [...new Set(rankingRows.map((row) => row.player_id))];
+    const playerBatches: string[][] = [];
+    for (let index = 0; index < playerIds.length; index += 80) playerBatches.push(playerIds.slice(index, index + 80));
+    const playerResults = includePlayerSlugs
+      ? await Promise.allSettled(playerBatches.map((batch) => rest<PlayerKeyRow[]>("snooker_players", new URLSearchParams({
+          select: "id,slug",
+          id: `in.(${batch.join(",")})`,
+        }), 300)))
+      : [];
+    const playerRows = playerResults.flatMap((result) => result.status === "fulfilled" ? result.value : []);
     const metaRows = metaResult.status === "fulfilled" ? metaResult.value : [];
-    if (playerResult.status === "rejected") console.error("[snooker-ranking-hub] player key mapping unavailable", playerResult.reason);
+    const failedPlayerResult = playerResults.find((result) => result.status === "rejected");
+    if (failedPlayerResult?.status === "rejected") console.error("[snooker-ranking-hub] player key mapping unavailable", failedPlayerResult.reason);
     if (metaResult.status === "rejected") console.error("[snooker-ranking-hub] ranking metadata unavailable", metaResult.reason);
 
     const slugByUuid = new Map(playerRows.map((row) => [row.id, row.slug]));

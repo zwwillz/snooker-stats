@@ -42,10 +42,12 @@ const sectionTabs: Array<{ id: SnookerRankingSection; label: string }> = [
   { id: "history", label: "历史排名" },
 ];
 
-let technicalCache: SnookerTechnicalHub | null = null;
-let technicalInflight: Promise<SnookerTechnicalHub | null> | null = null;
-let honoursCache: SnookerHonoursHub | null = null;
-let honoursInflight: Promise<SnookerHonoursHub | null> | null = null;
+type DeferredHubPayload<T> = { hub: T; players: SnookerPlayerListItem[] };
+
+let technicalCache: DeferredHubPayload<SnookerTechnicalHub> | null = null;
+let technicalInflight: Promise<DeferredHubPayload<SnookerTechnicalHub> | null> | null = null;
+let honoursCache: DeferredHubPayload<SnookerHonoursHub> | null = null;
+let honoursInflight: Promise<DeferredHubPayload<SnookerHonoursHub> | null> | null = null;
 
 async function loadTechnicalHubClient() {
   if (technicalCache) return technicalCache;
@@ -53,9 +55,11 @@ async function loadTechnicalHubClient() {
   technicalInflight = fetch("/api/snooker/v1/technical", { headers: { Accept: "application/json" } })
     .then(async (response) => {
       if (!response.ok) return null;
-      const data = await response.json() as { hub?: SnookerTechnicalHub };
-      if (data.hub?.online) technicalCache = data.hub;
-      return data.hub ?? null;
+      const data = await response.json() as { hub?: SnookerTechnicalHub; players?: SnookerPlayerListItem[] };
+      if (!data.hub) return null;
+      const payload = { hub: data.hub, players: data.players ?? [] };
+      if (data.hub.online) technicalCache = payload;
+      return payload;
     })
     .catch(() => null)
     .finally(() => { technicalInflight = null; });
@@ -68,9 +72,11 @@ async function loadHonoursHubClient() {
   honoursInflight = fetch("/api/snooker/v1/honours", { headers: { Accept: "application/json" } })
     .then(async (response) => {
       if (!response.ok) return null;
-      const data = await response.json() as { hub?: SnookerHonoursHub };
-      if (data.hub?.online) honoursCache = data.hub;
-      return data.hub ?? null;
+      const data = await response.json() as { hub?: SnookerHonoursHub; players?: SnookerPlayerListItem[] };
+      if (!data.hub) return null;
+      const payload = { hub: data.hub, players: data.players ?? [] };
+      if (data.hub.online) honoursCache = payload;
+      return payload;
     })
     .catch(() => null)
     .finally(() => { honoursInflight = null; });
@@ -106,6 +112,14 @@ function playerBySlugMap(players: SnookerPlayerListItem[]) {
 
 function playerByUuidMap(players: SnookerPlayerListItem[]) {
   return new Map(players.map((player) => [player.id, player]));
+}
+
+function mergePlayers(...groups: SnookerPlayerListItem[][]) {
+  const byId = new Map<string, SnookerPlayerListItem>();
+  for (const group of groups) {
+    for (const player of group) byId.set(player.id, { ...(byId.get(player.id) ?? {}), ...player } as SnookerPlayerListItem);
+  }
+  return [...byId.values()];
 }
 
 function rankingPlayer(
@@ -200,22 +214,30 @@ export function DataHubContent({
   initialTechnicalMetric?: SnookerTechnicalMetricKey | null;
 }) {
   const [infoOpen, setInfoOpen] = useState(false);
-  const [technicalHub, setTechnicalHub] = useState<SnookerTechnicalHub | null>(() => technicalCache);
+  const [technicalHub, setTechnicalHub] = useState<SnookerTechnicalHub | null>(() => technicalCache?.hub ?? null);
   const [technicalKey, setTechnicalKey] = useState<SnookerTechnicalMetricKey | null>(() => initialTechnicalMetric);
-  const [honoursHub, setHonoursHub] = useState<SnookerHonoursHub | null>(() => honoursCache);
+  const [honoursHub, setHonoursHub] = useState<SnookerHonoursHub | null>(() => honoursCache?.hub ?? null);
+  const [deferredPlayers, setDeferredPlayers] = useState<SnookerPlayerListItem[]>(() => mergePlayers(
+    technicalCache?.players ?? [],
+    honoursCache?.players ?? [],
+  ));
   const [honoursKey, setHonoursKey] = useState<SnookerHonoursMetricKey | null>(null);
   const technicalSectionRef = useRef<HTMLDivElement | null>(null);
   const honoursSectionRef = useRef<HTMLDivElement | null>(null);
-  const playerBySlug = useMemo(() => playerBySlugMap(players), [players]);
-  const playerByUuid = useMemo(() => playerByUuidMap(players), [players]);
+  const resolvedPlayers = useMemo(() => mergePlayers(players, deferredPlayers), [players, deferredPlayers]);
+  const playerBySlug = useMemo(() => playerBySlugMap(resolvedPlayers), [resolvedPlayers]);
+  const playerByUuid = useMemo(() => playerByUuidMap(resolvedPlayers), [resolvedPlayers]);
   const selected = listFor(hub, selectedKey);
   const top = selected?.rows.slice(0, 3) ?? [];
 
   useEffect(() => {
     if (!technicalKey) return;
     let cancelled = false;
-    void loadTechnicalHubClient().then((nextHub) => {
-      if (!cancelled && nextHub) setTechnicalHub(nextHub);
+    void loadTechnicalHubClient().then((payload) => {
+      if (!cancelled && payload) {
+        setTechnicalHub(payload.hub);
+        setDeferredPlayers((current) => mergePlayers(current, payload.players));
+      }
     });
     return () => { cancelled = true; };
   }, [technicalKey]);
@@ -223,8 +245,11 @@ export function DataHubContent({
   useEffect(() => {
     if (!honoursKey) return;
     let cancelled = false;
-    void loadHonoursHubClient().then((nextHub) => {
-      if (!cancelled && nextHub) setHonoursHub(nextHub);
+    void loadHonoursHubClient().then((payload) => {
+      if (!cancelled && payload) {
+        setHonoursHub(payload.hub);
+        setDeferredPlayers((current) => mergePlayers(current, payload.players));
+      }
     });
     return () => { cancelled = true; };
   }, [honoursKey]);
@@ -234,8 +259,16 @@ export function DataHubContent({
     const honoursNode = honoursSectionRef.current;
     if (!technicalNode || !honoursNode) return;
 
-    const loadTechnical = () => { void loadTechnicalHubClient().then((nextHub) => { if (nextHub) setTechnicalHub(nextHub); }); };
-    const loadHonours = () => { void loadHonoursHubClient().then((nextHub) => { if (nextHub) setHonoursHub(nextHub); }); };
+    const loadTechnical = () => { void loadTechnicalHubClient().then((payload) => {
+      if (!payload) return;
+      setTechnicalHub(payload.hub);
+      setDeferredPlayers((current) => mergePlayers(current, payload.players));
+    }); };
+    const loadHonours = () => { void loadHonoursHubClient().then((payload) => {
+      if (!payload) return;
+      setHonoursHub(payload.hub);
+      setDeferredPlayers((current) => mergePlayers(current, payload.players));
+    }); };
     if (typeof IntersectionObserver === "undefined") {
       loadTechnical();
       loadHonours();
@@ -366,7 +399,7 @@ export function DataHubContent({
   }
 
   if (technicalHub?.online && technicalKey) {
-    return <TechnicalDetailPage hub={technicalHub} players={players} selectedKey={technicalKey} onSelectKey={selectTechnical} onOpenPlayer={onOpenPlayer} onClose={closeTechnical} />;
+    return <TechnicalDetailPage hub={technicalHub} players={resolvedPlayers} selectedKey={technicalKey} onSelectKey={selectTechnical} onOpenPlayer={onOpenPlayer} onClose={closeTechnical} />;
   }
 
   return <>
@@ -376,7 +409,7 @@ export function DataHubContent({
       <p>世界斯诺克排名、赛季表现与历史纪录的数据入口。排名、技术与荣誉数据按统一结构逐步扩展。</p>
     </section>
 
-    <PlayerCompareTeaser players={players} variant="data" initialData={initialPlayerCompare} actionClassName={styles.primaryAction} headerClassName={styles.sectionHeader} />
+    <PlayerCompareTeaser players={resolvedPlayers} variant="data" initialData={initialPlayerCompare} actionClassName={styles.primaryAction} headerClassName={styles.sectionHeader} />
 
     <section className={`${styles.card} ${styles.rankingCard}`}>
       <div className={styles.sectionHeader}>
@@ -404,12 +437,12 @@ export function DataHubContent({
       </> : <div className={styles.emptyState}>排名数据正在准备中。</div>}
     </section>
 
-    <div ref={technicalSectionRef}>{technicalHub?.online ? <SeasonLeadersSection hub={technicalHub} players={players} onOpenTechnical={openTechnical} /> : <section className={styles.card}>
+    <div ref={technicalSectionRef}>{technicalHub?.online ? <SeasonLeadersSection hub={technicalHub} players={resolvedPlayers} onOpenTechnical={openTechnical} /> : <section className={styles.card}>
       <div className={styles.sectionHeader}><div><small>SEASON LEADERS</small><h2>本赛季领跑者</h2></div></div>
       <div className={styles.technicalLoading}>正在加载赛季技术数据…</div>
     </section>}</div>
 
-    <div ref={honoursSectionRef}>{honoursHub?.online ? <HonoursLeadersSection hub={honoursHub} players={players} onOpenHonours={openHonours} /> : <section className={styles.card}>
+    <div ref={honoursSectionRef}>{honoursHub?.online ? <HonoursLeadersSection hub={honoursHub} players={resolvedPlayers} onOpenHonours={openHonours} /> : <section className={styles.card}>
       <div className={styles.sectionHeader}><div><small>CAREER HONOURS</small><h2>荣誉榜</h2></div></div>
       <div className={styles.technicalLoading}>正在加载职业生涯荣誉数据…</div>
     </section>}</div>
@@ -423,7 +456,7 @@ export function DataHubContent({
     </section>
 
     {infoOpen ? <RankingInfoModal hub={hub} onClose={() => setInfoOpen(false)} /> : null}
-    {honoursHub?.online && honoursKey ? <HonoursDetailOverlay hub={honoursHub} players={players} selectedKey={honoursKey} onSelectKey={selectHonours} onOpenPlayer={onOpenPlayer} onClose={closeHonours} /> : null}
+    {honoursHub?.online && honoursKey ? <HonoursDetailOverlay hub={honoursHub} players={resolvedPlayers} selectedKey={honoursKey} onSelectKey={selectHonours} onOpenPlayer={onOpenPlayer} onClose={closeHonours} /> : null}
   </>;
 }
 

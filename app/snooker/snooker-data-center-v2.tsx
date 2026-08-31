@@ -55,6 +55,7 @@ import priority from "./snooker-priority.module.css";
 import insight from "./snooker-insights.module.css";
 import polish from "./snooker-ui-polish.module.css";
 import liveIndicator from "./live-striker-indicator.module.css";
+import shell from "./root-view-shell.module.css";
 
 type MainView = "home" | "matches" | "players" | "data";
 type NavId = MainView;
@@ -99,6 +100,13 @@ type CalendarResponse = {
   calendar?: SnookerCalendarEvent[];
 };
 
+type PlayerDirectoryPageResponse = {
+  ok?: boolean;
+  players?: SnookerPlayerListItem[];
+  nextCursor?: string | null;
+  hasMore?: boolean;
+};
+
 type SnookerHistoryState = {
   snookerView?: MainView;
   snookerOrigin?: boolean;
@@ -126,10 +134,23 @@ function RootViewLoading({ view, failed = false, onRetry }: { view: "players" | 
       <h1>{isPlayers ? "球员" : "数据"}</h1>
       <p>{isPlayers ? "职业球员资料与排名信息。" : "世界斯诺克排名、赛季表现与历史纪录的数据入口。"}</p>
     </section>
-    <section className={styles.card}>
-      <div className={styles.emptyState}>{failed ? `${isPlayers ? "球员目录" : "数据中心"}加载失败，请稍后重试。` : `正在加载${isPlayers ? "球员目录" : "数据中心"}…`}</div>
-      {failed && onRetry ? <button className={styles.fullButton} onClick={onRetry}>重新加载</button> : null}
-    </section>
+    {isPlayers ? <>
+      <div className={shell.playerToolbar} aria-hidden="true"><i /><span /><span /><span /><span /></div>
+      <section className={`${styles.card} ${shell.shellCard}`} aria-busy={!failed}>
+        <div className={shell.shellSummary}><span>按官方世界排名排列</span><b>{failed ? "加载失败" : "正在准备首屏球员"}</b></div>
+        <div className={shell.rows}>{Array.from({ length: 7 }, (_, index) => <div className={shell.row} key={index}><i /><span><b /><small /></span><em /></div>)}</div>
+        {failed && onRetry ? <button className={styles.fullButton} onClick={onRetry}>重新加载</button> : null}
+      </section>
+    </> : <>
+      <section className={`${styles.card} ${shell.dataCard}`} aria-busy={!failed}>
+        <div className={shell.dataHeading}><span /><b /></div><div className={shell.dataPanel} />
+      </section>
+      <section className={`${styles.card} ${shell.dataCard}`} aria-busy={!failed}>
+        <div className={shell.dataHeading}><span /><b /></div><div className={shell.tabs}>{Array.from({ length: 4 }, (_, index) => <i key={index} />)}</div>
+        <div className={shell.rows}>{Array.from({ length: 3 }, (_, index) => <div className={shell.row} key={index}><i /><span><b /><small /></span><em /></div>)}</div>
+        {failed && onRetry ? <button className={styles.fullButton} onClick={onRetry}>重新加载</button> : null}
+      </section>
+    </>}
   </>;
 }
 
@@ -152,6 +173,14 @@ function rankingSectionFromParam(value: string | null | undefined): SnookerRanki
 
 function initials(name: string) {
   return name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+}
+
+function mergeDirectoryPlayers(...groups: Array<SnookerPlayerListItem[] | null | undefined>) {
+  const byId = new Map<string, SnookerPlayerListItem>();
+  for (const group of groups) {
+    for (const player of group ?? []) byId.set(player.id, { ...(byId.get(player.id) ?? {}), ...player } as SnookerPlayerListItem);
+  }
+  return [...byId.values()].sort((a, b) => (a.currentRank ?? 9999) - (b.currentRank ?? 9999) || a.nameEn.localeCompare(b.nameEn));
 }
 
 function isChina(player?: SnookerPlayer) {
@@ -605,7 +634,10 @@ export default function SnookerDataCenterV2({
   const [selectedRankingKey, setSelectedRankingKey] = useState<SnookerCurrentRankingKey>(initialKey);
   const [rankingSection, setRankingSection] = useState<SnookerRankingSection>(initialRankingSection);
   const [loadedDirectory, setLoadedDirectory] = useState<SnookerPlayerListItem[] | null>(null);
+  const [rankingScopedPlayers, setRankingScopedPlayers] = useState<SnookerPlayerListItem[]>([]);
   const [directoryLoaded, setDirectoryLoaded] = useState(!initialHomeBootstrap);
+  const [directoryHasMore, setDirectoryHasMore] = useState(true);
+  const [directoryLoadingMore, setDirectoryLoadingMore] = useState(false);
   const [directoryModuleLoaded, setDirectoryModuleLoaded] = useState(false);
   const [directoryLoadError, setDirectoryLoadError] = useState(false);
   const [rankingHub, setRankingHub] = useState(initialRankingHub);
@@ -627,6 +659,9 @@ export default function SnookerDataCenterV2({
   const calendarInFlight = useRef(new Map<string, Promise<void>>());
   const eventDetailInFlight = useRef(new Map<string, Promise<void>>());
   const playerDirectoryInFlight = useRef<Promise<void> | null>(null);
+  const playerArchiveInFlight = useRef<Promise<void> | null>(null);
+  const playerArchiveCursor = useRef<string | null>(null);
+  const playerArchiveComplete = useRef(false);
   const rankingHubInFlight = useRef<Promise<void> | null>(null);
 
   const ensureCalendarSeason = useCallback((season: string) => {
@@ -755,6 +790,10 @@ export default function SnookerDataCenterV2({
     }))
     .sort((a, b) => (a.currentRank ?? 9999) - (b.currentRank ?? 9999) || a.nameEn.localeCompare(b.nameEn)), [snapshot.players]);
   const directoryPlayers = loadedDirectory ?? snapshotDirectoryPlayers;
+  const dataPlayers = useMemo(
+    () => mergeDirectoryPlayers(snapshotDirectoryPlayers, rankingScopedPlayers, loadedDirectory),
+    [snapshotDirectoryPlayers, rankingScopedPlayers, loadedDirectory],
+  );
   const eventBySlug = useMemo(() => new Map(databaseEvents.map((event) => [event.slug, event])), [databaseEvents]);
 
   const applyMatchDetail = useCallback((data: MatchDetailResponse) => {
@@ -800,14 +839,35 @@ export default function SnookerDataCenterV2({
     if (playerDirectoryInFlight.current) return playerDirectoryInFlight.current;
     setDirectoryLoadError(false);
     const task = (async () => {
+      let deliveredFirstPage = false;
       try {
-        const response = await fetch("/api/snooker/v1/player-directory", { headers: { Accept: "application/json" } });
-        const data = await response.json() as { ok?: boolean; players?: SnookerPlayerListItem[] };
-        if (!response.ok || !data.ok || !data.players) throw new Error("PLAYER_DIRECTORY_UNAVAILABLE");
-        setLoadedDirectory(data.players);
+        let cursor: string | null = null;
+        let firstPage = true;
+        do {
+          const url = new URL("/api/snooker/v1/player-directory", window.location.origin);
+          url.searchParams.set("scope", "tour");
+          url.searchParams.set("limit", "32");
+          if (cursor) url.searchParams.set("cursor", cursor);
+          const response = await fetch(url.pathname + url.search, { headers: { Accept: "application/json" } });
+          const data = await response.json() as PlayerDirectoryPageResponse;
+          if (!response.ok || !data.ok || !data.players) throw new Error("PLAYER_DIRECTORY_UNAVAILABLE");
+          setLoadedDirectory((current) => mergeDirectoryPlayers(current, data.players));
+          cursor = data.hasMore ? data.nextCursor ?? null : null;
+          if (firstPage) {
+            firstPage = false;
+            deliveredFirstPage = true;
+            setDirectoryLoaded(true);
+          }
+          if (cursor) {
+            await new Promise<void>((resolve) => {
+              if ("requestIdleCallback" in window) window.requestIdleCallback(() => resolve(), { timeout: 1200 });
+              else globalThis.setTimeout(resolve, 32);
+            });
+          }
+        } while (cursor);
         setDirectoryLoaded(true);
       } catch {
-        setDirectoryLoadError(true);
+        if (!deliveredFirstPage) setDirectoryLoadError(true);
       } finally {
         playerDirectoryInFlight.current = null;
       }
@@ -815,6 +875,58 @@ export default function SnookerDataCenterV2({
     playerDirectoryInFlight.current = task;
     return task;
   }, [directoryLoaded]);
+
+  const loadMorePlayerDirectory = useCallback(() => {
+    if (playerArchiveComplete.current) return Promise.resolve();
+    if (playerArchiveInFlight.current) return playerArchiveInFlight.current;
+    setDirectoryLoadingMore(true);
+    const task = (async () => {
+      try {
+        if (playerDirectoryInFlight.current) await playerDirectoryInFlight.current;
+        const url = new URL("/api/snooker/v1/player-directory", window.location.origin);
+        url.searchParams.set("scope", "archive");
+        url.searchParams.set("limit", "64");
+        if (playerArchiveCursor.current) url.searchParams.set("cursor", playerArchiveCursor.current);
+        const response = await fetch(url.pathname + url.search, { headers: { Accept: "application/json" } });
+        const data = await response.json() as PlayerDirectoryPageResponse;
+        if (!response.ok || !data.ok || !data.players) throw new Error("PLAYER_DIRECTORY_ARCHIVE_UNAVAILABLE");
+        setLoadedDirectory((current) => mergeDirectoryPlayers(current, data.players));
+        playerArchiveCursor.current = data.nextCursor ?? null;
+        playerArchiveComplete.current = !data.hasMore;
+        setDirectoryHasMore(Boolean(data.hasMore));
+      } catch {
+        setDirectoryLoadError(true);
+      } finally {
+        playerArchiveInFlight.current = null;
+        setDirectoryLoadingMore(false);
+      }
+    })();
+    playerArchiveInFlight.current = task;
+    return task;
+  }, []);
+
+  useEffect(() => {
+    if (activeView !== "players" || !directoryLoaded) return;
+    const query = playerQuery.trim();
+    if (!query && playerFilter !== "china") return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      const url = new URL("/api/snooker/v1/player-directory", window.location.origin);
+      url.searchParams.set("mode", "search");
+      if (query) url.searchParams.set("q", query);
+      if (playerFilter === "china") url.searchParams.set("filter", "china");
+      void fetch(url.pathname + url.search, { signal: controller.signal, headers: { Accept: "application/json" } })
+        .then(async (response) => {
+          const data = await response.json() as PlayerDirectoryPageResponse;
+          if (response.ok && data.ok && data.players) setLoadedDirectory((current) => mergeDirectoryPlayers(current, data.players));
+        })
+        .catch(() => undefined);
+    }, 180);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [activeView, directoryLoaded, playerFilter, playerQuery]);
 
   const ensureRankingHub = useCallback(() => {
     if (rankingHubLoaded) return Promise.resolve();
@@ -827,10 +939,7 @@ export default function SnookerDataCenterV2({
         if (!response.ok || !data.ok || !data.hub) throw new Error("RANKING_HUB_UNAVAILABLE");
         setRankingHub(data.hub);
         setRankingHubLoaded(true);
-        if (data.players?.length) {
-          setLoadedDirectory(data.players);
-          setDirectoryLoaded(true);
-        }
+        if (data.players?.length) setRankingScopedPlayers((current) => mergeDirectoryPlayers(current, data.players));
       } catch {
         setRankingHubLoadError(true);
       } finally {
@@ -1187,7 +1296,7 @@ export default function SnookerDataCenterV2({
       openPlayer(target.id);
       return;
     }
-    const directoryTarget = directoryPlayers.find((player) => player.slug === slug);
+    const directoryTarget = dataPlayers.find((player) => player.slug === slug);
     const returnDetail = detail;
     const returnView = activeView;
     const currentState: SnookerHistoryState = { snookerView: returnView, snookerOrigin: true, snookerReturnView: returnView, snookerReturnDetail: returnDetail };
@@ -1304,7 +1413,7 @@ export default function SnookerDataCenterV2({
       <header className={styles.detailHeader}><button onClick={closeRankings}>‹</button><strong>排名</strong><span>DATA</span></header>
       <RankingDetailContent
         hub={rankingHub}
-        players={directoryPlayers}
+        players={dataPlayers}
         selectedKey={selectedRankingKey}
         section={rankingSection}
         onSelectKey={(key) => updateRankingDetail(rankingSection, key)}
@@ -1583,11 +1692,11 @@ export default function SnookerDataCenterV2({
       </> : null}
 
       {activeView === "players" ? directoryLoaded && directoryModuleLoaded
-        ? <PlayerDirectoryContent players={directoryPlayers} query={playerQuery} filter={playerFilter} onQueryChange={setPlayerQuery} onFilterChange={setPlayerFilter} onOpenPlayer={(player) => openPlayerBySlug(player.slug)} onPrefetchPlayer={(player) => prefetchPlayerDetail(player.slug)} />
+        ? <PlayerDirectoryContent players={directoryPlayers} query={playerQuery} filter={playerFilter} onQueryChange={setPlayerQuery} onFilterChange={setPlayerFilter} onOpenPlayer={(player) => openPlayerBySlug(player.slug)} onPrefetchPlayer={(player) => prefetchPlayerDetail(player.slug)} hasMore={directoryHasMore && playerFilter === "all" && !playerQuery.trim()} loadingMore={directoryLoadingMore} onLoadMore={() => { void loadMorePlayerDirectory(); }} />
         : <RootViewLoading view="players" failed={directoryLoadError} onRetry={warmPlayerDirectoryView} /> : null}
 
       {activeView === "data" ? dataModuleLoaded && (rankingHubLoaded || requestedTechnicalMetric)
-        ? <DataHubContent hub={rankingHub} players={directoryPlayers} selectedKey={selectedRankingKey} onSelectKey={setSelectedRankingKey} onOpenRankings={openRankings} onOpenPlayer={openPlayerBySlug} initialPlayerCompare={initialPlayerCompare} initialTechnicalMetric={requestedTechnicalMetric} />
+        ? <DataHubContent hub={rankingHub} players={dataPlayers} selectedKey={selectedRankingKey} onSelectKey={setSelectedRankingKey} onOpenRankings={openRankings} onOpenPlayer={openPlayerBySlug} initialPlayerCompare={initialPlayerCompare} initialTechnicalMetric={requestedTechnicalMetric} />
         : <RootViewLoading view="data" failed={rankingHubLoadError} onRetry={warmDataView} /> : null}
       {activeView !== "home" ? <div className={styles.dataStatus} role="status">
         <i className={styles.liveOk} />
