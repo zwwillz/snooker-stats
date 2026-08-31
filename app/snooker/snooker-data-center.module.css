@@ -40,7 +40,7 @@
 @media (min-width:1024px){
   .appRoot{background:linear-gradient(180deg,color-mix(in srgb,var(--accent-soft) 68%,#eef2f0) 0,#f7f8f7 210px,#f3f5f4 100%)}
   .shell{width:100%;min-height:100dvh;padding-bottom:42px;background:transparent;box-shadow:none}
-  .header{height:68px;padding:0 max(20px,calc((100vw - 1120px)/2));gap:20px}
+  .header{height:68px;padding:0 max(20px,calc((100% - 1120px)/2));gap:20px}
   .brand{flex:0 0 auto;gap:10px}.brand>span{width:39px;height:39px;font-size:18px}.brand div{gap:2px}.brand strong{font-size:15px}.brand small{font-size:8px}
   .desktopNav{position:absolute;left:50%;top:0;height:68px;transform:translateX(-50%);display:flex;align-items:stretch;justify-content:center;gap:2px}
   .desktopNav a{min-width:88px;padding:0 14px;border-bottom:2px solid transparent;color:#727a76;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;transition:color .16s ease,background .16s ease,border-color .16s ease}
