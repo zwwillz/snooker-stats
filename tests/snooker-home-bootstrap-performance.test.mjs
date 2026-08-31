@@ -39,10 +39,13 @@ test("season leaders are selected inside the single homepage RPC with bounded to
   assert.match(migration, /s\.average_shot_time>0[\s\S]*?order by s\.average_shot_time asc[\s\S]*?limit 1/);
 });
 
-test("homepage no longer prewarms technical or refetches compare data", () => {
+test("homepage avoids normal compare refetches while recovering an absent bootstrap comparison", () => {
   assert.doesNotMatch(leaders, /setTimeout|\/api\/snooker\/v1\/technical|MutationObserver|createPortal/);
-  assert.doesNotMatch(compare, /IntersectionObserver|\/api\/snooker\/v1\/player-compare/);
-  assert.match(compare, /const data = matchesInitialPair \? initialData : null/);
+  assert.doesNotMatch(compare, /IntersectionObserver/);
+  assert.match(compare, /if \(hasUsableInitialData \|\| !leftSlug \|\| !rightSlug\) return/);
+  assert.match(compare, /\/api\/snooker\/v1\/player-compare\?player1=/);
+  assert.match(compare, /attempt === 0/);
+  assert.match(compare, /const data = hasUsableInitialData \? initialData : matchesRecoveredPair \? recoveredData : null/);
   assert.match(compare, /prefetch=\{false\}/);
 });
 
