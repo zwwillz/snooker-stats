@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { SnookerTechnicalHub, SnookerTechnicalList, SnookerTechnicalMetricKey } from "@/lib/snooker/technical-hub";
-import shellStyles from "../snooker-data-center.module.css";
 import styles from "./data.module.css";
 
 const leaderKeys: SnookerTechnicalMetricKey[] = ["centuries", "win_rate", "shot_time", "maximums"];
@@ -143,7 +142,7 @@ export function TechnicalDetailContent({
   </div>;
 }
 
-export function TechnicalDetailOverlay({
+export function TechnicalDetailPage({
   hub,
   players,
   selectedKey,
@@ -158,16 +157,12 @@ export function TechnicalDetailOverlay({
   onOpenPlayer: (slug: string) => void;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previous; };
-  }, []);
-
-  return <div className={styles.technicalOverlay}>
-    <div className={styles.technicalOverlayScroll}>
-      <header className={shellStyles.detailHeader}><button onClick={onClose}>‹</button><strong>技术榜</strong><span>DATA</span></header>
-      <TechnicalDetailContent hub={hub} players={players} selectedKey={selectedKey} onSelectKey={onSelectKey} onOpenPlayer={onOpenPlayer} />
-    </div>
-  </div>;
+  return <section className={styles.technicalPage} aria-labelledby="technical-page-title">
+    <header className={styles.technicalPageHeader}>
+      <button type="button" onClick={onClose}><span aria-hidden="true">‹</span> 返回数据</button>
+      <div><small>TECHNICAL LEADERBOARD</small><h1 id="technical-page-title">技术榜</h1><p>本赛季球员技术表现与比赛效率排名。</p></div>
+      <strong>{hub.seasonLabel}</strong>
+    </header>
+    <TechnicalDetailContent hub={hub} players={players} selectedKey={selectedKey} onSelectKey={onSelectKey} onOpenPlayer={onOpenPlayer} />
+  </section>;
 }

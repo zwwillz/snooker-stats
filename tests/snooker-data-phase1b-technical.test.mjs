@@ -54,8 +54,9 @@ test("technical detail supports URL/back navigation and player drill-down withou
   assert.match(data, /url\.searchParams\.set\("metric", key\)/);
   assert.match(data, /window\.addEventListener\("popstate", syncTechnicalFromUrl\)/);
   assert.match(technical, /onOpenPlayer\(row\.playerSlug\)/);
-  assert.match(technical, /TechnicalDetailOverlay/);
-  assert.match(css, /\.technicalOverlay\{position:fixed;inset:0;z-index:120/);
+  assert.match(technical, /TechnicalDetailPage/);
+  assert.match(data, /return <TechnicalDetailPage/);
+  assert.match(css, /\.technicalPageHeader/);
   assert.doesNotMatch(root, /SnookerRootController/);
 });
 

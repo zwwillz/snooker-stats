@@ -10,7 +10,7 @@ import type {
 } from "@/lib/snooker/ranking-hub";
 import { technicalMetricKey, type SnookerTechnicalHub, type SnookerTechnicalMetricKey } from "@/lib/snooker/technical-hub";
 import { honoursMetricKey, type SnookerHonoursHub, type SnookerHonoursMetricKey } from "@/lib/snooker/honours-hub";
-import { SeasonLeadersSection, TechnicalDetailOverlay } from "./data-technical-content";
+import { SeasonLeadersSection, TechnicalDetailPage } from "./data-technical-content";
 import { HonoursDetailOverlay, HonoursLeadersSection } from "./data-honours-content";
 import PlayerCompareTeaser from "../compare/player-compare-teaser";
 import styles from "./data.module.css";
@@ -317,6 +317,10 @@ export function DataHubContent({
     </section>;
   }
 
+  if (technicalHub?.online && technicalKey) {
+    return <TechnicalDetailPage hub={technicalHub} players={players} selectedKey={technicalKey} onSelectKey={selectTechnical} onOpenPlayer={onOpenPlayer} onClose={closeTechnical} />;
+  }
+
   return <>
     <section className={styles.pageIntro}>
       <small>DATA CENTER</small>
@@ -370,7 +374,6 @@ export function DataHubContent({
     </section>
 
     {infoOpen ? <RankingInfoModal hub={hub} onClose={() => setInfoOpen(false)} /> : null}
-    {technicalHub?.online && technicalKey ? <TechnicalDetailOverlay hub={technicalHub} players={players} selectedKey={technicalKey} onSelectKey={selectTechnical} onOpenPlayer={onOpenPlayer} onClose={closeTechnical} /> : null}
     {honoursHub?.online && honoursKey ? <HonoursDetailOverlay hub={honoursHub} players={players} selectedKey={honoursKey} onSelectKey={selectHonours} onOpenPlayer={onOpenPlayer} onClose={closeHonours} /> : null}
   </>;
 }
