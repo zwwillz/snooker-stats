@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 const root = readFileSync(new URL("../app/snooker/snooker-data-center-v2.tsx", import.meta.url), "utf8");
 const page = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
 const hub = readFileSync(new URL("../lib/snooker/ranking-hub.ts", import.meta.url), "utf8");
+const hubRoute = readFileSync(new URL("../app/api/snooker/v1/ranking-hub/route.ts", import.meta.url), "utf8");
 const data = readFileSync(new URL("../app/snooker/data/data-ranking-content.tsx", import.meta.url), "utf8");
 const technical = readFileSync(new URL("../app/snooker/data/data-technical-content.tsx", import.meta.url), "utf8");
 const css = readFileSync(new URL("../app/snooker/data/data.module.css", import.meta.url), "utf8");
@@ -26,6 +27,15 @@ test("ranking rows stay available when optional mapping or metadata reads fail",
   assert.match(hub, /playerResult\.status === "fulfilled" \? playerResult\.value : \[\]/);
   assert.match(hub, /metaResult\.status === "fulfilled" \? metaResult\.value : \[\]/);
   assert.match(hub, /sourcePlayerName: row\.source_player_name \?\? ""/);
+});
+
+test("ranking rows recover player details and navigation from the stable player UUID", () => {
+  assert.match(hub, /reconcileRankingHubPlayerSlugs/);
+  assert.match(hubRoute, /reconcileRankingHubPlayerSlugs\(loadedHub, players\)/);
+  assert.match(data, /playerByUuid\.get\(row\.playerUuid\)/);
+  assert.match(data, /const playerSlug = player\?\.slug \?\? row\.playerSlug/);
+  assert.match(data, /disabled=\{!playerSlug\}/);
+  assert.doesNotMatch(data, /disabled=\{!row\.playerSlug\}/);
 });
 
 test("data view keeps the existing root shell and opens rankings as a root detail state", () => {
