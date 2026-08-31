@@ -474,7 +474,7 @@ function SeasonSelector({ seasons, value, onChange }: { seasons: string[]; value
   return <div className={priority.seasonSelector} aria-label="赛季选择器">
     <button type="button" className={priority.seasonArrow} onClick={() => scroll(-1)} aria-label="查看较新赛季">‹</button>
     <div className={priority.seasonRail} ref={rail}>
-      {seasons.map((season) => <button type="button" key={season} className={season === value ? priority.seasonActive : ""} onClick={() => onChange(season)}>{season}赛季</button>)}
+      {seasons.map((season) => <button type="button" key={season} aria-label={`${season}赛季`} className={season === value ? priority.seasonActive : ""} onClick={() => onChange(season)}>{season}</button>)}
     </div>
     <button type="button" className={priority.seasonArrow} onClick={() => scroll(1)} aria-label="查看较早赛季">›</button>
   </div>;

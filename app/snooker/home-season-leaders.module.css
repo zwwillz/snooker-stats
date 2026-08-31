@@ -2,14 +2,14 @@
 .header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:14px}.header small{display:block;margin-bottom:4px;color:var(--accent,#0b7a55);font-size:8px;font-weight:850;letter-spacing:.13em;text-transform:uppercase}.header h2{margin:0;font-size:19px;letter-spacing:-.035em}.header>span{color:var(--muted,#747b78);font-size:9px;font-weight:700}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.item{position:relative;min-width:0;min-height:134px;padding:13px;border:1px solid var(--line,#e7ece9);border-radius:15px;background:#fbfcfb;color:var(--ink,#171b1a);overflow:hidden;text-align:left;cursor:pointer;transition:transform .14s ease,border-color .14s ease,background .14s ease}.item:active{transform:scale(.985)}.item:disabled{cursor:default;opacity:.72}.copy{position:relative;z-index:2;width:61%;min-height:106px;display:flex;flex-direction:column;align-items:flex-start}.metric{font-size:9px;font-weight:850;line-height:1.2;color:var(--ink,#171b1a)}.player{min-width:0;margin-top:10px}.player strong{display:block;max-width:100%;font-size:11px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.player small{display:block;max-width:100%;margin-top:2px;color:var(--muted,#747b78);font-size:7px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.value{margin-top:auto;font-size:25px;line-height:.95;letter-spacing:-.04em;color:var(--ink,#171b1a)}.caption{margin-top:5px;color:var(--muted,#747b78);font-size:7px}.portrait{position:absolute;z-index:1;right:-7px;bottom:0;width:49%;height:122px;object-fit:contain;object-position:right bottom;pointer-events:none;user-select:none}
 .action{width:100%;margin-top:10px;padding:11px;border:0;border-radius:12px;background:var(--accent-soft,#eaf6f1);color:var(--accent-strong,#075b40);font-size:10px;font-weight:850;cursor:pointer}
+.value{color:var(--accent-strong,#075b40)}
 
 :global(main[data-theme]):has(.card) :global([role="status"]){order:99}
 :global(main[data-theme]):has(.card) :global(:is(div,header,section):has(> small:first-child):has(h1,h2) > small:first-child){text-transform:uppercase}
 :global(main[data-theme]):has(.card) > :global(div > header:first-child > div:last-child > span:first-child){display:none}
-:global(main[data-theme]):has(.card) > :global(div > header:first-child > button:first-child > div > small){letter-spacing:.035em;white-space:nowrap}
 
 @media (hover:hover){.item:not(:disabled):hover{border-color:#dce2df;background:#f8f9f8}}
-@media (max-width:380px){.card{padding:16px}.item{min-height:128px;padding:11px}.copy{width:63%;min-height:104px}.value{font-size:23px}.portrait{right:-8px;width:48%;height:116px}.player strong{font-size:10px}:global(main[data-theme]):has(.card) > :global(div > header:first-child > button:first-child > div > small){font-size:6.5px;letter-spacing:.015em}}
+@media (max-width:380px){.card{padding:16px}.item{min-height:128px;padding:11px}.copy{width:63%;min-height:104px}.value{font-size:23px}.portrait{right:-8px;width:48%;height:116px}.player strong{font-size:10px}}
 
 /* RESPONSIVE_READABILITY_PHASE1 */
 @media (max-width:767px){
@@ -21,5 +21,4 @@
   .player small{font-size:var(--snooker-type-secondary)}
   .caption{font-size:var(--snooker-type-auxiliary)}
   .action{font-size:var(--snooker-type-body-small)}
-  :global(main[data-theme]):has(.card) > :global(div > header:first-child > button:first-child > div > small){font-size:var(--snooker-type-decorative);letter-spacing:.035em}
 }

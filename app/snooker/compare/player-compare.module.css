@@ -1121,7 +1121,7 @@
 .summaryText,.h2hNote { font-size:10px; }
 .tabs button { min-height:54px; }
 .tabs button span { font-size:11px; }
-.tabs button small { font-size:7px; }
+.tabs button small { font-size:8px; }
 .h2hHero { background:linear-gradient(135deg,var(--accent-dark),var(--accent)); box-shadow:0 14px 30px var(--accent-shadow); }
 .h2hHero > div > strong { font-size:44px; }
 .vsControl { display:flex; align-items:center; justify-content:center; flex-direction:column; gap:7px; }

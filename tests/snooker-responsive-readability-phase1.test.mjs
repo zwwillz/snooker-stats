@@ -57,8 +57,34 @@ test("player directory and match cards share the approved 13 pixel primary name 
 
 test("player comparison preserves emphasized names and readable metric labels", async () => {
   const teaser = await read("app/snooker/compare/player-compare-teaser.module.css");
+  const compare = await read("app/snooker/compare/player-compare.module.css");
 
   assert.match(teaser, /\.players strong \{ font-size: var\(--snooker-type-feature-name\); \}/);
   assert.match(teaser, /\.metrics strong \{ font-size: var\(--snooker-type-stat-value\); \}/);
   assert.match(teaser, /\.metrics span \{ font-size: var\(--snooker-type-body-small\); \}/);
+  assert.match(compare, /\.tabs button small \{ font-size:8px; \}/);
+  assert.match(compare, /\.tabs button small \{\s*display:\s*none;/);
+});
+
+test("phase one visual follow-up keeps compact labels and theme accents consistent", async () => {
+  const ranking = await read("app/snooker/data/data-ranking-content.tsx");
+  const rankingCss = await read("app/snooker/data/data.module.css");
+  const homeCss = await read("app/snooker/snooker-data-center.module.css");
+  const leadersCss = await read("app/snooker/home-season-leaders.module.css");
+  const aboutCss = await read("app/snooker/home-about-card.module.css");
+  const priorityCss = await read("app/snooker/snooker-priority.module.css");
+  const ui = await read("app/snooker/snooker-data-center-v2.tsx");
+
+  assert.match(ranking, /shortEnglishLabels/);
+  assert.doesNotMatch(ranking, /rows\.length \? `\$\{list\.rows\.length\} 人`/);
+  assert.match(rankingCss, /\.rankingTabs button span\{font-size:var\(--snooker-type-body-small\)\}/);
+  assert.match(rankingCss, /\.rankingTabs button small\{display:none\}/);
+  assert.match(homeCss, /\.chinaTopGrid strong\{font-size:var\(--snooker-type-body-small\)\}/);
+  assert.match(leadersCss, /\.value\{color:var\(--accent-strong,#075b40\)\}/);
+  assert.doesNotMatch(leadersCss, /header:first-child > button:first-child > div > small/);
+  assert.match(aboutCss, /\.copy strong\{font-size:var\(--snooker-type-card-title\)\}/);
+  assert.match(aboutCss, /\.copy p\{font-size:var\(--snooker-type-compact-data\)\}/);
+  assert.match(aboutCss, /\.action\{font-size:var\(--snooker-type-list-title\)\}/);
+  assert.match(priorityCss, /\.seasonRail button\{height:44px;font-size:var\(--snooker-type-compact-data\)\}/);
+  assert.match(ui, /aria-label=\{`\$\{season\}赛季`\}[\s\S]*?>\{season\}<\/button>/);
 });

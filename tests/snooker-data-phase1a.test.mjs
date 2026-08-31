@@ -53,7 +53,7 @@ test("ranking detail uses a compact two-level navigation and direct list", () =>
   assert.match(data, /className=\{styles\.detailNavStack\}/);
   assert.match(data, /资格竞争/);
   assert.match(data, /历史排名/);
-  assert.match(data, /<RankingListTabs hub=\{hub\} selectedKey=\{selectedKey\} onSelectKey=\{onSelectKey\} compact \/>/);
+  assert.match(data, /<RankingListTabs selectedKey=\{selectedKey\} onSelectKey=\{onSelectKey\} compact \/>/);
   assert.match(data, /className=\{styles\.rankingFooterMeta\}/);
   assert.match(data, /来源：/);
   assert.match(data, /更新：/);

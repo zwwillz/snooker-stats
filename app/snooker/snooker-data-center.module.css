@@ -39,6 +39,8 @@
 /* USER_FACING_UPDATE_ONLY_V3 */
 .dataStatus{grid-template-columns:8px minmax(0,1fr)}.dataStatus>span{color:#8d9691;font-size:7px;font-weight:700}
 
+.chinaTopGrid strong{font-size:var(--snooker-type-secondary)}
+
 /* RESPONSIVE_READABILITY_PHASE1 */
 @media (max-width:767px){
   .brand strong{font-size:var(--snooker-type-feature-name)}
@@ -61,7 +63,7 @@
   .rankingList>button>span small{font-size:var(--snooker-type-secondary)}
   .rankingList>button>em{font-size:var(--snooker-type-compact-data)}
   .chinaTopGrid span,.chinaTopGrid small{font-size:var(--snooker-type-auxiliary)}
-  .chinaTopGrid strong{font-size:var(--snooker-type-compact-data)}
+  .chinaTopGrid strong{font-size:var(--snooker-type-body-small)}
   .pageIntro h1{font-size:var(--snooker-type-page-title)}
   .pageIntro p{font-size:var(--snooker-type-body-small)}
   .currentEventBanner>div>small{font-size:var(--snooker-type-auxiliary)}

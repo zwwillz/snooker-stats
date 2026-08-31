@@ -29,6 +29,13 @@ const shortLabels: Record<SnookerCurrentRankingKey, string> = {
   provisional_eos: "赛季末预测",
 };
 
+const shortEnglishLabels: Record<SnookerCurrentRankingKey, string> = {
+  world_official: "WORLD",
+  one_year: "ONE-YEAR",
+  provisional_seeding: "PROVISIONAL",
+  provisional_eos: "SEASON-END",
+};
+
 const sectionTabs: Array<{ id: SnookerRankingSection; label: string }> = [
   { id: "current", label: "当前排名" },
   { id: "qualification", label: "资格竞争" },
@@ -106,19 +113,16 @@ function listFor(hub: SnookerRankingHub, key: SnookerCurrentRankingKey) {
 }
 
 function RankingListTabs({
-  hub,
   selectedKey,
   onSelectKey,
   compact = false,
 }: {
-  hub: SnookerRankingHub;
   selectedKey: SnookerCurrentRankingKey;
   onSelectKey: (key: SnookerCurrentRankingKey) => void;
   compact?: boolean;
 }) {
   return <div className={`${styles.rankingTabs} ${compact ? styles.rankingTabsCompact : ""}`} role="tablist" aria-label="排名类型">
     {currentKeyOrder.map((key) => {
-      const list = listFor(hub, key);
       return <button
         type="button"
         role="tab"
@@ -128,7 +132,7 @@ function RankingListTabs({
         key={key}
       >
         <span>{shortLabels[key]}</span>
-        {!compact ? <small>{list?.rows.length ? `${list.rows.length} 人` : "待同步"}</small> : null}
+        {!compact ? <small>{shortEnglishLabels[key]}</small> : null}
       </button>;
     })}
   </div>;
@@ -329,7 +333,7 @@ export function DataHubContent({
           <div className={styles.titleWithInfo}><h2>排名中心</h2><button type="button" className={styles.infoButton} onClick={() => setInfoOpen(true)} aria-label="查看四种排名说明">i</button></div>
         </div>
       </div>
-      <RankingListTabs hub={hub} selectedKey={selectedKey} onSelectKey={onSelectKey} />
+      <RankingListTabs selectedKey={selectedKey} onSelectKey={onSelectKey} />
 
       {selected ? <>
         <div className={styles.topRankingList}>
@@ -397,7 +401,7 @@ export function RankingDetailContent({
       <div className={styles.sectionTabs} role="tablist" aria-label="排名栏目">
         {sectionTabs.map((item) => <button type="button" role="tab" aria-selected={section === item.id} className={section === item.id ? styles.sectionActive : ""} onClick={() => onSelectSection(item.id)} key={item.id}>{item.label}</button>)}
       </div>
-      {section === "current" ? <RankingListTabs hub={hub} selectedKey={selectedKey} onSelectKey={onSelectKey} compact /> : null}
+      {section === "current" ? <RankingListTabs selectedKey={selectedKey} onSelectKey={onSelectKey} compact /> : null}
     </div>
 
     {section === "current" ? selected ? <section className={`${styles.card} ${styles.rankingTableCard}`}>
