@@ -39,6 +39,25 @@ export type SnookerRankingHub = {
   online: boolean;
 };
 
+export function reconcileRankingHubPlayerSlugs(
+  hub: SnookerRankingHub,
+  players: Array<{ id: string; slug: string }>,
+): SnookerRankingHub {
+  const slugByUuid = new Map(players.map((player) => [player.id, player.slug]));
+  let changed = false;
+  const lists = hub.lists.map((list) => ({
+    ...list,
+    rows: list.rows.map((row) => {
+      if (row.playerSlug) return row;
+      const playerSlug = slugByUuid.get(row.playerUuid) ?? null;
+      if (!playerSlug) return row;
+      changed = true;
+      return { ...row, playerSlug };
+    }),
+  }));
+  return changed ? { ...hub, lists } : hub;
+}
+
 type RankingRow = {
   list_key: string;
   player_id: string;
@@ -105,7 +124,7 @@ export async function loadSnookerRankingHub(): Promise<SnookerRankingHub> {
         list_key: `in.${keys}`,
         order: "list_key.asc,rank.asc",
       }), 300),
-      rest<PlayerKeyRow[]>("snooker_players", new URLSearchParams({ select: "id,slug" }), 1800),
+      rest<PlayerKeyRow[]>("snooker_players", new URLSearchParams({ select: "id,slug" }), 300),
       rest<RankingListMetaRow[]>("snooker_ranking_lists", new URLSearchParams({
         select: "list_key,title_zh,title_en,description_zh,source_name,source_url,sync_status,latest_captured_at",
         list_key: `in.${keys}`,
