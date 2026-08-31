@@ -31,8 +31,11 @@ test("technical hub stays a focused read model and does not add match-detail rea
 
 test("technical data is loaded only when the Data Hub is mounted and is cached", () => {
   assert.match(data, /fetch\("\/api\/snooker\/v1\/technical"/);
-  assert.match(data, /let technicalCache: SnookerTechnicalHub \| null = null/);
-  assert.match(data, /let technicalInflight: Promise<SnookerTechnicalHub \| null> \| null = null/);
+  assert.match(data, /let technicalCache: DeferredHubPayload<SnookerTechnicalHub> \| null = null/);
+  assert.match(data, /let technicalInflight: Promise<DeferredHubPayload<SnookerTechnicalHub> \| null> \| null = null/);
+  assert.match(api, /getSnookerPlayersByIds/);
+  assert.match(api, /hub\.lists\.flatMap/);
+  assert.match(data, /setDeferredPlayers/);
   assert.match(api, /s-maxage=300/);
   assert.match(api, /stale-while-revalidate=1800/);
   assert.match(root, /import type \{ SnookerTechnicalMetricKey \} from "@\/lib\/snooker\/technical-hub"/);

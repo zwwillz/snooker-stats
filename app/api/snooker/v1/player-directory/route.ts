@@ -1,13 +1,36 @@
 import { NextResponse } from "next/server";
-import { getSnookerPlayerDirectory } from "@/lib/snooker/player-data";
+import {
+  getSnookerPlayerDirectoryPage,
+  searchSnookerPlayerDirectory,
+  type SnookerPlayerDirectoryScope,
+} from "@/lib/snooker/player-data";
 
 export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const players = await getSnookerPlayerDirectory();
+    const url = new URL(request.url);
+    const mode = url.searchParams.get("mode");
+    if (mode === "search") {
+      const players = await searchSnookerPlayerDirectory({
+        query: url.searchParams.get("q"),
+        chinaOnly: url.searchParams.get("filter") === "china",
+      });
+      return NextResponse.json(
+        { ok: true, players },
+        { headers: { "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=1800" } },
+      );
+    }
+
+    const scope: SnookerPlayerDirectoryScope = url.searchParams.get("scope") === "archive" ? "archive" : "tour";
+    const page = await getSnookerPlayerDirectoryPage({
+      scope,
+      cursor: url.searchParams.get("cursor"),
+      limit: Number(url.searchParams.get("limit") ?? 32),
+    });
     return NextResponse.json(
-      { ok: true, players },
+      { ok: true, scope, ...page },
       { headers: { "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=1800" } },
     );
   } catch (error) {
