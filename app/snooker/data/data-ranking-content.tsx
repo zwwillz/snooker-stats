@@ -104,6 +104,18 @@ function playerBySlugMap(players: SnookerPlayerListItem[]) {
   return new Map(players.map((player) => [player.slug, player]));
 }
 
+function playerByUuidMap(players: SnookerPlayerListItem[]) {
+  return new Map(players.map((player) => [player.id, player]));
+}
+
+function rankingPlayer(
+  row: { playerUuid: string; playerSlug: string | null },
+  playerByUuid: Map<string, SnookerPlayerListItem>,
+  playerBySlug: Map<string, SnookerPlayerListItem>,
+) {
+  return playerByUuid.get(row.playerUuid) ?? (row.playerSlug ? playerBySlug.get(row.playerSlug) : undefined);
+}
+
 function RankingAvatar({ player }: { player?: SnookerPlayerListItem }) {
   return <span className={styles.avatar}>{player?.avatarUrl ? <img src={player.avatarUrl} alt="" loading="lazy" decoding="async" /> : <span>{initials(player?.nameEn ?? "Player")}</span>}</span>;
 }
@@ -195,6 +207,7 @@ export function DataHubContent({
   const technicalSectionRef = useRef<HTMLDivElement | null>(null);
   const honoursSectionRef = useRef<HTMLDivElement | null>(null);
   const playerBySlug = useMemo(() => playerBySlugMap(players), [players]);
+  const playerByUuid = useMemo(() => playerByUuidMap(players), [players]);
   const selected = listFor(hub, selectedKey);
   const top = selected?.rows.slice(0, 3) ?? [];
 
@@ -377,8 +390,9 @@ export function DataHubContent({
       {selected ? <>
         <div className={styles.topRankingList}>
           {top.map((row) => {
-            const player = row.playerSlug ? playerBySlug.get(row.playerSlug) : undefined;
-            return <button type="button" onClick={() => row.playerSlug && onOpenPlayer(row.playerSlug)} disabled={!row.playerSlug} key={`${selected.key}-${row.rank}`}>
+            const player = rankingPlayer(row, playerByUuid, playerBySlug);
+            const playerSlug = player?.slug ?? row.playerSlug;
+            return <button type="button" onClick={() => playerSlug && onOpenPlayer(playerSlug)} disabled={!playerSlug} key={`${selected.key}-${row.rank}`}>
               <strong className={row.rank <= 3 ? styles.medalRank : ""}>{row.rank}</strong>
               <RankingAvatar player={player} />
               <span><b>{player?.nameZh ?? row.sourcePlayerName}</b><small>{player?.nameEn ?? row.sourcePlayerName}</small></span>
@@ -431,6 +445,7 @@ export function RankingDetailContent({
   onOpenPlayer: (slug: string) => void;
 }) {
   const playerBySlug = useMemo(() => playerBySlugMap(players), [players]);
+  const playerByUuid = useMemo(() => playerByUuidMap(players), [players]);
   const selected = listFor(hub, selectedKey);
   const rows = selected?.rows ?? [];
 
@@ -446,8 +461,9 @@ export function RankingDetailContent({
       <div className={styles.rankingTableHeader}><span>排名</span><span>球员</span><span>排名金额</span></div>
       <div className={styles.fullRankingList}>
         {rows.map((row) => {
-          const player = row.playerSlug ? playerBySlug.get(row.playerSlug) : undefined;
-          return <button type="button" onClick={() => row.playerSlug && onOpenPlayer(row.playerSlug)} disabled={!row.playerSlug} key={`${selected.key}-${row.rank}-${row.playerUuid}`}>
+          const player = rankingPlayer(row, playerByUuid, playerBySlug);
+          const playerSlug = player?.slug ?? row.playerSlug;
+          return <button type="button" onClick={() => playerSlug && onOpenPlayer(playerSlug)} disabled={!playerSlug} key={`${selected.key}-${row.rank}-${row.playerUuid}`}>
             <strong>{row.rank}</strong>
             <RankingAvatar player={player} />
             <span><b>{player?.nameZh ?? row.sourcePlayerName}</b><small>{player?.nameEn ?? row.sourcePlayerName}{player?.nationalityZh ? ` · ${player.nationalityZh}` : ""}</small></span>
