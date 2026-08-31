@@ -30,6 +30,8 @@
 .compareLeft{text-align:left}.compareRight{text-align:right}
 .dataHint{margin:9px 0 0;color:#989e9b;font-size:7px;line-height:1.65}
 .championCard{margin:14px;padding:14px 16px;border:1px solid color-mix(in srgb,var(--accent) 14%,var(--line));border-radius:18px;background:linear-gradient(135deg,var(--accent-faint),#fff);display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:11px;align-items:center;box-shadow:0 8px 24px rgba(35,45,41,.03)}
+.championCardLoading{min-height:78px;grid-template-columns:auto minmax(0,1fr);box-shadow:none}
+.championLoadingMark{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-size:15px;font-weight:900}
 .championAvatar{position:relative}.championAvatar>span:last-child{position:absolute;right:-4px;bottom:-2px;width:19px;height:19px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;font-size:7px;font-weight:900;box-shadow:0 0 0 2px #fff}
 .championText{min-width:0}.championText small{display:block;color:var(--accent);font-size:7px;font-weight:850;letter-spacing:.11em}.championText strong{display:block;margin-top:4px;font-size:16px;line-height:1.2}.championText span{display:block;margin-top:3px;color:var(--muted);font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .championScore{text-align:right}.championScore small{display:block;color:var(--muted);font-size:6px;font-weight:800;letter-spacing:.08em}.championScore b{display:block;margin-top:3px;font-size:15px;font-variant-numeric:tabular-nums}

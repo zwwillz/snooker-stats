@@ -12,12 +12,13 @@ test("historical season catalog is lightweight and independent from current-seas
     read("app/snooker/snooker-data-center-v2.tsx"),
   ]);
   assert.match(calendar, /snooker_events\?select=id,slug,season/);
-  assert.doesNotMatch(calendar, /season=eq\./);
+  assert.match(calendar, /seasonFilter = season \? `&season=eq\.\$\{encodeURIComponent\(season\)\}`/);
   assert.doesNotMatch(calendar, /snooker_rounds|snooker_matches|snooker_frames|snooker_match_statistics/);
-  assert.match(route, /loadSnookerEventCalendar/);
+  assert.match(route, /loadSnookerEventCalendar\(season\)/);
   assert.match(ui, /const \[calendarEvents, setCalendarEvents\]/);
   assert.match(ui, /const effectiveCalendarEvents = useMemo/);
-  assert.match(ui, /const seasonOptions = useMemo\(\(\) => \[\.\.\.new Set\(effectiveCalendarEvents\.map/);
+  assert.match(ui, /const seasonOptions = useMemo\(\(\) => seasonOptionsFromCurrent\(initialCurrentSeason\)/);
+  assert.match(ui, /calendar\?season=\$\{encodeURIComponent\(season\)\}/);
   assert.match(ui, /const seasonCalendar = useMemo\(\(\) => \[\.\.\.snapshot\.calendar\]\.filter\(\(item\) => item\.season === initialCurrentSeason\)/);
 });
 

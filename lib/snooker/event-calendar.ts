@@ -46,10 +46,11 @@ function statusLabel(status: "upcoming" | "live" | "completed") {
   return "即将开始";
 }
 
-export async function loadSnookerEventCalendar(): Promise<SnookerCalendarEvent[]> {
+export async function loadSnookerEventCalendar(season?: string): Promise<SnookerCalendarEvent[]> {
   if (process.env.SNOOKER_BUILD_OFFLINE === "1") return [];
+  const seasonFilter = season ? `&season=eq.${encodeURIComponent(season)}` : "";
   const response = await fetch(
-    `${REST_URL}/snooker_events?select=id,slug,season,name_en,name_zh,type_zh,event_type,event_stage,ranking_status,start_date,end_date,country_zh,city_zh,venue_zh,data_ready&order=start_date.asc`,
+    `${REST_URL}/snooker_events?select=id,slug,season,name_en,name_zh,type_zh,event_type,event_stage,ranking_status,start_date,end_date,country_zh,city_zh,venue_zh,data_ready${seasonFilter}&order=start_date.asc`,
     {
       headers: { apikey: SUPABASE_KEY, Accept: "application/json" },
       next: { revalidate: SNOOKER_CACHE_SECONDS.history },

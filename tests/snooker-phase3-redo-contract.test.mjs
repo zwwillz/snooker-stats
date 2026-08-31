@@ -63,10 +63,11 @@ test("one React controller owns root URL/history after hydration", () => {
   assert.doesNotMatch(ui, /window\.history\.replaceState\(window\.history\.state/);
 });
 
-test("root tabs stay usable before hydration and lazy datasets start after target view activation", () => {
+test("root tabs stay usable before hydration and lazy datasets warm on intent or activation", () => {
   assert.match(page, /const useHomeBootstrap = !requestedPlayer && !query\.section && !query\.list && !query\.group/);
   assert.match(ui, /<nav className=\{`\$\{styles\.bottomNav\} \$\{polish\.fastNav\}`\}>\{navItems\.map\(\(item\) => <a key=\{item\.id\} href=/);
-  assert.match(ui, /if \(!initialHomeBootstrap\) return;[\s\S]*?if \(activeView === "players"\) void ensurePlayerDirectory\(\);[\s\S]*?if \(activeView === "data"\) void ensureRankingHub\(\)/);
+  assert.match(ui, /if \(activeView === "players"\) warmPlayerDirectoryView\(\);[\s\S]*?if \(activeView === "data"\) warmDataView\(\)/);
+  assert.match(ui, /onPointerEnter=\{\(\) => warmRootView\(item\.id\)\}/);
 });
 
 test("live polling stays lightweight and selected match polling never falls back to full dashboard", () => {
@@ -132,9 +133,11 @@ test("current striker and frame winners remain declarative", () => {
 });
 
 test("deep player and data code is dynamically loaded", () => {
-  assert.match(ui, /dynamic\(\(\) => import\("\.\/players\/player-directory"\)/);
+  assert.match(ui, /loadPlayerDirectoryModule = \(\) => import\("\.\/players\/player-directory"\)/);
+  assert.match(ui, /dynamic\(\(\) => loadPlayerDirectoryModule\(\)/);
   assert.match(ui, /dynamic\(\(\) => import\("\.\/players\/player-detail-inline"\)/);
-  assert.match(ui, /dynamic\(\(\) => import\("\.\/data\/data-ranking-content"\)/);
+  assert.match(ui, /loadDataContentModule = \(\) => import\("\.\/data\/data-ranking-content"\)/);
+  assert.match(ui, /dynamic\(\(\) => loadDataContentModule\(\)/);
   assert.match(playerDirectoryRoute, /getSnookerPlayerDirectory\(\)/);
   assert.doesNotMatch(playerDirectoryRoute, /loadSnookerDatabaseViewV2/);
   assert.match(rankingHubRoute, /loadSnookerRankingHub\(\)/);
