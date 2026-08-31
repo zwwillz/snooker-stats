@@ -105,11 +105,11 @@ type SnookerHistoryState = {
   snookerTechnicalDetail?: string;
 };
 
-const navItems: Array<{ id: NavId; label: string; icon: string }> = [
-  { id: "home", label: "首页", icon: "⌂" },
-  { id: "matches", label: "赛事", icon: "◫" },
-  { id: "players", label: "球员", icon: "◎" },
-  { id: "data", label: "数据", icon: "▥" },
+const navItems: Array<{ id: NavId; label: string; labelEn: string; icon: string }> = [
+  { id: "home", label: "首页", labelEn: "HOME", icon: "⌂" },
+  { id: "matches", label: "赛事", labelEn: "TOURNAMENTS", icon: "◫" },
+  { id: "players", label: "球员", labelEn: "PLAYERS", icon: "◎" },
+  { id: "data", label: "数据", labelEn: "DATA", icon: "▥" },
 ];
 
 const rootDetailParams = ["player", "section", "list", "group", "metric", "honour"] as const;
@@ -1413,8 +1413,12 @@ export default function SnookerDataCenterV2({
   const headlineSelections = selectHomepageHeadlineMatches(databaseEvents, players);
 
   return <main className={styles.appRoot} data-theme={theme}><div className={styles.shell}>
-    <header className={styles.header}><button className={styles.brand} onClick={() => changeView("home")}><span>S</span><div><strong>147数据局</strong><small>中文斯诺克数据平台 · CN SNOOKER STATS</small></div></button><div className={styles.headerRight}><div className={styles.themeSwitch}><button className={theme === "green" ? styles.themeActive : ""} onClick={() => setTheme("green")}>绿</button><button className={theme === "red" ? styles.themeActive : ""} onClick={() => setTheme("red")}>红</button></div></div></header>
-    <div className={styles.content}>
+    <header className={styles.header}>
+      <button className={styles.brand} onClick={() => changeView("home")}><span>S</span><div><strong>147数据局</strong><small>中文斯诺克数据平台 · CN SNOOKER STATS</small></div></button>
+      <nav className={styles.desktopNav} aria-label="主要导航">{navItems.map((item) => <a key={item.id} href={item.id === "home" ? "/" : `/?view=${item.id}`} aria-current={item.id === activeView ? "page" : undefined} className={item.id === activeView ? styles.desktopNavActive : ""} onClick={(event) => { event.preventDefault(); changeView(item.id); }}><span>{item.label}</span><small>{item.labelEn}</small></a>)}</nav>
+      <div className={styles.headerRight}><div className={styles.themeSwitch} role="group" aria-label="主题颜色"><button className={theme === "green" ? styles.themeActive : ""} onClick={() => setTheme("green")} aria-pressed={theme === "green"}>绿</button><button className={theme === "red" ? styles.themeActive : ""} onClick={() => setTheme("red")} aria-pressed={theme === "red"}>红</button></div></div>
+    </header>
+    <div className={`${styles.content} ${activeView === "home" ? styles.contentHome : activeView === "matches" ? styles.contentMatches : activeView === "players" ? styles.contentPlayers : styles.contentData}`}>
       {activeView === "home" ? <>
         {featuredEventCard ? <section className={styles.hero}><div className={styles.heroTop}><span className={eventStatusClass(featuredEventCard.status)}><StatusPill status={featuredEventCard.status} label={activeEventCard ? "当前赛事" : graceEventCard ? "刚刚结束" : "下一站"} /></span><span>{featuredEventCard.typeZh}</span></div><small>{activeEventCard ? "CURRENT TOURNAMENT" : graceEventCard ? "JUST FINISHED" : "NEXT TOURNAMENT"}</small><h1>{featuredEventCard.nameZh}</h1><p>{formatDateRange(featuredEventCard.startDate, featuredEventCard.endDate)} · {featuredEventCard.countryZh} {featuredEventCard.cityZh}</p><div className={styles.heroActions}><button onClick={() => openEvent(featuredEventCard.slug, featuredDetail?.rounds.length ? "schedule" : "overview")}>查看赛事</button><button className={styles.secondaryButton} onClick={() => changeView("matches")}>赛事列表</button></div></section> : null}
 

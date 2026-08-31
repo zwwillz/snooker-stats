@@ -116,11 +116,11 @@ export function TechnicalDetailContent({
         className={selected?.key === list.key ? styles.technicalMetricActive : ""}
         onClick={() => onSelectKey(list.key)}
         key={list.key}
-      >{list.shortLabelZh}</button>)}
+      ><span>{list.shortLabelZh}</span><small>{list.labelEn}</small></button>)}
     </div>
 
     {selected ? <section className={`${styles.card} ${styles.technicalTableCard}`}>
-      <div className={styles.technicalTableHeader}><span>排名</span><span>球员</span><span>{selected.shortLabelZh}</span></div>
+      <div className={styles.technicalTableHeader}><span>排名</span><span>球员</span><span className={styles.technicalMatchesHeader}>场次</span><span>{selected.shortLabelZh}</span><span className={styles.technicalArrowHeader} aria-hidden="true" /></div>
       <div className={styles.technicalRankingList}>
         {selected.rows.map((row) => {
           const player = bySlug.get(row.playerSlug);
@@ -128,6 +128,7 @@ export function TechnicalDetailContent({
             <strong>{row.rank}</strong>
             <TechnicalAvatar player={player} compact />
             <span><b>{player?.nameZh ?? row.playerSlug}</b><small>{player?.nameEn ?? row.playerSlug}{row.matchesPlayed ? ` · ${row.matchesPlayed}场` : ""}</small></span>
+            <span className={styles.technicalMatches}>{row.matchesPlayed ?? "—"}</span>
             <em>{formatMetricValue(selected, row.value)}</em>
             <i>›</i>
           </button>;
