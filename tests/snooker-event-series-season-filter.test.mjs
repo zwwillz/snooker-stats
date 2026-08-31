@@ -31,21 +31,24 @@ test("database may retain dormant series metadata without changing WST event row
 });
 
 test("frontend follows raw WST events while historical seasons use a lightweight catalog", async () => {
-  const [ui, css, page, dashboard, calendar] = await Promise.all([
+  const [ui, css, page, dashboard, calendar, calendarRoute] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-priority.module.css"),
     read("app/page.tsx"),
     read("app/api/snooker/v1/dashboard/route.ts"),
     read("lib/snooker/event-calendar.ts"),
+    read("app/api/snooker/v1/calendar/route.ts"),
   ]);
   assert.match(ui, /function SeasonSelector/);
   assert.match(ui, /eventListMode === "calendar" \? <SeasonSelector/);
   assert.match(ui, /function EventCard/);
   assert.match(ui, /const effectiveCalendarEvents = useMemo/);
-  assert.match(ui, /const seasonOptions = useMemo\(\(\) => \[\.\.\.new Set\(effectiveCalendarEvents\.map/);
+  assert.match(ui, /function seasonOptionsFromCurrent/);
+  assert.match(ui, /const seasonOptions = useMemo\(\(\) => seasonOptionsFromCurrent\(initialCurrentSeason\)/);
   assert.match(ui, /const selectedSeasonEvents = useMemo\(\(\) => effectiveCalendarEvents/);
   assert.match(ui, /const recentEvents = seasonCalendar/);
-  assert.match(ui, /\/api\/snooker\/v1\/calendar/);
+  assert.match(ui, /\/api\/snooker\/v1\/calendar\?season=\$\{encodeURIComponent\(season\)\}/);
+  assert.match(ui, /loadedCalendarSeasons.*initialCurrentSeason/);
   assert.doesNotMatch(ui, /SnookerEventSeries/);
   assert.doesNotMatch(ui, /seriesSlug/);
   assert.doesNotMatch(ui, /function SeriesCard/);
@@ -57,6 +60,9 @@ test("frontend follows raw WST events while historical seasons use a lightweight
   assert.doesNotMatch(page, /initialEventSeries/);
   assert.doesNotMatch(dashboard, /eventSeries: database\.eventSeries/);
   assert.match(calendar, /snooker_events\?select=id,slug,season/);
+  assert.match(calendar, /season=eq\.\$\{encodeURIComponent\(season\)\}/);
+  assert.match(calendarRoute, /loadSnookerEventCalendar\(season\)/);
+  assert.match(calendarRoute, /INVALID_SEASON/);
   assert.doesNotMatch(calendar, /snooker_event_series/);
   assert.doesNotMatch(calendar, /snooker_matches|snooker_rounds|snooker_frames/);
 });

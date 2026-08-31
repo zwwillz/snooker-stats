@@ -35,20 +35,25 @@ test("about page follows the main site theme and fast homepage return pattern", 
   assert.match(aboutCss, /margin-top:14px/);
 });
 
-test("about statistics use warehouse counts with the requested display factors", () => {
+test("about statistics use a dated static snapshot with the requested display factors", () => {
   assert.match(aboutStats, /players: 1\.2/);
   assert.match(aboutStats, /events: 1\.8/);
   assert.match(aboutStats, /matches: 1\.8/);
   assert.match(aboutStats, /frames: 1\.8/);
   assert.match(aboutStats, /h2hPairs: 1\.5/);
-  assert.match(aboutStats, /count=exact/);
-  assert.match(aboutStats, /revalidate: ABOUT_STATS_REVALIDATE_SECONDS/);
+  assert.match(aboutStats, /PUBLIC_ABOUT_STATS_AS_OF = "2026年8月31日"/);
+  assert.match(aboutStats, /source: "snapshot"/);
+  assert.doesNotMatch(aboutStats, /fetch\(|count=exact|SUPABASE/);
+  assert.match(aboutPage, /dynamic = "force-static"/);
+  assert.match(aboutPage, /数据统计截至\{PUBLIC_ABOUT_STATS_AS_OF\}/);
 });
 
 test("homepage exposes only the lightweight theme-aware about entry on the home view", () => {
   assert.match(homeUi, /import HomeAboutCard/);
   assert.match(homeUi, /activeView === "home" \? <>[\s\S]*?<HomeAboutCard \/>[\s\S]*?<\/> : null/);
   assert.match(homeCard, /href="\/about"/);
+  assert.doesNotMatch(homeCard, /prefetch=\{false\}/);
+  assert.match(homeCard, /router\.prefetch\("\/about"\)/);
   assert.doesNotMatch(homeCard, /findHomepagePortalTarget|createPortal|MutationObserver/);
   assert.match(homeCard, /<small>ABOUT<\/small>/);
   assert.match(homeCard, /snooker-about-return/);

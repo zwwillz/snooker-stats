@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { PlayerCompareSnapshot } from "@/lib/snooker/player-compare";
 import type {
@@ -192,19 +192,54 @@ export function DataHubContent({
   const [technicalKey, setTechnicalKey] = useState<SnookerTechnicalMetricKey | null>(() => initialTechnicalMetric);
   const [honoursHub, setHonoursHub] = useState<SnookerHonoursHub | null>(() => honoursCache);
   const [honoursKey, setHonoursKey] = useState<SnookerHonoursMetricKey | null>(null);
+  const technicalSectionRef = useRef<HTMLDivElement | null>(null);
+  const honoursSectionRef = useRef<HTMLDivElement | null>(null);
   const playerBySlug = useMemo(() => playerBySlugMap(players), [players]);
   const selected = listFor(hub, selectedKey);
   const top = selected?.rows.slice(0, 3) ?? [];
 
   useEffect(() => {
+    if (!technicalKey) return;
     let cancelled = false;
     void loadTechnicalHubClient().then((nextHub) => {
       if (!cancelled && nextHub) setTechnicalHub(nextHub);
     });
+    return () => { cancelled = true; };
+  }, [technicalKey]);
+
+  useEffect(() => {
+    if (!honoursKey) return;
+    let cancelled = false;
     void loadHonoursHubClient().then((nextHub) => {
       if (!cancelled && nextHub) setHonoursHub(nextHub);
     });
     return () => { cancelled = true; };
+  }, [honoursKey]);
+
+  useEffect(() => {
+    const technicalNode = technicalSectionRef.current;
+    const honoursNode = honoursSectionRef.current;
+    if (!technicalNode || !honoursNode) return;
+
+    const loadTechnical = () => { void loadTechnicalHubClient().then((nextHub) => { if (nextHub) setTechnicalHub(nextHub); }); };
+    const loadHonours = () => { void loadHonoursHubClient().then((nextHub) => { if (nextHub) setHonoursHub(nextHub); }); };
+    if (typeof IntersectionObserver === "undefined") {
+      loadTechnical();
+      loadHonours();
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        if (entry.target === technicalNode) loadTechnical();
+        if (entry.target === honoursNode) loadHonours();
+        observer.unobserve(entry.target);
+      }
+    }, { rootMargin: "480px 0px", threshold: 0.01 });
+    observer.observe(technicalNode);
+    observer.observe(honoursNode);
+    return () => observer.disconnect();
   }, []);
 
   useLayoutEffect(() => {
@@ -355,15 +390,15 @@ export function DataHubContent({
       </> : <div className={styles.emptyState}>排名数据正在准备中。</div>}
     </section>
 
-    {technicalHub?.online ? <SeasonLeadersSection hub={technicalHub} players={players} onOpenTechnical={openTechnical} /> : <section className={styles.card}>
+    <div ref={technicalSectionRef}>{technicalHub?.online ? <SeasonLeadersSection hub={technicalHub} players={players} onOpenTechnical={openTechnical} /> : <section className={styles.card}>
       <div className={styles.sectionHeader}><div><small>SEASON LEADERS</small><h2>本赛季领跑者</h2></div></div>
       <div className={styles.technicalLoading}>正在加载赛季技术数据…</div>
-    </section>}
+    </section>}</div>
 
-    {honoursHub?.online ? <HonoursLeadersSection hub={honoursHub} players={players} onOpenHonours={openHonours} /> : <section className={styles.card}>
+    <div ref={honoursSectionRef}>{honoursHub?.online ? <HonoursLeadersSection hub={honoursHub} players={players} onOpenHonours={openHonours} /> : <section className={styles.card}>
       <div className={styles.sectionHeader}><div><small>CAREER HONOURS</small><h2>荣誉榜</h2></div></div>
       <div className={styles.technicalLoading}>正在加载职业生涯荣誉数据…</div>
-    </section>}
+    </section>}</div>
 
     <section className={styles.card}>
       <div className={styles.sectionHeader}><div><small>MORE DATA</small><h2>更多数据</h2></div></div>

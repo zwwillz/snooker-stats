@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { loadPublicAboutStats } from "@/lib/snooker/public-site-stats";
+import { loadPublicAboutStats, PUBLIC_ABOUT_STATS_AS_OF } from "@/lib/snooker/public-site-stats";
 import AboutChrome from "./about-chrome";
 import styles from "./about.module.css";
 
-export const revalidate = 21600;
+export const dynamic = "force-static";
 
 export const metadata: Metadata = {
   title: "关于147数据局",
@@ -13,8 +13,8 @@ export const metadata: Metadata = {
 const CONTACT_EMAIL = "zw.will@outlook.com";
 const nf = new Intl.NumberFormat("zh-CN");
 
-export default async function AboutPage() {
-  const stats = await loadPublicAboutStats();
+export default function AboutPage() {
+  const stats = loadPublicAboutStats();
   const scale = [
     { value: stats.players, label: "收录球员", note: "职业与历史球员" },
     { value: stats.events, label: "收录赛事", note: "巡回赛与历史赛事" },
@@ -47,7 +47,7 @@ export default async function AboutPage() {
         <section className={styles.section} aria-labelledby="about-scale-title">
           <div className={styles.sectionHead}>
             <div><small>DATABASE SCALE</small><h2 id="about-scale-title">一个不断增长的斯诺克数据库</h2></div>
-            <p>数据随新赛事进行和历史资料整理持续更新。</p>
+            <p>数据统计截至{PUBLIC_ABOUT_STATS_AS_OF}，后续随新赛事和历史资料整理定期更新。</p>
           </div>
           <div className={styles.statsGrid}>
             {scale.map((item) => (

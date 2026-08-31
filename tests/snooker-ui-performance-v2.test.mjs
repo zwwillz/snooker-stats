@@ -149,11 +149,11 @@ test("player directory and player detail share one root shell and focused data p
     read("app/snooker/players/player.module.css"),
   ]);
 
-  assert.match(ui, /activeView === "players" \? directoryLoaded/);
+  assert.match(ui, /activeView === "players" \? directoryLoaded && directoryModuleLoaded/);
   assert.match(ui, /<PlayerDirectoryContent players=\{directoryPlayers\}/);
   assert.match(ui, /if \(detail\?\.type === "player"\)/);
   assert.match(ui, /<PlayerDetailInline key=\{detail\.slug\}/);
-  assert.match(ui, /dynamic\(\(\) => import\("\.\/players\/player-directory"\)/);
+  assert.match(ui, /dynamic\(\(\) => loadPlayerDirectoryModule\(\)/);
   assert.match(ui, /dynamic\(\(\) => import\("\.\/players\/player-detail-inline"\)/);
   assert.match(directory, /type="button"[\s\S]*className=\{styles\.playerRow\}/);
   assert.doesNotMatch(directory, /next\/link/);
@@ -176,8 +176,8 @@ test("slim homepage keeps all root tabs local and loads complete data only after
   ]);
 
   assert.match(ui, /type MainView = "home" \| "matches" \| "players" \| "data"/);
-  assert.match(ui, /activeView === "players" \? directoryLoaded/);
-  assert.match(ui, /const changeView = \(view: NavId\) => \{[\s\S]*?setActiveView\(view\);[\s\S]*?view === "players"[\s\S]*?ensurePlayerDirectory\(\);[\s\S]*?view === "data"[\s\S]*?ensureRankingHub\(\)/);
+  assert.match(ui, /activeView === "players" \? directoryLoaded && directoryModuleLoaded/);
+  assert.match(ui, /const changeView = \(view: NavId\) => \{[\s\S]*?setActiveView\(view\);[\s\S]*?warmRootView\(view\)/);
   assert.match(ui, /url\.searchParams\.set\("view", "players"\)/);
   assert.match(ui, /url\.searchParams\.set\("player", target\.slug\)/);
   assert.doesNotMatch(ui, /router\.push\("\/snooker\/players"\)/);
