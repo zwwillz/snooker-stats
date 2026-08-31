@@ -58,7 +58,7 @@
   .homeCompareSlot{grid-column:1/7;grid-row:2}.homeRankingSlot{grid-column:7/13;grid-row:2}
   .homeNextSlot{grid-column:1/7;grid-row:3}.homeChinaSlot{grid-column:7/13;grid-row:3}
   .homeLeadersSlot{grid-column:1/-1;grid-row:4}.homeAboutSlot{grid-column:1/-1;grid-row:5}
-  .homeCompareSlot>*,.homeRankingSlot>*,.homeNextSlot>*,.homeChinaSlot>*{height:100%}
+  .homeNextSlot>*,.homeChinaSlot>*{height:100%}
   .pageIntro{padding:25px 4px 13px}.pageIntro small{font-size:10px}.pageIntro h1{margin-top:7px;font-size:42px}.pageIntro p{max-width:720px;font-size:14px;line-height:1.75}
   .card{border-radius:22px;box-shadow:0 14px 38px rgba(35,45,41,.05)}
   .bottomNav{display:none}.buildMark{bottom:12px}
