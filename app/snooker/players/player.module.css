@@ -12,6 +12,10 @@
   background:linear-gradient(180deg,#edf4f1 0,#f7f8f7 180px,#f6f6f5 100%);
   color:var(--ink);
 }
+
+@media (min-width:1024px){
+  .directoryToolbar{top:var(--snooker-header-height,68px)}
+}
 .appRoot[data-theme="red"]{
   --accent:#d7193f;
   --accent-strong:#b21031;

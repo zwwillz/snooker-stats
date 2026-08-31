@@ -14,7 +14,8 @@ test("phase two adds one semantic desktop navigation without replacing mobile na
   assert.match(ui, /aria-current=\{item\.id === activeView \? "page" : undefined\}/);
   assert.match(ui, /className=\{`\$\{styles\.bottomNav\} \$\{polish\.fastNav\}`\}/);
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.shell\{width:100%/);
-  assert.match(css, /\.header\{height:68px;padding:0 max\(20px,calc\(\(100% - 1120px\)\/2\)\)/);
+  assert.match(css, /\.appRoot\{--snooker-header-height:64px/);
+  assert.match(css, /\.header\{height:var\(--snooker-header-height\);padding:0 max\(20px,calc\(\(100% - 1120px\)\/2\)\)/);
   assert.match(css, /\.desktopNav\{display:none\}/);
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.desktopNav\{[\s\S]*display:flex/);
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.bottomNav\{display:none\}/);

@@ -22,3 +22,11 @@
   .caption{font-size:var(--snooker-type-auxiliary)}
   .action{font-size:var(--snooker-type-body-small)}
 }
+
+@media (min-width:1024px){
+  .card{padding:20px}
+  .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .item{min-height:164px;padding:14px}
+  .copy{min-height:136px}
+  .portrait{height:146px}
+}
