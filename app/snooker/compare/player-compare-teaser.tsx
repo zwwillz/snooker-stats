@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { PlayerCompareSnapshot } from "@/lib/snooker/player-compare";
 import styles from "./player-compare-teaser.module.css";
@@ -37,6 +37,7 @@ export default function PlayerCompareTeaser({
   headerClassName: string;
 }) {
   const router = useRouter();
+  const [recoveredData, setRecoveredData] = useState<PlayerCompareSnapshot | null>(null);
   const pair = useMemo(() => {
     if (initialData) {
       const bySlug = new Map(players.map((player) => [player.slug, player]));
@@ -45,11 +46,49 @@ export default function PlayerCompareTeaser({
     }
     return players.filter((player) => player.isCurrentTour).slice(0, 2);
   }, [initialData, players]);
-  if (pair.length < 2) return null;
-
   const [left, right] = pair;
-  const matchesInitialPair = Boolean(initialData && initialData.players[0].slug === left.slug && initialData.players[1].slug === right.slug);
-  const data = matchesInitialPair ? initialData : null;
+  const leftSlug = left?.slug ?? "";
+  const rightSlug = right?.slug ?? "";
+  const matchesInitialPair = Boolean(initialData && initialData.players[0].slug === leftSlug && initialData.players[1].slug === rightSlug);
+  const hasUsableInitialData = Boolean(matchesInitialPair && initialData?.seasonStats[0] && initialData.seasonStats[1]);
+  const matchesRecoveredPair = Boolean(recoveredData && recoveredData.players[0].slug === leftSlug && recoveredData.players[1].slug === rightSlug);
+  const data = hasUsableInitialData ? initialData : matchesRecoveredPair ? recoveredData : null;
+
+  useEffect(() => {
+    if (hasUsableInitialData || !leftSlug || !rightSlug) return;
+    let cancelled = false;
+    let retryTimer = 0;
+    let controller: AbortController | null = null;
+    const url = `/api/snooker/v1/player-compare?player1=${encodeURIComponent(leftSlug)}&player2=${encodeURIComponent(rightSlug)}`;
+
+    const recover = async (attempt: number) => {
+      controller = new AbortController();
+      try {
+        const response = await fetch(url, { headers: { Accept: "application/json" }, signal: controller.signal });
+        const payload = await response.json() as { ok?: boolean; compare?: PlayerCompareSnapshot };
+        const compare = payload.compare;
+        if (response.ok && payload.ok && compare
+          && compare.players[0].slug === leftSlug
+          && compare.players[1].slug === rightSlug) {
+          if (!cancelled) setRecoveredData(compare);
+          return;
+        }
+      } catch {
+        // A second bounded attempt handles a transient edge or Supabase failure.
+      }
+      if (!cancelled && attempt === 0) retryTimer = window.setTimeout(() => { void recover(1); }, 1500);
+    };
+
+    void recover(0);
+    return () => {
+      cancelled = true;
+      controller?.abort();
+      if (retryTimer) window.clearTimeout(retryTimer);
+    };
+  }, [hasUsableInitialData, leftSlug, rightSlug]);
+
+  if (!left || !right) return null;
+
   const [leftStats, rightStats] = data?.seasonStats ?? [null, null];
   const compareHref = `/snooker/compare?player1=${encodeURIComponent(left.slug)}&player2=${encodeURIComponent(right.slug)}${data?.season ? `&season=${encodeURIComponent(data.season)}` : ""}`;
 
