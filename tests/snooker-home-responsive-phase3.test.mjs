@@ -38,3 +38,33 @@ test("phase three compacts only the desktop header and shares its sticky offset"
   assert.match(dataCss, /top:var\(--snooker-header-height,68px\)/);
   assert.match(playerCss, /\.directoryToolbar\{top:var\(--snooker-header-height,68px\)\}/);
 });
+
+test("phase three homepage adapts ranking, focus matches and China players by viewport and item count", async () => {
+  const [ui, css, priority] = await Promise.all([
+    read("app/snooker/snooker-data-center-v2.tsx"),
+    read("app/snooker/snooker-data-center.module.css"),
+    read("app/snooker/snooker-priority.module.css"),
+  ]);
+
+  assert.match(ui, /rankingRows\.slice\(0, 5\)/);
+  assert.match(ui, /styles\.rankingDesktopRow/);
+  assert.match(css, /\.rankingDesktopRow\{display:none!important\}/);
+  assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.rankingDesktopRow\{display:grid!important\}/);
+  assert.match(css, /\.homeRankingSlot>\*\{display:flex;flex-direction:column\}/);
+  assert.match(css, /\.homeRankingSlot \.rankingList>\*\{flex:1\}/);
+
+  assert.match(ui, /ref=\{headlineRail\}/);
+  assert.match(ui, /aria-label="上一场焦点比赛"/);
+  assert.match(ui, /aria-label="下一场焦点比赛"/);
+  assert.match(ui, /title="比赛间歇"/);
+  assert.match(ui, /下一场比赛进入预热或直播状态后/);
+  assert.match(priority, /\.desktopRailControls\{display:none/);
+  assert.match(priority, /@media \(min-width:1024px\)[\s\S]*\.desktopRailControls\{display:flex\}/);
+
+  assert.match(ui, /row\.rank <= 16 && isChina\(row\.player\)/);
+  assert.match(ui, /styles\.chinaTopGridFour/);
+  assert.match(ui, /styles\.chinaTopGridScrollable/);
+  assert.match(css, /\.chinaTopGridFour\{grid-template-columns:repeat\(4,1fr\)\}/);
+  assert.match(css, /\.chinaTopGridScrollable\{display:flex;overflow-x:auto/);
+  assert.match(ui, /aria-label="查看更多中国球员"/);
+});

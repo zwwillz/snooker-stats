@@ -78,7 +78,7 @@ test("current-season match detail keeps Match Season and H2H rows while historic
   assert.match(dbV2, /season_start_year=eq\.\$\{Number\(base\.currentSeason\.slice\(0, 4\)\)\}/);
 });
 
-test("official world ranking is explicit, top three on home, euro-prefixed and avatar-only clickable", async () => {
+test("official world ranking is explicit, top three on mobile and top five on desktop, euro-prefixed and avatar-only clickable", async () => {
   const [ui, css, dbV2, playerData] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/snooker-ui-polish.module.css"),
@@ -86,10 +86,12 @@ test("official world ranking is explicit, top three on home, euro-prefixed and a
     read("lib/snooker/player-data.ts"),
   ]);
 
-  assert.match(ui, /eyebrow="OFFICIAL WORLD RANKING" title="世界排名" action="TOP 3"/);
-  assert.match(ui, /rankingRows\.slice\(0, 3\)/);
+  assert.match(ui, /className=\{styles\.mobileOnly\}>TOP 3/);
+  assert.match(ui, /className=\{styles\.desktopOnly\}>TOP 5/);
+  assert.match(ui, /rankingRows\.slice\(0, 5\)/);
+  assert.match(ui, /index >= 3 \? styles\.rankingDesktopRow/);
   assert.match(ui, /return `€\$\{value\.toLocaleString/);
-  assert.match(ui, /className=\{polish\.rankingStaticRow\}/);
+  assert.match(ui, /className=\{`\$\{polish\.rankingStaticRow\} \$\{index >= 3 \? styles\.rankingDesktopRow/);
   assert.match(ui, /className=\{polish\.rankingAvatarButton\} onClick=\{\(\) => openPlayer/);
   assert.match(css, /\.rankingStaticRow\{/);
   assert.match(dbV2, /list_key=eq\.world_official/);

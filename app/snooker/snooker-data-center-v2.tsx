@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import type {
   PlayerEventStats,
   SnookerCalendarEvent,
@@ -425,8 +426,23 @@ function rankingMoney(value: number) {
   return `€${value.toLocaleString("en-GB")}`;
 }
 
-function SectionHeader({ eyebrow, title, action, actionClassName }: { eyebrow?: string; title: string; action?: string; actionClassName?: string }) {
+function SectionHeader({ eyebrow, title, action, actionClassName }: { eyebrow?: string; title: string; action?: ReactNode; actionClassName?: string }) {
   return <div className={styles.sectionHeader}><div>{eyebrow ? <small>{eyebrow}</small> : null}<h2>{title}</h2></div>{action ? <span className={actionClassName}>{action}</span> : null}</div>;
+}
+
+function nearestRailItemIndex(rail: HTMLDivElement) {
+  const items = Array.from(rail.children) as HTMLElement[];
+  if (!items.length) return 0;
+  const railStart = items[0].offsetLeft;
+  return items.reduce((nearest, item, index) => Math.abs(item.offsetLeft - railStart - rail.scrollLeft) < Math.abs(items[nearest].offsetLeft - railStart - rail.scrollLeft) ? index : nearest, 0);
+}
+
+function scrollRailItem(rail: HTMLDivElement | null, index: number) {
+  const item = rail?.children.item(index) as HTMLElement | null;
+  if (!rail || !item) return;
+  const firstItem = rail.children.item(0) as HTMLElement | null;
+  const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  rail.scrollTo({ left: item.offsetLeft - (firstItem?.offsetLeft ?? 0), behavior });
 }
 
 function PlayerAvatar({ player, size = "md" }: { player: SnookerPlayer; size?: "sm" | "md" | "lg" | "xl" }) {
@@ -598,7 +614,11 @@ export default function SnookerDataCenterV2({
   const [rankingHubLoadError, setRankingHubLoadError] = useState(false);
   const [requestedTechnicalMetric, setRequestedTechnicalMetric] = useState<SnookerTechnicalMetricKey | null>(null);
   const [clientNow, setClientNow] = useState(() => Date.now());
+  const [headlineIndex, setHeadlineIndex] = useState(0);
+  const [chinaRailIndex, setChinaRailIndex] = useState(0);
   const playerDirectoryScrollY = useRef(0);
+  const headlineRail = useRef<HTMLDivElement>(null);
+  const chinaPlayersRail = useRef<HTMLDivElement>(null);
   const eventReturnState = useRef<{ view: MainView; mode: EventListMode; season: string; scrollY: number } | null>(null);
   const matchReturnState = useRef<MatchReturnState | null>(null);
   const scheduleAutoFocusedEvents = useRef(new Set<string>());
@@ -1057,7 +1077,7 @@ export default function SnookerDataCenterV2({
     .map((row) => ({ ...row, player: players.get(row.playerId) }))
     .filter((row): row is typeof row & { player: SnookerPlayer } => Boolean(row.player))
     .sort((a, b) => a.rank - b.rank), [snapshot.rankings, players]);
-  const chinaTop16 = rankingRows.filter((row) => isChina(row.player));
+  const chinaTop16 = rankingRows.filter((row) => row.rank <= 16 && isChina(row.player));
 
   const ensureEventDetail = (slug: string) => {
     const inFlight = eventDetailInFlight.current.get(slug);
@@ -1488,6 +1508,21 @@ export default function SnookerDataCenterV2({
 
   const featuredDetail = featuredEventCard ? eventBySlug.get(featuredEventCard.slug) : undefined;
   const headlineSelections = selectHomepageHeadlineMatches(databaseEvents, players);
+  const activeHeadlineIndex = Math.min(headlineIndex, Math.max(0, headlineSelections.length - 1));
+  const chinaVisibleCount = Math.min(5, chinaTop16.length);
+  const chinaMaxRailIndex = Math.max(0, chinaTop16.length - chinaVisibleCount);
+  const activeChinaRailIndex = Math.min(chinaRailIndex, chinaMaxRailIndex);
+  const chinaGridClass = chinaTop16.length > 5
+    ? styles.chinaTopGridScrollable
+    : chinaTop16.length === 4
+      ? styles.chinaTopGridFour
+      : chinaTop16.length === 3
+        ? styles.chinaTopGridThree
+        : chinaTop16.length === 2
+          ? styles.chinaTopGridTwo
+          : chinaTop16.length === 1
+            ? styles.chinaTopGridOne
+            : styles.chinaTopGridFive;
 
   return <main className={styles.appRoot} data-theme={theme}><div className={styles.shell}>
     <header className={styles.header}>
@@ -1500,8 +1535,9 @@ export default function SnookerDataCenterV2({
         <div className={styles.homeLeadGrid}>
           {featuredEventCard ? <section className={styles.hero}><div className={styles.heroTop}><span className={eventStatusClass(featuredEventCard.status)}><StatusPill status={featuredEventCard.status} label={activeEventCard ? "当前赛事" : graceEventCard ? "刚刚结束" : "下一站"} /></span><span>{featuredEventCard.typeZh}</span></div><small>{activeEventCard ? "CURRENT TOURNAMENT" : graceEventCard ? "JUST FINISHED" : "NEXT TOURNAMENT"}</small><h1>{featuredEventCard.nameZh}</h1><p>{formatDateRange(featuredEventCard.startDate, featuredEventCard.endDate)} · {featuredEventCard.countryZh} {featuredEventCard.cityZh}</p><div className={styles.heroActions}><button onPointerEnter={() => void ensureEventDetail(featuredEventCard.slug)} onFocus={() => void ensureEventDetail(featuredEventCard.slug)} onTouchStart={() => void ensureEventDetail(featuredEventCard.slug)} onClick={() => openEvent(featuredEventCard.slug, featuredDetail?.rounds.length ? "schedule" : "overview")}>查看赛事</button><button className={styles.secondaryButton} onClick={() => changeView("matches")}>赛事列表</button></div></section> : null}
 
-          {headlineSelections.length ? <div className={priority.headlineCarousel} aria-label="焦点比赛">
-          {headlineSelections.map(({ match: headlineMatch, event: headlineEvent }, index) => {
+          {headlineSelections.length ? <div className={priority.headlineViewport}>
+          <div className={priority.headlineCarousel} aria-label="焦点比赛" ref={headlineRail} onScroll={(event) => setHeadlineIndex(nearestRailItemIndex(event.currentTarget))}>
+          {headlineSelections.map(({ match: headlineMatch, event: headlineEvent }) => {
             const player1 = players.get(headlineMatch.player1Id);
             const player2 = players.get(headlineMatch.player2Id);
             if (!player1 || !player2) return null;
@@ -1513,17 +1549,25 @@ export default function SnookerDataCenterV2({
                 <button onClick={() => openPlayer(headlineMatch.player2Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={player2} size="lg" />{headlineMatch.winnerId === headlineMatch.player2Id ? <em className={polish.winBadge}>胜</em> : null}{headlineMatch.status === "walkover" && headlineMatch.winnerId && headlineMatch.winnerId !== headlineMatch.player2Id ? <span className={polish.withdrawnAvatarBadge}>退赛</span> : null}</div><span className={polish.homePlayerName}>{player2.shortNameZh}</span></button>
               </div>
               <button className={styles.fullButton} onClick={() => openMatch(headlineMatch.id, headlineEvent.slug)}>查看比赛详情</button>
-              {headlineSelections.length > 1 ? <div className={priority.headlineSwipeHint}>左右滑动 · {index + 1}/{headlineSelections.length}</div> : null}
             </section>;
           })}
+          </div>
+          {headlineSelections.length > 1 ? <div className={priority.headlineRailFooter}>
+            <span className={priority.headlineSwipeHint}>左右滑动 · {activeHeadlineIndex + 1}/{headlineSelections.length}</span>
+            <div className={priority.desktopRailControls} aria-label="焦点比赛切换">
+              <button type="button" disabled={activeHeadlineIndex === 0} onClick={() => scrollRailItem(headlineRail.current, activeHeadlineIndex - 1)} aria-label="上一场焦点比赛">‹</button>
+              <span aria-live="polite">{activeHeadlineIndex + 1} / {headlineSelections.length}</span>
+              <button type="button" disabled={activeHeadlineIndex === headlineSelections.length - 1} onClick={() => scrollRailItem(headlineRail.current, activeHeadlineIndex + 1)} aria-label="下一场焦点比赛">›</button>
+            </div>
           </div> : null}
+          </div> : <section className={`${styles.card} ${priority.headlineFallback}`}><SectionHeader eyebrow="MATCH CENTRE" title="比赛间歇" action="赛历持续更新" /><div className={priority.headlineFallbackBody}><span>147</span><div><strong>当前暂无焦点比赛</strong><p>下一场比赛进入预热或直播状态后，这里会自动恢复比分与比赛入口。</p></div></div><div className={priority.headlineFallbackActions}><button className={styles.fullButton} onClick={() => { setEventListMode("calendar"); setSelectedSeason(initialCurrentSeason); changeView("matches"); }}>查看赛季赛历</button><button className={`${styles.fullButton} ${priority.headlineFallbackSecondary}`} onClick={() => changeView("data")}>查看世界排名</button></div></section>}
         </div>
 
         <div className={`${styles.homeSlot} ${styles.homeCompareSlot}`}><PlayerCompareTeaser players={directoryPlayers} initialData={initialPlayerCompare} actionClassName={styles.fullButton} headerClassName={styles.sectionHeader} /></div>
 
         {nextEventCard ? <div className={`${styles.homeSlot} ${styles.homeNextSlot}`}><section className={styles.card}><SectionHeader eyebrow="NEXT EVENT" title="下一站" action={eventStatusLabel(nextEventCard)} actionClassName={`${polish.eventStatusText} ${eventStatusClass(nextEventCard.status)}`} /><button className={styles.nextEvent} onPointerEnter={() => void ensureEventDetail(nextEventCard.slug)} onFocus={() => void ensureEventDetail(nextEventCard.slug)} onTouchStart={() => void ensureEventDetail(nextEventCard.slug)} onClick={() => openEvent(nextEventCard.slug)}><span>{nextEventCard.cityZh?.slice(0, 1) || "赛"}</span><div><strong>{nextEventCard.nameZh}</strong><small>{nextEventCard.nameEn}</small><p>{formatDateRange(nextEventCard.startDate, nextEventCard.endDate)} · {nextEventCard.cityZh}</p></div><em>›</em></button></section></div> : null}
-        <div className={`${styles.homeSlot} ${styles.homeRankingSlot}`}><section className={styles.card}><SectionHeader eyebrow="OFFICIAL WORLD RANKING" title="世界排名" action="TOP 3" /><div className={styles.rankingList}>{rankingRows.slice(0, 3).map((row) => <div className={polish.rankingStaticRow} key={row.rank}><strong>{row.rank}</strong><button className={polish.rankingAvatarButton} onClick={() => openPlayer(row.player.id)} aria-label={`查看${row.player.nameZh}球员详情`}><PlayerAvatar player={row.player} size="sm" /></button><span><b>{row.player.nameZh}</b><small>{row.player.nameEn}</small></span><em>{rankingMoney(row.points)}</em></div>)}</div><button className={styles.fullButton} onClick={() => changeView("data")}>查看完整世界排名</button></section></div>
-        <div className={`${styles.homeSlot} ${styles.homeChinaSlot}`}><section className={styles.card}><SectionHeader eyebrow="CHINA PLAYERS" title="中国球员" action={`${chinaTop16.length} 人进入 TOP16`} /><div className={styles.chinaTopGrid}>{chinaTop16.map((row) => <button key={row.player.id} onClick={() => openPlayer(row.player.id)}><span>{row.rank}</span><strong>{row.player.nameZh}</strong><small>世界第 {row.rank}</small></button>)}</div></section></div>
+        <div className={`${styles.homeSlot} ${styles.homeRankingSlot}`}><section className={styles.card}><SectionHeader eyebrow="OFFICIAL WORLD RANKING" title="世界排名" action={<><span className={styles.mobileOnly}>TOP 3</span><span className={styles.desktopOnly}>TOP 5</span></>} /><div className={styles.rankingList}>{rankingRows.slice(0, 5).map((row, index) => <div className={`${polish.rankingStaticRow} ${index >= 3 ? styles.rankingDesktopRow : ""}`} key={row.rank}><strong>{row.rank}</strong><button className={polish.rankingAvatarButton} onClick={() => openPlayer(row.player.id)} aria-label={`查看${row.player.nameZh}球员详情`}><PlayerAvatar player={row.player} size="sm" /></button><span><b>{row.player.nameZh}</b><small>{row.player.nameEn}</small></span><em>{rankingMoney(row.points)}</em></div>)}</div><button className={styles.fullButton} onClick={() => changeView("data")}>查看完整世界排名</button></section></div>
+        <div className={`${styles.homeSlot} ${styles.homeChinaSlot}`}><section className={styles.card}><SectionHeader eyebrow="CHINA PLAYERS" title="中国球员" action={`${chinaTop16.length} 人进入 TOP16`} />{chinaTop16.length ? <><div className={`${styles.chinaTopGrid} ${chinaGridClass}`} ref={chinaPlayersRail} onScroll={(event) => setChinaRailIndex(nearestRailItemIndex(event.currentTarget))}>{chinaTop16.map((row) => <button key={row.player.id} onClick={() => openPlayer(row.player.id)}><span>{row.rank}</span><strong>{row.player.nameZh}</strong><small>世界第 {row.rank}</small></button>)}</div>{chinaTop16.length > 5 ? <div className={styles.chinaRailFooter}><span>左右滑动 · {activeChinaRailIndex + 1}–{Math.min(activeChinaRailIndex + chinaVisibleCount, chinaTop16.length)} / {chinaTop16.length}</span><div className={priority.desktopRailControls} aria-label="中国球员切换"><button type="button" disabled={activeChinaRailIndex === 0} onClick={() => scrollRailItem(chinaPlayersRail.current, activeChinaRailIndex - 1)} aria-label="查看前面的中国球员">‹</button><span aria-live="polite">{activeChinaRailIndex + 1}–{Math.min(activeChinaRailIndex + chinaVisibleCount, chinaTop16.length)} / {chinaTop16.length}</span><button type="button" disabled={activeChinaRailIndex === chinaMaxRailIndex} onClick={() => scrollRailItem(chinaPlayersRail.current, activeChinaRailIndex + 1)} aria-label="查看更多中国球员">›</button></div></div> : null}</> : <div className={styles.emptyState}>当前世界前16暂无中国球员。</div>}</section></div>
         <div className={`${styles.homeSlot} ${styles.homeLeadersSlot}`}><HomeSeasonLeaders initialPayload={initialHomeLeaders} onOpenMetric={openTechnicalFromHome} /></div>
         <div className={`${styles.homeSlot} ${styles.homeAboutSlot}`}><HomeAboutCard /></div>
       </> : null}
