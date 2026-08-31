@@ -149,9 +149,11 @@ test("home season leader opens requested technical metric in one state transitio
   assert.match(dataHub, /initialTechnicalMetric = null/);
 });
 
-test("home compare remains bootstrap-driven and compare route remains server rendered", () => {
-  assert.doesNotMatch(teaser, /IntersectionObserver|\/api\/snooker\/v1\/player-compare/);
-  assert.match(teaser, /const data = matchesInitialPair \? initialData : null/);
+test("home compare remains bootstrap-first with a bounded degraded-path recovery", () => {
+  assert.doesNotMatch(teaser, /IntersectionObserver/);
+  assert.match(teaser, /if \(hasUsableInitialData \|\| !leftSlug \|\| !rightSlug\) return/);
+  assert.match(teaser, /attempt === 0/);
+  assert.match(teaser, /const data = hasUsableInitialData \? initialData : matchesRecoveredPair \? recoveredData : null/);
   assert.match(comparePage, /export const revalidate = 60/);
   assert.doesNotMatch(comparePage, /force-dynamic|revalidate = 0/);
   assert.match(comparePage, /const initialCompare = await loadPlayerCompare/);
