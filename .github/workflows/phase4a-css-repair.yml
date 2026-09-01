@@ -1,0 +1,42 @@
+name: Phase 4A CSS repair
+
+on:
+  push:
+    branches: [feat/tournaments-phase4a-web]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: ${{ !contains(github.event.head_commit.message, '[phase4a-css-fixed]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/tournaments-phase4a-web
+          fetch-depth: 0
+      - name: Repair serialized newlines
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/snooker/snooker-priority.module.css')
+          text = path.read_text()
+          marker = '/* TOURNAMENTS_PHASE4A_DESKTOP */'
+          if marker not in text:
+              raise SystemExit('phase4a marker missing')
+          head, tail = text.split(marker, 1)
+          if '\\n' not in tail:
+              raise SystemExit('no serialized newlines found')
+          path.write_text(head + marker + tail.replace('\\n', '\n'))
+          workflow = Path('.github/workflows/phase4a-css-repair.yml')
+          if workflow.exists(): workflow.unlink()
+          PY
+      - name: Commit repair
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix(tournaments): repair desktop phase4a css [phase4a-css-fixed]"
+          git push origin HEAD:feat/tournaments-phase4a-web
