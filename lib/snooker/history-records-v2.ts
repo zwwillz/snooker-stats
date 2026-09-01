@@ -5,6 +5,8 @@ import {
   type HistoryRecordItem,
 } from "./history-records";
 
+export type { HistoryRecordCategoryKey, HistoryRecordItem } from "./history-records";
+
 const SNOOKER_HQ_AGE_RECORDS = "https://snookerhq.com/records/youngest-oldest-ranking-event-winners/";
 const SNOOKER_ORG_ARCHIVE = "https://www.snooker.org/TRN/";
 const OLBG_PRIZE_MONEY = "https://www.olbg.com/blogs/snooker-earnings";
