@@ -7,14 +7,18 @@ import {
   HISTORY_RECORD_CATEGORIES,
   historyLeaderboardItem,
   historyLeaderboardItemsForCategory,
+  historyPlayerAvatar,
+  historyPlayerNationality,
   historyRecordCategory,
   type HistoryRecordCategoryKey,
   type HistoryRecordItem,
-} from "@/lib/snooker/history-records-v3";
+} from "@/lib/snooker/history-records-v4";
 import dataStyles from "./data.module.css";
 import styles from "./data-history-records.module.css";
+import v4Styles from "./data-history-records-v4.module.css";
 
 type HistoryRecordsViewKey = HistoryRecordCategoryKey | "classic";
+type AvatarSize = 256 | 512;
 
 function itemTypeLabel(item: HistoryRecordItem) {
   return item.kind === "timeline" ? "历史档案" : "历史榜单";
@@ -29,6 +33,40 @@ function itemSizeLabel(item: HistoryRecordItem) {
 function cleanRecordsParams(url: URL) {
   url.searchParams.delete("group");
   url.searchParams.delete("record");
+}
+
+function HistorySilhouette() {
+  return <svg viewBox="0 0 120 160" aria-hidden="true">
+    <circle cx="60" cy="43" r="28" fill="currentColor" />
+    <path d="M17 150c3-39 17-63 43-63s40 24 43 63H17Z" fill="currentColor" />
+  </svg>;
+}
+
+function HistoryAvatar({ nameEn, size, className = "" }: { nameEn?: string | null; size: AvatarSize; className?: string }) {
+  const src = historyPlayerAvatar(nameEn, size);
+  return <span className={`${v4Styles.historyAvatar} ${className}`} aria-hidden="true">
+    <HistorySilhouette />
+    {src ? <img src={src} alt="" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.hidden = true; }} /> : null}
+  </span>;
+}
+
+function splitRecordPeople(nameZh: string, nameEn?: string | null) {
+  const namesZh = nameZh.split(/\s*\/\s*/).filter(Boolean);
+  const namesEn = (nameEn ?? "").split(/\s*\/\s*/).filter(Boolean);
+  const count = Math.max(namesZh.length, namesEn.length, 1);
+  return Array.from({ length: count }, (_, index) => ({
+    nameZh: namesZh[index] ?? namesZh[0] ?? nameZh,
+    nameEn: namesEn[index] ?? namesEn[0] ?? nameEn ?? null,
+  }));
+}
+
+function identityLine(nameEn?: string | null) {
+  if (!nameEn) return null;
+  const nationality = historyPlayerNationality(nameEn);
+  return <small className={v4Styles.rowIdentity}>
+    <span>{nameEn}</span>
+    {nationality ? <em className={v4Styles.rowNationality}>· {nationality}</em> : null}
+  </small>;
 }
 
 export function HistoryRecordsSection() {
@@ -214,18 +252,22 @@ function CategoryDetail({
 
 function LeaderboardDetail({ item }: { item: HistoryRecordItem }) {
   const lead = item.rows[0] ?? null;
+  const leadNationality = historyPlayerNationality(lead?.nameEn);
 
   return <main className={styles.detailPage}>
     <section className={styles.recordIntro}>
       <small>{item.titleEn}</small>
       <h1>{item.titleZh}</h1>
       <p>{item.descriptionZh}</p>
-      {lead ? <div className={styles.recordHero}>
-        <span>{item.kind === "timeline" ? "最新一届" : "历史第一"}</span>
-        <strong>{lead.value}</strong>
-        <b>{lead.nameZh}</b>
-        {lead.nameEn ? <em>{lead.nameEn}</em> : null}
-        {lead.meta ? <small>{lead.meta}</small> : null}
+      {lead ? <div className={`${styles.recordHero} ${v4Styles.recordHeroWithAvatar}`}>
+        <div className={v4Styles.heroCopy}>
+          <span>{item.kind === "timeline" ? "最新一届" : "历史第一"}</span>
+          <strong>{lead.value}</strong>
+          <b>{lead.nameZh}</b>
+          {lead.nameEn ? <em>{lead.nameEn}{leadNationality ? ` · ${leadNationality}` : ""}</em> : leadNationality ? <em>{leadNationality}</em> : null}
+          {lead.meta ? <small>{lead.meta}</small> : null}
+        </div>
+        <HistoryAvatar nameEn={lead.nameEn} size={512} className={v4Styles.heroAvatar} />
       </div> : null}
     </section>
 
@@ -240,7 +282,7 @@ function LeaderboardDetail({ item }: { item: HistoryRecordItem }) {
           <strong className={styles.rowRank}>{row.rank ?? index + 1}</strong>
           <div className={styles.rowMain}>
             <b>{row.nameZh}</b>
-            {row.nameEn ? <small>{row.nameEn}</small> : null}
+            {identityLine(row.nameEn)}
             {row.meta ? <span>{row.meta}</span> : null}
             {row.note ? <p>{row.note}</p> : null}
           </div>
@@ -263,22 +305,30 @@ function ClassicRecordsPage() {
       <div><small>{CLASSIC_RECORD_ENTRY.titleEn}</small><h1>{CLASSIC_RECORD_ENTRY.titleZh}</h1><p>{CLASSIC_RECORD_ENTRY.descriptionZh}</p></div>
       <strong>{CLASSIC_RECORDS.length} 项</strong>
     </section>
-    <section className={styles.classicGrid}>
+    <section className={`${styles.classicGrid} ${v4Styles.classicGridSingle}`}>
       {CLASSIC_RECORDS.map((item) => {
         const row = item.rows[0];
         if (!row) return null;
-        return <article className={styles.classicCard} key={item.key}>
-          <small>{item.titleEn}</small>
-          <h2>{item.titleZh}</h2>
-          <strong>{row.value}</strong>
-          <b>{row.nameZh}</b>
-          {row.nameEn ? <em>{row.nameEn}</em> : null}
-          {row.meta ? <p>{row.meta}</p> : null}
+        const people = splitRecordPeople(row.nameZh, row.nameEn);
+        const nationalities = people.map((person) => historyPlayerNationality(person.nameEn)).filter((value): value is string => Boolean(value));
+        return <article className={`${styles.classicCard} ${v4Styles.classicCardWithAvatar}`} key={item.key}>
+          <div className={v4Styles.classicCopy}>
+            <small>{item.titleEn}</small>
+            <h2>{item.titleZh}</h2>
+            <strong>{row.value}</strong>
+            <b>{row.nameZh}</b>
+            {row.nameEn ? <em>{row.nameEn}</em> : null}
+            {nationalities.length ? <span className={v4Styles.classicNationality}>{nationalities.join(" / ")}</span> : null}
+            {row.meta ? <p>{row.meta}</p> : null}
+          </div>
+          <div className={v4Styles.classicAvatars} aria-hidden="true">
+            {people.slice(0, 2).map((person, index) => <HistoryAvatar nameEn={person.nameEn} size={256} className={v4Styles.classicAvatar} key={`${item.key}-${person.nameEn ?? person.nameZh}-${index}`} />)}
+          </div>
         </article>;
       })}
     </section>
     <section className={styles.classicMeta}>
-      <div><small>数据说明</small><p>本页为固定静态历史快照，不会在用户访问时请求外部网站或数据库。纪录口径随本站静态数据版本人工维护。</p></div>
+      <div><small>数据说明</small><p>本页为固定静态历史快照，不会在用户访问时请求外部网站或数据库。头像地址与纪录数据同样随本站静态版本维护。</p></div>
       <div><small>数据来源</small><p>{sourceNames}</p></div>
     </section>
   </main>;
