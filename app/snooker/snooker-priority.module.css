@@ -271,7 +271,9 @@
   .seriesStageEmpty{font-size:var(--snooker-type-body-small)}
   .scoreUpdated,.headlineSwipeHint{font-size:var(--snooker-type-auxiliary)!important}
 }
-\n\n/* TOURNAMENTS_PHASE4A_DESKTOP */
+
+
+/* TOURNAMENTS_PHASE4A_DESKTOP */
 .eventCenterLayout,.eventSidebar,.eventListPanel{display:contents}
 .eventFilterEyebrow,.eventFilterLabel,.eventTableHead,.featuredEventEnglish{display:none}
 
