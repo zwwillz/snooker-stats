@@ -125,7 +125,7 @@ export function TechnicalDetailContent({
       if (!desktop.matches) return;
 
       observer = new IntersectionObserver(([entry]) => {
-        setTablePinned(!entry.isIntersecting);
+        setTablePinned(entry.boundingClientRect.top <= 64);
       }, {
         root: null,
         rootMargin: "-64px 0px 0px 0px",
