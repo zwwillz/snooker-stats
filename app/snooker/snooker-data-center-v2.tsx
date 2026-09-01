@@ -1640,7 +1640,7 @@ export default function SnookerDataCenterV2({
       ["平均单杆", "averageBreak", ""],
     ];
 
-    return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
+    return <main className={styles.appRoot} data-theme={theme}><div className={`${styles.detailShell} ${priority.matchDetailShell}`} data-match-detail>
       <header className={styles.detailHeader}><button onClick={() => closeMatch(selectedEvent.slug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
       <section className={`${styles.matchHero} ${priority.matchHeroDesktop}`}>
         <div className={styles.matchHeroMeta}><span>{!isCurrentSeasonMatch ? `${selectedEvent.season}赛季 · 历史赛事 · ` : ""}{match.roundLabelZh} · {match.timeLabelZh ?? "比赛时间待定"}</span><b>{bestOfLabel(match.bestOf)}</b></div>
