@@ -55,7 +55,7 @@
   .contentHome{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));align-items:stretch}
   .homeLeadGrid{grid-column:1/-1;grid-row:1;display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:18px}
   .homeLeadGrid>:only-child{grid-column:1/-1}.homeLeadGrid>.hero,.homeLeadGrid>div{height:100%}
-  .homeLeadGrid>.hero{min-height:322px;padding:28px 30px}.homeLeadGrid>.hero .heroTop{margin-bottom:28px}.homeLeadGrid>.hero h1{margin-bottom:3px}.homeLeadGrid>.hero .heroEventEnglish{display:block;max-width:72%}.homeLeadGrid>.hero .heroMeta{margin-top:8px}.homeLeadGrid>.hero .heroActions{margin-top:20px}
+  .homeLeadGrid>.hero{min-height:282px;padding:28px 30px}.homeLeadGrid>.hero .heroTop{margin-bottom:28px}.homeLeadGrid>.hero h1{margin-bottom:3px}.homeLeadGrid>.hero .heroEventEnglish{display:block;max-width:72%}.homeLeadGrid>.hero .heroMeta{margin-top:8px}.homeLeadGrid>.hero .heroActions{margin-top:20px}
   .homeCompareSlot{grid-column:1/7;grid-row:2}.homeRankingSlot{grid-column:7/13;grid-row:2}
   .homeNextSlot{grid-column:1/7;grid-row:3}.homeChinaSlot{grid-column:7/13;grid-row:3}
   .homeLeadersSlot{grid-column:1/-1;grid-row:4}.homeAboutSlot{grid-column:1/-1;grid-row:5}

@@ -66,7 +66,7 @@ test("phase three homepage adapts ranking, focus matches and China players by vi
   assert.match(ui, /className=\{styles\.heroEventEnglish\}>\{featuredEventCard\.nameEn\}/);
   assert.match(css, /\.heroEventEnglish\{display:none/);
   assert.match(css, /\.homeLeadGrid>\.hero \.heroEventEnglish\{display:block/);
-  assert.match(css, /\.homeLeadGrid>\.hero\{min-height:322px/);
+  assert.match(css, /\.homeLeadGrid>\.hero\{min-height:282px/);
   assert.match(ui, /function headlineEventName\(value: string\)/);
   assert.match(ui, /<h2 title=\{headlineTitle\}>\{headlineTitle\}<\/h2>/);
   assert.doesNotMatch(ui, /\{headlineEvent\.nameZh\} · \{headlineMatch\.roundLabelZh\}/);
