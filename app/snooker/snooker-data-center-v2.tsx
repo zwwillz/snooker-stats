@@ -646,9 +646,13 @@ function MatchListRow({ match, players, onOpen }: { match: SnookerMatch; players
 }
 
 function EventCard({ item, onOpen, onPrefetch, interactive = true }: { item: SnookerCalendarEvent; onOpen?: () => void; onPrefetch?: () => void; interactive?: boolean }) {
+  const nameZh = item.nameZh?.trim() || item.nameEn?.trim() || "赛事名称待确认";
+  const nameEn = item.nameEn?.trim();
+  const typeZh = item.typeZh?.trim() || "赛事";
+  const place = [item.countryZh, item.cityZh].map((value) => value?.trim()).filter(Boolean).join(" ");
   const content = <>
     <div className={styles.calendarDate}><b>{formatMonthDay(item.startDate)}</b><small className={`${polish.eventStatusText} ${eventStatusClass(item.status)}`}>{eventStatusLabel(item)}</small></div>
-    <div><span><StatusPill status="type" label={item.typeZh} /></span><strong>{item.nameZh}</strong><small>{item.nameEn}</small><p>{formatDateRange(item.startDate, item.endDate)} · {item.countryZh} {item.cityZh}</p></div>
+    <div><span><StatusPill status="type" label={typeZh} /></span><strong>{nameZh}</strong>{nameEn ? <small>{nameEn}</small> : null}<p>{formatDateRange(item.startDate, item.endDate)}{place ? ` · ${place}` : ""}</p></div>
     {interactive ? <em>›</em> : null}
   </>;
   if (!interactive) return <article className={priority.calendarStaticCard}>{content}</article>;
@@ -1282,7 +1286,7 @@ export default function SnookerDataCenterV2({
   const activeEventCard = mainSeasonEvents.find((item) => isActiveOn(item, today));
   const graceEventCard = [...mainSeasonEvents].reverse().find((item) => item.endDate < today && addDateDays(item.endDate, 1) === today);
   const firstUpcomingMain = mainSeasonEvents.find((item) => item.startDate > today);
-  const featuredEventCard = activeEventCard ?? graceEventCard ?? firstUpcomingMain ?? [...mainSeasonEvents].reverse()[0];
+  const featuredEventCard = activeEventCard ?? firstUpcomingMain ?? graceEventCard ?? [...mainSeasonEvents].reverse()[0];
   const nextEventCard = featuredEventCard ? mainSeasonEvents.find((item) => item.startDate > featuredEventCard.startDate) : firstUpcomingMain;
   const seasonOptions = useMemo(() => seasonOptionsFromCurrent(initialCurrentSeason), [initialCurrentSeason]);
   const selectedSeasonEvents = useMemo(() => effectiveCalendarEvents
@@ -1294,7 +1298,18 @@ export default function SnookerDataCenterV2({
   const firstUpcomingCurrent = seasonCalendar.find((item) => item.startDate > today);
   const recentEvents = seasonCalendar
     .filter((item) => item.endDate < today || isActiveOn(item, today) || item.id === firstUpcomingCurrent?.id || item.id === featuredEventCard?.id)
-    .sort((a, b) => b.startDate.localeCompare(a.startDate));
+    .sort((a, b) => {
+      const priorityOf = (item: SnookerCalendarEvent) => isActiveOn(item, today) || item.status === "live"
+        ? 0
+        : item.id === firstUpcomingCurrent?.id || item.status === "upcoming"
+          ? 1
+          : 2;
+      const priorityDelta = priorityOf(a) - priorityOf(b);
+      if (priorityDelta) return priorityDelta;
+      return priorityOf(a) === 2
+        ? b.endDate.localeCompare(a.endDate)
+        : a.startDate.localeCompare(b.startDate);
+    });
   const recentListEvents = featuredEventCard ? recentEvents.filter((item) => item.id !== featuredEventCard.id) : recentEvents;
 
   const rankingRows = useMemo(() => snapshot.rankings
@@ -1826,12 +1841,23 @@ export default function SnookerDataCenterV2({
 
       {activeView === "matches" ? <>
         <section className={styles.pageIntro}><small>TOURNAMENTS</small><h1>赛事</h1><p>查看近期赛事和完整赛季赛历，及时了解正在进行、即将开始和已经结束的比赛。</p></section>
-        <div className={priority.eventModeTabs}><button className={eventListMode === "recent" ? priority.eventModeActive : ""} onClick={() => setEventListMode("recent")}>近期赛事</button><button className={eventListMode === "calendar" ? priority.eventModeActive : ""} onClick={() => setEventListMode("calendar")}>赛季赛历</button></div>
-        {eventListMode === "calendar" ? <SeasonSelector seasons={seasonOptions} value={selectedSeason} onPrefetch={(season) => { void ensureCalendarSeason(season); }} onChange={(season) => { setSelectedSeason(season); void ensureCalendarSeason(season); }} /> : null}
-        {eventListMode === "recent" ? <>
-          {featuredEventCard ? <section className={styles.currentEventBanner} onPointerEnter={() => void ensureEventDetail(featuredEventCard.slug)} onFocus={() => void ensureEventDetail(featuredEventCard.slug)} onTouchStart={() => void ensureEventDetail(featuredEventCard.slug)} onClick={() => openEvent(featuredEventCard.slug, "overview")}><div><span className={eventStatusClass(featuredEventCard.status)}><StatusPill status={featuredEventCard.status} label={featuredEventCard.status === "live" ? "正在进行" : featuredEventCard.status === "upcoming" ? "即将开始" : "最近结束"} /></span><small>{featuredEventCard.typeZh}</small></div><h2>{featuredEventCard.nameZh}</h2><p>{formatDateRange(featuredEventCard.startDate, featuredEventCard.endDate)} · {featuredEventCard.cityZh}</p><span>查看详情 ›</span></section> : null}
-          <section className={styles.card}><SectionHeader eyebrow="RECENT TOURNAMENTS" title="近期赛事" action="本赛季" /><div className={styles.calendarList}>{recentListEvents.map((item) => <EventCard key={item.id} item={item} onPrefetch={() => void ensureEventDetail(item.slug)} onOpen={() => openEvent(item.slug)} />)}{recentListEvents.length === 0 && !featuredEventCard ? <div className={styles.emptyState}>本赛季暂无可显示的赛事。</div> : null}</div></section>
-        </> : selectedSeasonLoadError && !selectedSeasonLoaded ? <section className={styles.card}><div className={styles.emptyState}>该赛季赛历加载失败，请稍后重试。</div><button className={styles.fullButton} onClick={() => void ensureCalendarSeason(selectedSeason)}>重新加载</button></section> : <section className={styles.card}><SectionHeader eyebrow={`${selectedSeason} SEASON`} title="赛季赛历" action={selectedSeasonLoading ? "正在加载…" : selectedSeasonLoaded ? `共 ${selectedSeasonEvents.length} 项赛事` : "按需加载"} /><div className={styles.calendarList}>{selectedSeasonEvents.map((item) => <EventCard key={item.id} item={item} onPrefetch={() => void ensureEventDetail(item.slug)} onOpen={() => openEvent(item.slug)} />)}{selectedSeasonEvents.length === 0 ? <div className={styles.emptyState}>{selectedSeasonLoading ? "正在加载该赛季赛历…" : selectedSeasonLoaded ? "该赛季暂无赛事。" : "选择赛季后加载赛事。"}</div> : null}</div></section>}
+        <div className={priority.eventCenterLayout}>
+          <aside className={priority.eventSidebar} aria-label="赛事浏览与筛选">
+            <small className={priority.eventFilterEyebrow}>EVENT BROWSER</small>
+            <strong className={priority.eventFilterLabel}>浏览方式</strong>
+            <div className={priority.eventModeTabs}><button className={eventListMode === "recent" ? priority.eventModeActive : ""} onClick={() => setEventListMode("recent")}>近期赛事</button><button className={eventListMode === "calendar" ? priority.eventModeActive : ""} onClick={() => setEventListMode("calendar")}>赛季赛历</button></div>
+            {eventListMode === "calendar" ? <>
+              <strong className={priority.eventFilterLabel}>赛季</strong>
+              <SeasonSelector seasons={seasonOptions} value={selectedSeason} onPrefetch={(season) => { void ensureCalendarSeason(season); }} onChange={(season) => { setSelectedSeason(season); void ensureCalendarSeason(season); }} />
+            </> : null}
+          </aside>
+          <div className={priority.eventListPanel}>
+            {eventListMode === "recent" ? <>
+              {featuredEventCard ? <section className={styles.currentEventBanner} onPointerEnter={() => void ensureEventDetail(featuredEventCard.slug)} onFocus={() => void ensureEventDetail(featuredEventCard.slug)} onTouchStart={() => void ensureEventDetail(featuredEventCard.slug)} onClick={() => openEvent(featuredEventCard.slug, "overview")}><div><span className={eventStatusClass(featuredEventCard.status)}><StatusPill status={featuredEventCard.status} label={featuredEventCard.status === "live" ? "正在进行" : featuredEventCard.status === "upcoming" ? "即将开始" : "最近结束"} /></span><small>{featuredEventCard.typeZh}</small></div><h2>{featuredEventCard.nameZh}</h2>{featuredEventCard.nameEn ? <small className={priority.featuredEventEnglish}>{featuredEventCard.nameEn}</small> : null}<p>{formatDateRange(featuredEventCard.startDate, featuredEventCard.endDate)}{featuredEventCard.cityZh ? ` · ${featuredEventCard.cityZh}` : ""}</p><span>查看详情 ›</span></section> : null}
+              <section className={styles.card}><SectionHeader eyebrow="RECENT TOURNAMENTS" title="近期赛事" action="本赛季" /><div className={priority.eventTableHead} aria-hidden="true"><span>日期 / 状态</span><span>赛事</span><span>类型</span><span>日期 / 地点</span><span /></div><div className={styles.calendarList}>{recentListEvents.map((item) => <EventCard key={item.id} item={item} onPrefetch={() => void ensureEventDetail(item.slug)} onOpen={() => openEvent(item.slug)} />)}{recentListEvents.length === 0 && !featuredEventCard ? <div className={styles.emptyState}>本赛季暂无可显示的赛事。</div> : null}</div></section>
+            </> : selectedSeasonLoadError && !selectedSeasonLoaded ? <section className={styles.card}><div className={styles.emptyState}>该赛季赛历加载失败，请稍后重试。</div><button className={styles.fullButton} onClick={() => void ensureCalendarSeason(selectedSeason)}>重新加载</button></section> : <section className={styles.card}><SectionHeader eyebrow={`${selectedSeason} SEASON`} title="赛季赛历" action={selectedSeasonLoading ? "正在加载…" : selectedSeasonLoaded ? `共 ${selectedSeasonEvents.length} 项赛事` : "按需加载"} /><div className={priority.eventTableHead} aria-hidden="true"><span>日期 / 状态</span><span>赛事</span><span>类型</span><span>日期 / 地点</span><span /></div><div className={styles.calendarList}>{selectedSeasonEvents.map((item) => <EventCard key={item.id} item={item} onPrefetch={() => void ensureEventDetail(item.slug)} onOpen={() => openEvent(item.slug)} />)}{selectedSeasonEvents.length === 0 ? <div className={styles.emptyState}>{selectedSeasonLoading ? "正在加载该赛季赛历…" : selectedSeasonLoaded ? "该赛季暂无赛事。" : "选择赛季后加载赛事。"}</div> : null}</div></section>}
+          </div>
+        </div>
       </> : null}
 
       {activeView === "players" ? directoryLoaded && directoryModuleLoaded
