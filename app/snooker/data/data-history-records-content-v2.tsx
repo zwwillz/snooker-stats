@@ -1,33 +1,29 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import {
+  CLASSIC_RECORD_ENTRY,
+  CLASSIC_RECORDS,
   HISTORY_RECORD_CATEGORIES,
+  historyLeaderboardItem,
+  historyLeaderboardItemsForCategory,
   historyRecordCategory,
-  historyRecordItem,
-  historyRecordItemsForCategory,
   type HistoryRecordCategoryKey,
   type HistoryRecordItem,
-} from "@/lib/snooker/history-records-v2";
+} from "@/lib/snooker/history-records-v3";
 import dataStyles from "./data.module.css";
 import styles from "./data-history-records.module.css";
 
+type HistoryRecordsViewKey = HistoryRecordCategoryKey | "classic";
+
 function itemTypeLabel(item: HistoryRecordItem) {
-  if (item.kind === "leaderboard") return "历史榜单";
-  if (item.kind === "timeline") return "历史档案";
-  return "历史纪录";
+  return item.kind === "timeline" ? "历史档案" : "历史榜单";
 }
 
 function itemSizeLabel(item: HistoryRecordItem) {
-  if (item.kind === "timeline") return `${item.rows.length} 届`;
-  if (item.rows.length > 1) return `Top ${item.rows.length}`;
-  return "纪录";
-}
-
-function itemActionLabel(item: HistoryRecordItem) {
-  if (item.kind === "timeline") return "查看历届";
-  if (item.rows.length > 1) return "查看榜单";
-  return "查看纪录";
+  if (item.kind === "timeline") return `${item.rows.length}届`;
+  if (item.rows.length >= 10) return `Top ${item.rows.length}`;
+  return `${item.rows.length}条`;
 }
 
 function cleanRecordsParams(url: URL) {
@@ -36,7 +32,7 @@ function cleanRecordsParams(url: URL) {
 }
 
 export function HistoryRecordsSection() {
-  const [group, setGroup] = useState<HistoryRecordCategoryKey | null>(null);
+  const [group, setGroup] = useState<HistoryRecordsViewKey | null>(null);
   const [recordKey, setRecordKey] = useState<string | null>(null);
 
   useLayoutEffect(() => {
@@ -47,11 +43,29 @@ export function HistoryRecordsSection() {
         setRecordKey(null);
         return;
       }
-      const category = historyRecordCategory(params.get("group"));
-      const record = historyRecordItem(params.get("record"));
+
+      const groupParam = params.get("group");
+      if (groupParam === "classic") {
+        setGroup("classic");
+        setRecordKey(null);
+        return;
+      }
+
+      const category = historyRecordCategory(groupParam);
+      const recordParam = params.get("record");
+      const leaderboard = historyLeaderboardItem(recordParam);
+      const legacyClassic = CLASSIC_RECORDS.find((item) => item.key === recordParam);
+
+      if (legacyClassic) {
+        setGroup("classic");
+        setRecordKey(null);
+        return;
+      }
+
       setGroup(category?.key ?? null);
-      setRecordKey(record && category && record.category === category.key ? record.key : null);
+      setRecordKey(leaderboard && category && leaderboard.category === category.key ? leaderboard.key : null);
     };
+
     syncFromUrl();
     window.addEventListener("popstate", syncFromUrl);
     window.addEventListener("snooker:root-navigation", syncFromUrl);
@@ -68,12 +82,10 @@ export function HistoryRecordsSection() {
     return () => { document.body.style.overflow = previous; };
   }, [group]);
 
-  const category = group ? historyRecordCategory(group) : null;
-  const selected = recordKey ? historyRecordItem(recordKey) : null;
-  const categoryItems = useMemo(() => group ? historyRecordItemsForCategory(group) : [], [group]);
-  void categoryItems;
+  const category = group && group !== "classic" ? historyRecordCategory(group) : null;
+  const selected = recordKey ? historyLeaderboardItem(recordKey) : null;
 
-  const openCategory = (key: HistoryRecordCategoryKey) => {
+  const openGroup = (key: HistoryRecordsViewKey) => {
     const url = new URL(window.location.href);
     url.searchParams.set("view", "data");
     url.searchParams.delete("player");
@@ -88,7 +100,7 @@ export function HistoryRecordsSection() {
     setRecordKey(null);
   };
 
-  const openRecord = (item: HistoryRecordItem) => {
+  const openLeaderboard = (item: HistoryRecordItem) => {
     const url = new URL(window.location.href);
     url.searchParams.set("view", "data");
     url.searchParams.set("section", "records");
@@ -126,34 +138,46 @@ export function HistoryRecordsSection() {
     setRecordKey(null);
   };
 
+  const overlayTitle = selected?.titleZh ?? (group === "classic" ? CLASSIC_RECORD_ENTRY.titleZh : category?.titleZh ?? "历史与纪录");
+
   return <>
     <section className={`${dataStyles.card} ${styles.hubCard}`}>
       <div className={dataStyles.sectionHeader}>
         <div><small>HISTORY &amp; RECORDS</small><h2>历史与纪录</h2></div>
-        <span className={styles.sectionCount}>{HISTORY_RECORD_CATEGORIES.length} 类</span>
+        <span className={styles.sectionCount}>5 个入口</span>
       </div>
       <div className={styles.categoryGrid}>
         {HISTORY_RECORD_CATEGORIES.map((item) => {
-          const count = historyRecordItemsForCategory(item.key).length;
-          return <button type="button" className={styles.categoryCard} onClick={() => openCategory(item.key)} key={item.key}>
-            <div className={styles.categoryTop}><small>{item.titleEn}</small><span>{count}</span></div>
-            <strong>{item.titleZh}</strong>
-            <p>{item.descriptionZh}</p>
-            <div className={styles.categoryMeta}><span>{item.previewZh}</span><i>›</i></div>
+          const count = historyLeaderboardItemsForCategory(item.key).length;
+          return <button type="button" className={styles.categoryCard} onClick={() => openGroup(item.key)} key={item.key}>
+            <div className={styles.categoryText}>
+              <small>{item.titleEn}</small>
+              <strong>{item.titleZh}</strong>
+              <p>{item.previewZh}</p>
+            </div>
+            <div className={styles.categoryAside}><span>{count}项</span><i>›</i></div>
           </button>;
         })}
+        <button type="button" className={`${styles.categoryCard} ${styles.classicEntry}`} onClick={() => openGroup("classic")}>
+          <div className={styles.categoryText}>
+            <small>{CLASSIC_RECORD_ENTRY.titleEn}</small>
+            <strong>{CLASSIC_RECORD_ENTRY.titleZh}</strong>
+            <p>{CLASSIC_RECORD_ENTRY.previewZh}</p>
+          </div>
+          <div className={styles.categoryAside}><span>{CLASSIC_RECORDS.length}项</span><i>›</i></div>
+        </button>
       </div>
     </section>
 
-    {group && category ? <div className={styles.overlay} data-history-records-overlay="true">
+    {group ? <div className={styles.overlay} data-history-records-overlay="true">
       <div className={styles.overlayScroll}>
         <header className={styles.mobileHeader}>
           <button type="button" onClick={selected ? backToCategory : closeRecords} aria-label="返回"><span aria-hidden="true">‹</span></button>
-          <strong>{selected?.titleZh ?? category.titleZh}</strong>
+          <strong>{overlayTitle}</strong>
           <span>DATA</span>
         </header>
 
-        {selected ? <RecordDetail item={selected} /> : <CategoryDetail categoryKey={group} onOpenRecord={openRecord} />}
+        {selected ? <LeaderboardDetail item={selected} /> : group === "classic" ? <ClassicRecordsPage /> : category ? <CategoryDetail categoryKey={category.key} onOpenLeaderboard={openLeaderboard} /> : null}
       </div>
     </div> : null}
   </>;
@@ -161,39 +185,43 @@ export function HistoryRecordsSection() {
 
 function CategoryDetail({
   categoryKey,
-  onOpenRecord,
+  onOpenLeaderboard,
 }: {
   categoryKey: HistoryRecordCategoryKey;
-  onOpenRecord: (item: HistoryRecordItem) => void;
+  onOpenLeaderboard: (item: HistoryRecordItem) => void;
 }) {
   const category = historyRecordCategory(categoryKey)!;
-  const items = historyRecordItemsForCategory(categoryKey);
+  const items = historyLeaderboardItemsForCategory(categoryKey);
+
   return <main className={styles.detailPage}>
     <section className={styles.desktopIntro}>
       <div><small>{category.titleEn}</small><h1>{category.titleZh}</h1><p>{category.descriptionZh}</p></div>
       <strong>{items.length} 项</strong>
     </section>
-    <section className={styles.itemGrid}>
-      {items.map((item) => <button type="button" className={styles.itemCard} onClick={() => onOpenRecord(item)} key={item.key}>
-        <div className={styles.itemCardTop}><small>{itemTypeLabel(item)}</small><span>{itemSizeLabel(item)}</span></div>
-        <strong>{item.titleZh}</strong>
-        <em>{item.titleEn}</em>
-        <p>{item.descriptionZh}</p>
-        <div className={styles.itemCardFoot}><span>{itemActionLabel(item)}</span><i>›</i></div>
+    <section className={`${styles.itemGrid} ${items.length === 1 ? styles.itemGridSingle : ""}`}>
+      {items.map((item) => <button type="button" className={styles.itemCard} onClick={() => onOpenLeaderboard(item)} key={item.key}>
+        <div className={styles.itemCardText}>
+          <small>{itemTypeLabel(item)}</small>
+          <strong>{item.titleZh}</strong>
+          <em>{item.titleEn}</em>
+          <p>{item.descriptionZh}</p>
+        </div>
+        <div className={styles.itemCardAside}><span>{itemSizeLabel(item)}</span><i>›</i></div>
       </button>)}
     </section>
   </main>;
 }
 
-function RecordDetail({ item }: { item: HistoryRecordItem }) {
+function LeaderboardDetail({ item }: { item: HistoryRecordItem }) {
   const lead = item.rows[0] ?? null;
+
   return <main className={styles.detailPage}>
     <section className={styles.recordIntro}>
       <small>{item.titleEn}</small>
       <h1>{item.titleZh}</h1>
       <p>{item.descriptionZh}</p>
       {lead ? <div className={styles.recordHero}>
-        <span>{item.kind === "timeline" ? "最新一届" : item.rows.length > 1 ? "历史第一" : "纪录"}</span>
+        <span>{item.kind === "timeline" ? "最新一届" : "历史第一"}</span>
         <strong>{lead.value}</strong>
         <b>{lead.nameZh}</b>
         {lead.nameEn ? <em>{lead.nameEn}</em> : null}
@@ -223,6 +251,35 @@ function RecordDetail({ item }: { item: HistoryRecordItem }) {
         <div><small>统计口径</small><p>{item.methodologyZh}</p></div>
         <div><small>数据来源</small><p>{item.source.name}{item.source.updatedAt ? ` · 更新 ${item.source.updatedAt}` : ""}</p>{item.source.note ? <span>{item.source.note}</span> : null}</div>
       </div>
+    </section>
+  </main>;
+}
+
+function ClassicRecordsPage() {
+  const sourceNames = [...new Set(CLASSIC_RECORDS.map((item) => item.source.name))].join(" · ");
+
+  return <main className={styles.detailPage}>
+    <section className={styles.desktopIntro}>
+      <div><small>{CLASSIC_RECORD_ENTRY.titleEn}</small><h1>{CLASSIC_RECORD_ENTRY.titleZh}</h1><p>{CLASSIC_RECORD_ENTRY.descriptionZh}</p></div>
+      <strong>{CLASSIC_RECORDS.length} 项</strong>
+    </section>
+    <section className={styles.classicGrid}>
+      {CLASSIC_RECORDS.map((item) => {
+        const row = item.rows[0];
+        if (!row) return null;
+        return <article className={styles.classicCard} key={item.key}>
+          <small>{item.titleEn}</small>
+          <h2>{item.titleZh}</h2>
+          <strong>{row.value}</strong>
+          <b>{row.nameZh}</b>
+          {row.nameEn ? <em>{row.nameEn}</em> : null}
+          {row.meta ? <p>{row.meta}</p> : null}
+        </article>;
+      })}
+    </section>
+    <section className={styles.classicMeta}>
+      <div><small>数据说明</small><p>本页为固定静态历史快照，不会在用户访问时请求外部网站或数据库。纪录口径随本站静态数据版本人工维护。</p></div>
+      <div><small>数据来源</small><p>{sourceNames}</p></div>
     </section>
   </main>;
 }

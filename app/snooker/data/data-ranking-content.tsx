@@ -12,6 +12,7 @@ import { technicalMetricKey, type SnookerTechnicalHub, type SnookerTechnicalMetr
 import { honoursMetricKey, type SnookerHonoursHub, type SnookerHonoursMetricKey } from "@/lib/snooker/honours-hub";
 import { SeasonLeadersSection, TechnicalDetailLoadingPage, TechnicalDetailPage } from "./data-technical-content";
 import { HonoursDetailOverlay, HonoursLeadersSection } from "./data-honours-content";
+import { HistoryRecordsSection } from "./data-history-records-content-v2";
 import PlayerCompareTeaser from "../compare/player-compare-teaser";
 import styles from "./data.module.css";
 
@@ -447,13 +448,7 @@ export function DataHubContent({
       <div className={styles.technicalLoading}>正在加载职业生涯荣誉数据…</div>
     </section>}</div>
 
-    <section className={styles.card}>
-      <div className={styles.sectionHeader}><div><small>MORE DATA</small><h2>更多数据</h2></div></div>
-      <div className={styles.moduleGrid}>
-        <article><small>RACE & HISTORY</small><strong>资格与历史</strong><p>大师赛 / 世锦赛资格线、历史排名节点</p><span>排名页已预留入口</span></article>
-        <article><small>MORE RECORDS</small><strong>更多纪录</strong><p>奖金、年龄、连续纪录与历史专题</p><span>后续阶段接入</span></article>
-      </div>
-    </section>
+    <HistoryRecordsSection />
 
     {infoOpen ? <RankingInfoModal hub={hub} onClose={() => setInfoOpen(false)} /> : null}
     {honoursHub?.online && honoursKey ? <HonoursDetailOverlay hub={honoursHub} players={resolvedPlayers} selectedKey={honoursKey} onSelectKey={selectHonours} onOpenPlayer={onOpenPlayer} onClose={closeHonours} /> : null}
