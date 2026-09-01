@@ -53,6 +53,7 @@ test("technical leaderboard is a desktop table pilot while mobile keeps the comp
   assert.match(technical, /className=\{styles\.technicalTableStickyHead\}/);
   assert.match(css, /\.technicalDesktopBack\{display:none\}/);
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.technicalMobileBack\{display:none\}/);
+  assert.match(css, /\.technicalPageHeader\{grid-template-columns:minmax\(0,1fr\) auto;padding:24px 2px 0\}/);
   assert.doesNotMatch(css, /\.technicalPage::before/);
   assert.match(css, /\.technicalSidebar\{position:sticky;top:var\(--snooker-header-height,68px\)/);
   assert.match(css, /\.technicalTableStickyHead\{position:sticky;top:var\(--snooker-header-height,68px\);z-index:2;margin:0 -18px;background:transparent\}/);
