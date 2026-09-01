@@ -33,7 +33,7 @@ test("phase two desktop shell keeps each main view inside an intentional content
   assert.match(css, /\.contentHome,\.contentMatches,\.contentPlayers,\.contentData\{max-width:none\}/);
 });
 
-test("technical leaderboard uses a real bounded desktop scroll region while mobile stays compact", async () => {
+test("technical leaderboard uses one page scroll with a sticky desktop sidebar and table header", async () => {
   const technical = await read("app/snooker/data/data-technical-content.tsx");
   const css = await read("app/snooker/data/technical-detail.module.css");
   const shellCss = await read("app/snooker/snooker-data-center.module.css");
@@ -43,14 +43,15 @@ test("technical leaderboard uses a real bounded desktop scroll region while mobi
   assert.match(technical, /className=\{detailStyles\.technicalMatches\}>\{row\.matchesPlayed \?\? "—"\}/);
   assert.match(css, /\.technicalMatchesHeader,\.technicalMatches,\.technicalArrowHeader\{display:none\}/);
   assert.match(css, /\.technicalMobileHeader[\s\S]*grid-template-columns:48px minmax\(0,1fr\) 48px/);
-  assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.detailContent\{[\s\S]*position:sticky;[\s\S]*grid-template-columns:230px minmax\(0,1fr\)/);
-  assert.match(css, /\.detailContent\{[\s\S]*top:calc\(var\(--snooker-header-height,64px\) \+ var\(--technical-workspace-gap\)\);[\s\S]*height:calc\(100dvh - var\(--snooker-header-height,64px\) - var\(--technical-workspace-gap\)\)/);
-  assert.match(technical, /ref=\{tableScrollRef\}/);
-  assert.match(technical, /tableScrollRef\.current\.scrollTop = 0/);
-  assert.match(css, /\.technicalTablePanel\{[\s\S]*min-height:0;[\s\S]*overflow:hidden;[\s\S]*grid-template-rows:auto minmax\(0,1fr\) auto/);
-  assert.match(css, /\.technicalTableScroll\{[\s\S]*min-height:0;[\s\S]*overflow-y:auto;[\s\S]*overscroll-behavior:contain;[\s\S]*scrollbar-gutter:stable/);
-  assert.match(css, /\.technicalTableHeader\{[\s\S]*border-bottom:1px solid var\(--line\)/);
-  assert.doesNotMatch(css, /\.technicalTableHeader\{[^}]*position:sticky/);
+  assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.detailContent\{[\s\S]*grid-template-columns:230px minmax\(0,1fr\);[\s\S]*align-items:start/);
+  assert.doesNotMatch(css, /\.detailContent\{[^}]*position:sticky/);
+  assert.doesNotMatch(css, /\.detailContent\{[^}]*height:calc\(100dvh/);
+  assert.match(css, /\.technicalSidebar\{[\s\S]*position:sticky;[\s\S]*top:calc\(var\(--snooker-header-height,64px\) \+ var\(--technical-workspace-gap\)\)/);
+  assert.match(css, /\.technicalTableHeader\{[\s\S]*position:sticky;[\s\S]*top:calc\(var\(--snooker-header-height,64px\) \+ var\(--technical-workspace-gap\)\);[\s\S]*background:#fff/);
+  assert.doesNotMatch(technical, /tableScrollRef|technicalTableScroll/);
+  assert.doesNotMatch(css, /\.technicalTableScroll/);
+  assert.doesNotMatch(css, /overflow-y:auto|scrollbar-gutter:stable/);
+  assert.match(css, /\.technicalTablePanel\{[\s\S]*overflow:visible/);
   assert.doesNotMatch(technical, /technicalStickyGutter/);
   assert.doesNotMatch(technical, /technicalTableStickyHead/);
   assert.doesNotMatch(css, /technicalStickyGutter|technicalTableStickyHead|\.technicalPage::before/);

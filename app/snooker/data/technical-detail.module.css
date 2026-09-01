@@ -122,7 +122,6 @@
 }
 .technicalTableHeader span:last-child{text-align:right}
 .technicalMatchesHeader,.technicalMatches,.technicalArrowHeader{display:none}
-.technicalTableScroll{min-width:0}
 .technicalRankingList{min-width:0}
 .technicalRankingList button{
   width:100%;
@@ -228,33 +227,28 @@
   }
 
   .detailContent{
-    position:sticky;
-    top:calc(var(--snooker-header-height,64px) + var(--technical-workspace-gap));
-    height:calc(100dvh - var(--snooker-header-height,64px) - var(--technical-workspace-gap));
     min-height:0;
-    padding:0 0 18px;
+    padding:0 0 34px;
     display:grid;
     grid-template-columns:230px minmax(0,1fr);
-    align-items:stretch;
+    align-items:start;
     column-gap:18px;
   }
 
   .technicalSidebar{
+    position:sticky;
+    top:calc(var(--snooker-header-height,64px) + var(--technical-workspace-gap));
+    z-index:3;
     min-width:0;
-    min-height:0;
-    height:100%;
+    align-self:start;
     display:flex;
     flex-direction:column;
     gap:10px;
-    overflow-y:auto;
-    overscroll-behavior:contain;
-    scrollbar-width:thin;
   }
   .technicalMetricNav{
     position:static;
     margin:0;
     padding:10px;
-    flex:0 0 auto;
     display:flex;
     flex-direction:column;
     gap:6px;
@@ -299,7 +293,6 @@
     align-items:center;
     justify-content:center;
     gap:5px;
-    flex:0 0 auto;
     font-size:10px;
     font-weight:850;
     cursor:pointer;
@@ -312,17 +305,20 @@
   .technicalTablePanel{
     min-width:0;
     min-height:0;
-    height:100%;
-    padding:0;
-    overflow:hidden;
-    display:grid;
-    grid-template-rows:auto minmax(0,1fr) auto;
+    padding:0 18px 18px;
+    overflow:visible;
   }
   .technicalTableHeader{
+    position:sticky;
+    top:calc(var(--snooker-header-height,64px) + var(--technical-workspace-gap));
+    z-index:4;
+    margin:0 -18px;
     grid-template-columns:48px minmax(0,1fr) 72px 110px 14px;
     gap:11px;
-    padding:18px 18px 10px;
+    padding:18px 30px 10px;
     border-bottom:1px solid var(--line);
+    border-radius:20px 20px 0 0;
+    background:#fff;
     font-size:9px;
     font-weight:800;
   }
@@ -331,17 +327,8 @@
   .technicalTableHeader span:nth-child(4){text-align:right}
   .technicalMatchesHeader,.technicalArrowHeader{display:block}
 
-  .technicalTableScroll{
-    min-width:0;
-    min-height:0;
-    overflow-x:hidden;
-    overflow-y:auto;
-    overscroll-behavior:contain;
-    scrollbar-gutter:stable;
-  }
   .technicalRankingList{
     min-width:0;
-    padding:0 18px;
   }
   .technicalRankingList button{
     min-height:60px;
@@ -388,9 +375,8 @@
     outline-offset:2px;
   }
   .rankingFooterMeta{
-    margin:0;
-    padding:12px 18px 14px;
-    border-top:1px solid var(--line);
+    margin-top:10px;
+    padding:13px 4px 0;
     font-size:9px;
   }
   .technicalLoadingCard{margin:0}

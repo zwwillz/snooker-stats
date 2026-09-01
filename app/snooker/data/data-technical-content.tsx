@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { SnookerTechnicalHub, SnookerTechnicalList, SnookerTechnicalMetricKey } from "@/lib/snooker/technical-hub";
 import styles from "./data.module.css";
@@ -108,11 +108,6 @@ export function TechnicalDetailContent({
   const bySlug = useMemo(() => playerMap(players), [players]);
   const selected = metricFor(hub, selectedKey) ?? hub.lists[0] ?? null;
   const updated = capturedLabel(hub.capturedAt);
-  const tableScrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (tableScrollRef.current) tableScrollRef.current.scrollTop = 0;
-  }, [selectedKey]);
 
   return <div className={detailStyles.detailContent}>
     <aside className={detailStyles.technicalSidebar}>
@@ -131,21 +126,19 @@ export function TechnicalDetailContent({
 
     {selected ? <section className={`${styles.card} ${detailStyles.technicalTablePanel}`}>
       <div className={detailStyles.technicalTableHeader}><span>排名</span><span>球员</span><span className={detailStyles.technicalMatchesHeader}>场次</span><span>{selected.shortLabelZh}</span><span className={detailStyles.technicalArrowHeader} aria-hidden="true" /></div>
-      <div className={detailStyles.technicalTableScroll} ref={tableScrollRef}>
-        <div className={detailStyles.technicalRankingList}>
-          {selected.rows.map((row) => {
-            const player = bySlug.get(row.playerSlug);
-            return <button type="button" onClick={() => onOpenPlayer(row.playerSlug)} key={`${selected.key}-${row.playerId}`}>
-              <strong>{row.rank}</strong>
-              <TechnicalAvatar player={player} compact />
-              <span><b>{player?.nameZh ?? row.playerSlug}</b><small>{player?.nameEn ?? row.playerSlug}{row.matchesPlayed ? ` · ${row.matchesPlayed}场` : ""}</small></span>
-              <span className={detailStyles.technicalMatches}>{row.matchesPlayed ?? "—"}</span>
-              <em>{formatMetricValue(selected, row.value)}</em>
-              <i>›</i>
-            </button>;
-          })}
-          {!selected.rows.length ? <div className={styles.emptyState}>当前赛季暂无该项数据。</div> : null}
-        </div>
+      <div className={detailStyles.technicalRankingList}>
+        {selected.rows.map((row) => {
+          const player = bySlug.get(row.playerSlug);
+          return <button type="button" onClick={() => onOpenPlayer(row.playerSlug)} key={`${selected.key}-${row.playerId}`}>
+            <strong>{row.rank}</strong>
+            <TechnicalAvatar player={player} compact />
+            <span><b>{player?.nameZh ?? row.playerSlug}</b><small>{player?.nameEn ?? row.playerSlug}{row.matchesPlayed ? ` · ${row.matchesPlayed}场` : ""}</small></span>
+            <span className={detailStyles.technicalMatches}>{row.matchesPlayed ?? "—"}</span>
+            <em>{formatMetricValue(selected, row.value)}</em>
+            <i>›</i>
+          </button>;
+        })}
+        {!selected.rows.length ? <div className={styles.emptyState}>当前赛季暂无该项数据。</div> : null}
       </div>
       <div className={detailStyles.rankingFooterMeta}>
         <span>{hub.seasonLabel} · {hub.sourceName}{updated ? ` · 更新 ${updated}` : ""}</span>
