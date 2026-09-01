@@ -95,28 +95,33 @@ export function TechnicalDetailContent({
   selectedKey,
   onSelectKey,
   onOpenPlayer,
+  onClose,
 }: {
   hub: SnookerTechnicalHub;
   players: SnookerPlayerListItem[];
   selectedKey: SnookerTechnicalMetricKey;
   onSelectKey: (key: SnookerTechnicalMetricKey) => void;
   onOpenPlayer: (slug: string) => void;
+  onClose: () => void;
 }) {
   const bySlug = useMemo(() => playerMap(players), [players]);
   const selected = metricFor(hub, selectedKey) ?? hub.lists[0] ?? null;
   const updated = capturedLabel(hub.capturedAt);
 
   return <div className={styles.detailContent}>
-    <div className={styles.technicalMetricNav} role="tablist" aria-label="技术榜指标">
-      {hub.lists.map((list) => <button
-        type="button"
-        role="tab"
-        aria-selected={selected?.key === list.key}
-        className={selected?.key === list.key ? styles.technicalMetricActive : ""}
-        onClick={() => onSelectKey(list.key)}
-        key={list.key}
-      ><span>{list.shortLabelZh}</span><small>{list.labelEn}</small></button>)}
-    </div>
+    <aside className={styles.technicalSidebar}>
+      <div className={styles.technicalMetricNav} role="tablist" aria-label="技术榜指标">
+        {hub.lists.map((list) => <button
+          type="button"
+          role="tab"
+          aria-selected={selected?.key === list.key}
+          className={selected?.key === list.key ? styles.technicalMetricActive : ""}
+          onClick={() => onSelectKey(list.key)}
+          key={list.key}
+        ><span>{list.shortLabelZh}</span><small>{list.labelEn}</small></button>)}
+      </div>
+      <button className={styles.technicalDesktopBack} type="button" onClick={onClose}><span aria-hidden="true">‹</span> 返回</button>
+    </aside>
 
     {selected ? <section className={`${styles.card} ${styles.technicalTableCard}`}>
       <div className={styles.technicalTableHeader}><span>排名</span><span>球员</span><span className={styles.technicalMatchesHeader}>场次</span><span>{selected.shortLabelZh}</span><span className={styles.technicalArrowHeader} aria-hidden="true" /></div>
@@ -157,12 +162,12 @@ export function TechnicalDetailPage({
   onOpenPlayer: (slug: string) => void;
   onClose: () => void;
 }) {
-  return <section className={styles.technicalPage} aria-labelledby="technical-page-title">
+  return <section className={styles.technicalPage} data-technical-detail="true" aria-labelledby="technical-page-title">
     <header className={styles.technicalPageHeader}>
-      <button type="button" onClick={onClose}><span aria-hidden="true">‹</span> 返回数据</button>
-      <div><small>TECHNICAL LEADERBOARD</small><h1 id="technical-page-title">技术榜</h1><p>本赛季球员技术表现与比赛效率排名。</p></div>
+      <button className={styles.technicalMobileBack} type="button" onClick={onClose}><span aria-hidden="true">‹</span> 返回数据</button>
+      <div><small>TECHNICAL LEADERBOARD</small><h1 id="technical-page-title">本赛季球员技术榜</h1><p>本赛季球员技术表现与比赛效率排名。</p></div>
       <strong>{hub.seasonLabel}</strong>
     </header>
-    <TechnicalDetailContent hub={hub} players={players} selectedKey={selectedKey} onSelectKey={onSelectKey} onOpenPlayer={onOpenPlayer} />
+    <TechnicalDetailContent hub={hub} players={players} selectedKey={selectedKey} onSelectKey={onSelectKey} onOpenPlayer={onOpenPlayer} onClose={onClose} />
   </section>;
 }

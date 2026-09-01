@@ -36,6 +36,7 @@ test("phase two desktop shell keeps each main view inside an intentional content
 test("technical leaderboard is a desktop table pilot while mobile keeps the compact list", async () => {
   const technical = await read("app/snooker/data/data-technical-content.tsx");
   const css = await read("app/snooker/data/data.module.css");
+  const shellCss = await read("app/snooker/snooker-data-center.module.css");
 
   assert.match(technical, /<span>\{list\.shortLabelZh\}<\/span><small>\{list\.labelEn\}<\/small>/);
   assert.match(technical, /className=\{styles\.technicalMatchesHeader\}>场次/);
@@ -47,4 +48,12 @@ test("technical leaderboard is a desktop table pilot while mobile keeps the comp
   assert.match(css, /\.technicalMetricNav button small\{display:block/);
   assert.match(css, /\.technicalMatches\{display:block!important/);
   assert.match(css, /\.technicalRankingList button:nth-child\(-n\+3\)>strong/);
+  assert.match(technical, /<h1 id="technical-page-title">本赛季球员技术榜<\/h1>/);
+  assert.match(technical, /className=\{styles\.technicalDesktopBack\}/);
+  assert.match(css, /\.technicalDesktopBack\{display:none\}/);
+  assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.technicalMobileBack\{display:none\}/);
+  assert.match(css, /\.technicalSidebar\{position:sticky;top:calc\(var\(--snooker-header-height,68px\) \+ 18px\)/);
+  assert.match(css, /\.technicalTableHeader\{position:sticky;top:calc\(var\(--snooker-header-height,68px\) \+ 18px\)/);
+  assert.match(technical, /data-technical-detail="true"/);
+  assert.match(shellCss, /\.contentData:has\(\[data-technical-detail\]\)>\.dataStatus\{display:none\}/);
 });

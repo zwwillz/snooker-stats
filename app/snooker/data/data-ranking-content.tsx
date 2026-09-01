@@ -333,16 +333,11 @@ export function DataHubContent({
   };
 
   const closeTechnical = () => {
-    const state = window.history.state as { snookerTechnicalDetail?: string } | null;
-    if (state?.snookerTechnicalDetail && window.history.length > 1) {
-      window.history.back();
-      return;
-    }
     const url = new URL(window.location.href);
     url.searchParams.set("view", "data");
     url.searchParams.delete("section");
     url.searchParams.delete("metric");
-    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    window.history.replaceState({ snookerView: "data" }, "", url.pathname + url.search + url.hash);
     setTechnicalKey(null);
   };
 
@@ -385,8 +380,8 @@ export function DataHubContent({
   };
 
   if (technicalKey && !technicalHub?.online) {
-    return <section className={styles.card} aria-label="加载技术榜">
-      <div className={styles.sectionHeader}><div><small>TECHNICAL LEADERBOARD</small><h2>技术榜</h2></div></div>
+    return <section className={styles.card} data-technical-detail="true" aria-label="加载技术榜">
+      <div className={styles.sectionHeader}><div><small>TECHNICAL LEADERBOARD</small><h2>本赛季球员技术榜</h2></div></div>
       <div className={styles.technicalLoading}>正在加载技术榜数据…</div>
     </section>;
   }

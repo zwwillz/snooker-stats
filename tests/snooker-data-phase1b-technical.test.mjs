@@ -59,7 +59,9 @@ test("technical detail supports URL/back navigation and player drill-down withou
   assert.match(technical, /onOpenPlayer\(row\.playerSlug\)/);
   assert.match(technical, /TechnicalDetailPage/);
   assert.match(data, /return <TechnicalDetailPage/);
+  assert.match(data, /data-technical-detail="true" aria-label="加载技术榜"/);
   assert.match(css, /\.technicalPageHeader/);
+  assert.match(data, /const closeTechnical = \(\) => \{[\s\S]*?url\.searchParams\.set\("view", "data"\)[\s\S]*?replaceState\(\{ snookerView: "data" \}/);
   assert.doesNotMatch(root, /SnookerRootController/);
 });
 
