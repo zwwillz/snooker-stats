@@ -1,0 +1,29 @@
+name: Capture core regression failure
+on:
+  push:
+    branches:
+      - feat/tournaments-phase4a-web
+permissions:
+  contents: write
+jobs:
+  capture:
+    if: github.event.head_commit.message == 'chore: capture core regression failure'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/tournaments-phase4a-web
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Capture test output
+        run: npm run test:core > core-failure.txt 2>&1 || true
+      - name: Commit output
+        run: |
+          git config user.name willz
+          git config user.email zw.will@outlook.com
+          git add core-failure.txt
+          git commit -m 'chore: capture core regression output'
+          git push origin HEAD:feat/tournaments-phase4a-web
