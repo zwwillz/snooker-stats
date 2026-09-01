@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { SnookerTechnicalHub, SnookerTechnicalList, SnookerTechnicalMetricKey } from "@/lib/snooker/technical-hub";
 import styles from "./data.module.css";
+import detailStyles from "./technical-detail.module.css";
 
 const leaderKeys: SnookerTechnicalMetricKey[] = ["centuries", "win_rate", "shot_time", "maximums"];
 
@@ -107,42 +108,46 @@ export function TechnicalDetailContent({
   const bySlug = useMemo(() => playerMap(players), [players]);
   const selected = metricFor(hub, selectedKey) ?? hub.lists[0] ?? null;
   const updated = capturedLabel(hub.capturedAt);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
 
-  return <div className={styles.detailContent}>
-    <div className={styles.technicalStickyGutter} aria-hidden="true" />
-    <aside className={styles.technicalSidebar}>
-      <div className={styles.technicalMetricNav} role="tablist" aria-label="技术榜指标">
+  useEffect(() => {
+    if (tableScrollRef.current) tableScrollRef.current.scrollTop = 0;
+  }, [selectedKey]);
+
+  return <div className={detailStyles.detailContent}>
+    <aside className={detailStyles.technicalSidebar}>
+      <div className={detailStyles.technicalMetricNav} role="tablist" aria-label="技术榜指标">
         {hub.lists.map((list) => <button
           type="button"
           role="tab"
           aria-selected={selected?.key === list.key}
-          className={selected?.key === list.key ? styles.technicalMetricActive : ""}
+          className={selected?.key === list.key ? detailStyles.technicalMetricActive : ""}
           onClick={() => onSelectKey(list.key)}
           key={list.key}
         ><span>{list.shortLabelZh}</span><small>{list.labelEn}</small></button>)}
       </div>
-      <button className={styles.technicalDesktopBack} type="button" onClick={onClose}><span aria-hidden="true">‹</span> 返回</button>
+      <button className={detailStyles.technicalDesktopBack} type="button" onClick={onClose}><span aria-hidden="true">‹</span> 返回</button>
     </aside>
 
-    {selected ? <section className={`${styles.card} ${styles.technicalTableCard}`}>
-      <div className={styles.technicalTableStickyHead}>
-        <div className={styles.technicalTableHeader}><span>排名</span><span>球员</span><span className={styles.technicalMatchesHeader}>场次</span><span>{selected.shortLabelZh}</span><span className={styles.technicalArrowHeader} aria-hidden="true" /></div>
+    {selected ? <section className={`${styles.card} ${detailStyles.technicalTablePanel}`}>
+      <div className={detailStyles.technicalTableHeader}><span>排名</span><span>球员</span><span className={detailStyles.technicalMatchesHeader}>场次</span><span>{selected.shortLabelZh}</span><span className={detailStyles.technicalArrowHeader} aria-hidden="true" /></div>
+      <div className={detailStyles.technicalTableScroll} ref={tableScrollRef}>
+        <div className={detailStyles.technicalRankingList}>
+          {selected.rows.map((row) => {
+            const player = bySlug.get(row.playerSlug);
+            return <button type="button" onClick={() => onOpenPlayer(row.playerSlug)} key={`${selected.key}-${row.playerId}`}>
+              <strong>{row.rank}</strong>
+              <TechnicalAvatar player={player} compact />
+              <span><b>{player?.nameZh ?? row.playerSlug}</b><small>{player?.nameEn ?? row.playerSlug}{row.matchesPlayed ? ` · ${row.matchesPlayed}场` : ""}</small></span>
+              <span className={detailStyles.technicalMatches}>{row.matchesPlayed ?? "—"}</span>
+              <em>{formatMetricValue(selected, row.value)}</em>
+              <i>›</i>
+            </button>;
+          })}
+          {!selected.rows.length ? <div className={styles.emptyState}>当前赛季暂无该项数据。</div> : null}
+        </div>
       </div>
-      <div className={styles.technicalRankingList}>
-        {selected.rows.map((row) => {
-          const player = bySlug.get(row.playerSlug);
-          return <button type="button" onClick={() => onOpenPlayer(row.playerSlug)} key={`${selected.key}-${row.playerId}`}>
-            <strong>{row.rank}</strong>
-            <TechnicalAvatar player={player} compact />
-            <span><b>{player?.nameZh ?? row.playerSlug}</b><small>{player?.nameEn ?? row.playerSlug}{row.matchesPlayed ? ` · ${row.matchesPlayed}场` : ""}</small></span>
-            <span className={styles.technicalMatches}>{row.matchesPlayed ?? "—"}</span>
-            <em>{formatMetricValue(selected, row.value)}</em>
-            <i>›</i>
-          </button>;
-        })}
-        {!selected.rows.length ? <div className={styles.emptyState}>当前赛季暂无该项数据。</div> : null}
-      </div>
-      <div className={styles.rankingFooterMeta}>
+      <div className={detailStyles.rankingFooterMeta}>
         <span>{hub.seasonLabel} · {hub.sourceName}{updated ? ` · 更新 ${updated}` : ""}</span>
         {selected.minMatches > 0 ? <span>口径：至少完成 {selected.minMatches} 场比赛</span> : <span>仅统计当前职业巡回赛球员</span>}
       </div>
@@ -165,13 +170,13 @@ export function TechnicalDetailPage({
   onOpenPlayer: (slug: string) => void;
   onClose: () => void;
 }) {
-  return <section className={styles.technicalPage} data-technical-detail="true" aria-label="本赛季球员技术榜">
-    <header className={styles.technicalMobileHeader}>
+  return <section className={detailStyles.technicalPage} data-technical-detail="true" aria-label="本赛季球员技术榜">
+    <header className={detailStyles.technicalMobileHeader}>
       <button type="button" onClick={onClose} aria-label="返回数据"><span aria-hidden="true">‹</span></button>
       <strong>本赛季球员技术榜</strong>
       <span>DATA</span>
     </header>
-    <header className={styles.technicalDesktopIntro}>
+    <header className={detailStyles.technicalDesktopIntro}>
       <div><small>TECHNICAL LEADERBOARD</small><h1>本赛季球员技术榜</h1><p>本赛季球员技术表现与比赛效率排名。</p></div>
       <strong>{hub.seasonLabel}</strong>
     </header>
@@ -180,15 +185,15 @@ export function TechnicalDetailPage({
 }
 
 export function TechnicalDetailLoadingPage({ onClose }: { onClose: () => void }) {
-  return <section className={styles.technicalPage} data-technical-detail="true" aria-label="正在加载本赛季球员技术榜">
-    <header className={styles.technicalMobileHeader}>
+  return <section className={detailStyles.technicalPage} data-technical-detail="true" aria-label="正在加载本赛季球员技术榜">
+    <header className={detailStyles.technicalMobileHeader}>
       <button type="button" onClick={onClose} aria-label="返回数据"><span aria-hidden="true">‹</span></button>
       <strong>本赛季球员技术榜</strong>
       <span>DATA</span>
     </header>
-    <header className={styles.technicalDesktopIntro}>
+    <header className={detailStyles.technicalDesktopIntro}>
       <div><small>TECHNICAL LEADERBOARD</small><h1>本赛季球员技术榜</h1><p>本赛季球员技术表现与比赛效率排名。</p></div>
     </header>
-    <section className={`${styles.card} ${styles.technicalLoadingCard}`}><div className={styles.technicalLoading}>正在加载技术榜数据…</div></section>
+    <section className={`${styles.card} ${detailStyles.technicalLoadingCard}`}><div className={styles.technicalLoading}>正在加载技术榜数据…</div></section>
   </section>;
 }
