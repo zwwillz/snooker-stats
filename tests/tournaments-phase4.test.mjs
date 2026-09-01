@@ -22,6 +22,8 @@ test("phase 4 tournament experience keeps the approved event hierarchy", async (
   assert.match(uiSource, /detailSiteHeader/);
   assert.match(uiSource, /eventStickyIdentity/);
   assert.match(uiSource, /scheduleDesktopMatch/);
+  assert.match(priorityCss, /\.recentEventGrid\{grid-template-columns:1fr!important/);
+  assert.match(priorityCss, /matchDetailBody,.matchDetailBodyWithData\{display:flex!important;flex-direction:column!important/);
   assert.doesNotMatch(uiSource, /matchContextBar/);
 });
 
