@@ -50,11 +50,14 @@ test("technical leaderboard is a desktop table pilot while mobile keeps the comp
   assert.match(css, /\.technicalRankingList button:nth-child\(-n\+3\)>strong/);
   assert.match(technical, /<h1 id="technical-page-title">本赛季球员技术榜<\/h1>/);
   assert.match(technical, /className=\{styles\.technicalDesktopBack\}/);
+  assert.match(technical, /className=\{styles\.technicalTableStickyHead\}/);
   assert.match(css, /\.technicalDesktopBack\{display:none\}/);
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.technicalMobileBack\{display:none\}/);
-  assert.match(css, /\.technicalPage::before\{content:"";position:fixed;left:0;right:0;top:var\(--snooker-header-height,68px\);height:18px;z-index:4;background:#f3f5f4;pointer-events:none\}/);
+  assert.doesNotMatch(css, /\.technicalPage::before/);
   assert.match(css, /\.technicalSidebar\{position:sticky;top:calc\(var\(--snooker-header-height,68px\) \+ 18px\)/);
-  assert.match(css, /\.technicalTableHeader\{position:sticky;top:calc\(var\(--snooker-header-height,68px\) \+ 18px\)/);
+  assert.match(css, /\.technicalTableStickyHead\{position:sticky;top:var\(--snooker-header-height,68px\);z-index:2;margin:-18px -18px 0;padding:18px 0 0;background:#f3f5f4\}/);
+  assert.match(css, /\.technicalTableHeader\{grid-template-columns:[^}]+border-radius:20px 20px 0 0/);
+  assert.doesNotMatch(css, /\.technicalTableHeader\{position:sticky/);
   assert.doesNotMatch(css, /\.technicalTableHeader::before/);
   assert.match(technical, /data-technical-detail="true"/);
   assert.match(shellCss, /\.contentData:has\(\[data-technical-detail\]\)>\.dataStatus\{display:none\}/);

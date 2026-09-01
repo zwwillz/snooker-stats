@@ -124,7 +124,9 @@ export function TechnicalDetailContent({
     </aside>
 
     {selected ? <section className={`${styles.card} ${styles.technicalTableCard}`}>
-      <div className={styles.technicalTableHeader}><span>排名</span><span>球员</span><span className={styles.technicalMatchesHeader}>场次</span><span>{selected.shortLabelZh}</span><span className={styles.technicalArrowHeader} aria-hidden="true" /></div>
+      <div className={styles.technicalTableStickyHead}>
+        <div className={styles.technicalTableHeader}><span>排名</span><span>球员</span><span className={styles.technicalMatchesHeader}>场次</span><span>{selected.shortLabelZh}</span><span className={styles.technicalArrowHeader} aria-hidden="true" /></div>
+      </div>
       <div className={styles.technicalRankingList}>
         {selected.rows.map((row) => {
           const player = bySlug.get(row.playerSlug);
