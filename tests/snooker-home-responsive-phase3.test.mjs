@@ -56,10 +56,21 @@ test("phase three homepage adapts ranking, focus matches and China players by vi
   assert.match(ui, /ref=\{headlineRail\}/);
   assert.match(ui, /aria-label="上一场焦点比赛"/);
   assert.match(ui, /aria-label="下一场焦点比赛"/);
-  assert.match(ui, /title="比赛间歇"/);
-  assert.match(ui, /下一场比赛进入预热或直播状态后/);
+  assert.match(ui, /className=\{priority\.headlineCardFooter\}/);
+  assert.doesNotMatch(ui, /比赛间歇|headlineFallback/);
+  assert.doesNotMatch(priority, /headlineRailFooter|headlineFallback/);
   assert.match(priority, /\.desktopRailControls\{display:none/);
   assert.match(priority, /@media \(min-width:1024px\)[\s\S]*\.desktopRailControls\{display:flex\}/);
+  assert.match(css, /\.homeLeadGrid>:only-child\{grid-column:1\/-1\}/);
+
+  assert.match(ui, /className=\{styles\.heroEventEnglish\}>\{featuredEventCard\.nameEn\}/);
+  assert.match(css, /\.heroEventEnglish\{display:none/);
+  assert.match(css, /\.homeLeadGrid>\.hero \.heroEventEnglish\{display:block/);
+  assert.match(css, /\.homeLeadGrid>\.hero\{min-height:322px/);
+  assert.match(ui, /function headlineEventName\(value: string\)/);
+  assert.match(ui, /<h2 title=\{headlineTitle\}>\{headlineTitle\}<\/h2>/);
+  assert.doesNotMatch(ui, /\{headlineEvent\.nameZh\} · \{headlineMatch\.roundLabelZh\}/);
+  assert.match(css, /\.liveHeader h2\{[^}]*overflow:hidden[^}]*text-overflow:ellipsis;white-space:nowrap/);
 
   assert.match(ui, /row\.rank <= 16 && isChina\(row\.player\)/);
   assert.match(ui, /styles\.chinaTopGridFour/);

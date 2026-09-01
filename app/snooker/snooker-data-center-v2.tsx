@@ -455,6 +455,10 @@ function rankingMoney(value: number) {
   return `€${value.toLocaleString("en-GB")}`;
 }
 
+function headlineEventName(value: string) {
+  return value.replace(/\s*[（(][^（）()]*[）)]/g, "").replace(/\s{2,}/g, " ").trim();
+}
+
 function SectionHeader({ eyebrow, title, action, actionClassName }: { eyebrow?: string; title: string; action?: ReactNode; actionClassName?: string }) {
   return <div className={styles.sectionHeader}><div>{eyebrow ? <small>{eyebrow}</small> : null}<h2>{title}</h2></div>{action ? <span className={actionClassName}>{action}</span> : null}</div>;
 }
@@ -1642,34 +1646,35 @@ export default function SnookerDataCenterV2({
     <div className={`${styles.content} ${activeView === "home" ? styles.contentHome : activeView === "matches" ? styles.contentMatches : activeView === "players" ? styles.contentPlayers : styles.contentData}`}>
       {activeView === "home" ? <>
         <div className={styles.homeLeadGrid}>
-          {featuredEventCard ? <section className={styles.hero}><div className={styles.heroTop}><span className={eventStatusClass(featuredEventCard.status)}><StatusPill status={featuredEventCard.status} label={activeEventCard ? "当前赛事" : graceEventCard ? "刚刚结束" : "下一站"} /></span><span>{featuredEventCard.typeZh}</span></div><small>{activeEventCard ? "CURRENT TOURNAMENT" : graceEventCard ? "JUST FINISHED" : "NEXT TOURNAMENT"}</small><h1>{featuredEventCard.nameZh}</h1><p>{formatDateRange(featuredEventCard.startDate, featuredEventCard.endDate)} · {featuredEventCard.countryZh} {featuredEventCard.cityZh}</p><div className={styles.heroActions}><button onPointerEnter={() => void ensureEventDetail(featuredEventCard.slug)} onFocus={() => void ensureEventDetail(featuredEventCard.slug)} onTouchStart={() => void ensureEventDetail(featuredEventCard.slug)} onClick={() => openEvent(featuredEventCard.slug, featuredDetail?.rounds.length ? "schedule" : "overview")}>查看赛事</button><button className={styles.secondaryButton} onClick={() => changeView("matches")}>赛事列表</button></div></section> : null}
+          {featuredEventCard ? <section className={styles.hero}><div className={styles.heroTop}><span className={eventStatusClass(featuredEventCard.status)}><StatusPill status={featuredEventCard.status} label={activeEventCard ? "当前赛事" : graceEventCard ? "刚刚结束" : "下一站"} /></span><span>{featuredEventCard.typeZh}</span></div><small>{activeEventCard ? "CURRENT TOURNAMENT" : graceEventCard ? "JUST FINISHED" : "NEXT TOURNAMENT"}</small><h1>{featuredEventCard.nameZh}</h1><p className={styles.heroEventEnglish}>{featuredEventCard.nameEn}</p><p className={styles.heroMeta}>{formatDateRange(featuredEventCard.startDate, featuredEventCard.endDate)} · {featuredEventCard.countryZh} {featuredEventCard.cityZh}</p><div className={styles.heroActions}><button onPointerEnter={() => void ensureEventDetail(featuredEventCard.slug)} onFocus={() => void ensureEventDetail(featuredEventCard.slug)} onTouchStart={() => void ensureEventDetail(featuredEventCard.slug)} onClick={() => openEvent(featuredEventCard.slug, featuredDetail?.rounds.length ? "schedule" : "overview")}>查看赛事</button><button className={styles.secondaryButton} onClick={() => changeView("matches")}>赛事列表</button></div></section> : null}
 
           {headlineSelections.length ? <div className={priority.headlineViewport}>
           <div className={priority.headlineCarousel} aria-label="焦点比赛" ref={headlineRail} onScroll={(event) => setHeadlineIndex(nearestRailItemIndex(event.currentTarget))}>
-          {headlineSelections.map(({ match: headlineMatch, event: headlineEvent }) => {
+          {headlineSelections.map(({ match: headlineMatch, event: headlineEvent }, index) => {
             const player1 = players.get(headlineMatch.player1Id);
             const player2 = players.get(headlineMatch.player2Id);
             if (!player1 || !player2) return null;
+            const headlineTitle = headlineEventName(headlineEvent.nameZh);
             return <section className={`${styles.card} ${priority.headlineSlide}`} key={`${headlineEvent.id}-${headlineMatch.id}`}>
-              <div className={styles.liveHeader}><div><small>{headlineMatch.roundLabelZh} · {headlineMatch.timeLabelZh ?? ""}{headlineMatch.matchNo ? ` · #${headlineMatch.matchNo}` : ""}</small><h2>{headlineEvent.nameZh} · {headlineMatch.roundLabelZh}</h2></div><StatusPill status={headlineMatch.status} label={matchDisplayStatus(headlineMatch)} /></div>
+              <div className={styles.liveHeader}><div><small>{headlineMatch.roundLabelZh} · {headlineMatch.timeLabelZh ?? ""}{headlineMatch.matchNo ? ` · #${headlineMatch.matchNo}` : ""}</small><h2 title={headlineTitle}>{headlineTitle}</h2></div><StatusPill status={headlineMatch.status} label={matchDisplayStatus(headlineMatch)} /></div>
               <div className={styles.homeScore}>
                 <button onClick={() => openPlayer(headlineMatch.player1Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={player1} size="lg" />{headlineMatch.winnerId === headlineMatch.player1Id ? <em className={polish.winBadge}>胜</em> : null}{headlineMatch.status === "walkover" && headlineMatch.winnerId && headlineMatch.winnerId !== headlineMatch.player1Id ? <span className={polish.withdrawnAvatarBadge}>退赛</span> : null}</div><span className={polish.homePlayerName}>{player1.shortNameZh}</span></button>
                 <div><strong>{headlineMatch.score1 ?? "-"} <i className={headlineMatch.status === "live" ? priority.liveSeparator : ""}>:</i> {headlineMatch.score2 ?? "-"}</strong><small>{bestOfLabel(headlineMatch.bestOf)}</small><span className={priority.scoreUpdated}><i />更新 {formatUpdatedAt(sourceHealth?.fetchedAt)}</span></div>
                 <button onClick={() => openPlayer(headlineMatch.player2Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={player2} size="lg" />{headlineMatch.winnerId === headlineMatch.player2Id ? <em className={polish.winBadge}>胜</em> : null}{headlineMatch.status === "walkover" && headlineMatch.winnerId && headlineMatch.winnerId !== headlineMatch.player2Id ? <span className={polish.withdrawnAvatarBadge}>退赛</span> : null}</div><span className={polish.homePlayerName}>{player2.shortNameZh}</span></button>
               </div>
               <button className={styles.fullButton} onClick={() => openMatch(headlineMatch.id, headlineEvent.slug)}>查看比赛详情</button>
+              {headlineSelections.length > 1 ? <div className={priority.headlineCardFooter}>
+                <span className={priority.headlineSwipeHint}>左右滑动 · {index + 1}/{headlineSelections.length}</span>
+                <div className={priority.desktopRailControls} aria-label="焦点比赛切换">
+                  <button type="button" disabled={activeHeadlineIndex === 0} onClick={() => scrollRailItem(headlineRail.current, activeHeadlineIndex - 1)} aria-label="上一场焦点比赛">‹</button>
+                  <span aria-live="polite">{activeHeadlineIndex + 1} / {headlineSelections.length}</span>
+                  <button type="button" disabled={activeHeadlineIndex === headlineSelections.length - 1} onClick={() => scrollRailItem(headlineRail.current, activeHeadlineIndex + 1)} aria-label="下一场焦点比赛">›</button>
+                </div>
+              </div> : null}
             </section>;
           })}
           </div>
-          {headlineSelections.length > 1 ? <div className={priority.headlineRailFooter}>
-            <span className={priority.headlineSwipeHint}>左右滑动 · {activeHeadlineIndex + 1}/{headlineSelections.length}</span>
-            <div className={priority.desktopRailControls} aria-label="焦点比赛切换">
-              <button type="button" disabled={activeHeadlineIndex === 0} onClick={() => scrollRailItem(headlineRail.current, activeHeadlineIndex - 1)} aria-label="上一场焦点比赛">‹</button>
-              <span aria-live="polite">{activeHeadlineIndex + 1} / {headlineSelections.length}</span>
-              <button type="button" disabled={activeHeadlineIndex === headlineSelections.length - 1} onClick={() => scrollRailItem(headlineRail.current, activeHeadlineIndex + 1)} aria-label="下一场焦点比赛">›</button>
-            </div>
           </div> : null}
-          </div> : <section className={`${styles.card} ${priority.headlineFallback}`}><SectionHeader eyebrow="MATCH CENTRE" title="比赛间歇" action="赛历持续更新" /><div className={priority.headlineFallbackBody}><span>147</span><div><strong>当前暂无焦点比赛</strong><p>下一场比赛进入预热或直播状态后，这里会自动恢复比分与比赛入口。</p></div></div><div className={priority.headlineFallbackActions}><button className={styles.fullButton} onClick={() => { setEventListMode("calendar"); setSelectedSeason(initialCurrentSeason); changeView("matches"); }}>查看赛季赛历</button><button className={`${styles.fullButton} ${priority.headlineFallbackSecondary}`} onClick={() => changeView("data")}>查看世界排名</button></div></section>}
         </div>
 
         <div className={`${styles.homeSlot} ${styles.homeCompareSlot}`}><PlayerCompareTeaser players={directoryPlayers} initialData={initialPlayerCompare} actionClassName={styles.fullButton} headerClassName={styles.sectionHeader} /></div>
