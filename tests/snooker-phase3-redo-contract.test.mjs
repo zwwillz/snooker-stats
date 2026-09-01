@@ -114,7 +114,9 @@ test("match return state restores exact event origin or the root origin", () => 
   assert.match(ui, /type MatchReturnState =[\s\S]*?kind: "event"[\s\S]*?kind: "root"/);
   assert.match(ui, /matchReturnState\.current = \{ kind: "event", slug: eventSlug, tab: detail\.tab, scrollY: window\.scrollY \}/);
   assert.match(ui, /matchReturnState\.current = \{ kind: "root", view: activeView, scrollY: window\.scrollY \}/);
-  assert.match(ui, /restore\?\.kind === "root"[\s\S]*?setDetail\(null\);[\s\S]*?setActiveView\(restore\.view\)/);
+  assert.match(ui, /window\.history\.replaceState\([\s\S]*?snookerReturnDetail: detail,[\s\S]*?snookerScrollY: window\.scrollY/);
+  assert.match(ui, /window\.history\.pushState\([\s\S]*?snookerReturnDetail: nextDetail,[\s\S]*?snookerScrollY: 0/);
+  assert.match(ui, /state\?\.snookerOrigin && state\.snookerReturnDetail[\s\S]*?setActiveView\(state\.snookerReturnView/);
 });
 
 test("home technical leaderboard uses clean history state so browser back resolves to home URL", () => {

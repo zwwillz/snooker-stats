@@ -32,12 +32,18 @@ test("historical event and match screens keep explicit time context", async () =
 test("event navigation restores season, list mode and scroll positions", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
   assert.match(ui, /eventReturnState = useRef<\{ view: MainView; mode: EventListMode; season: string; scrollY: number \}/);
-  assert.match(ui, /setEventListMode\(restore\.mode\)/);
-  assert.match(ui, /setSelectedSeason\(restore\.season\)/);
-  assert.match(ui, /window\.scrollTo\(\{ top: restore\.scrollY, behavior: "auto" \}\)/);
+  assert.match(ui, /snookerScrollY\?: number/);
+  assert.match(ui, /snookerEventMode\?: EventListMode/);
+  assert.match(ui, /snookerEventSeason\?: string/);
+  assert.match(ui, /replaceState\([\s\S]*?snookerEventMode: eventListMode,[\s\S]*?snookerEventSeason: selectedSeason/);
+  assert.match(ui, /pushState\([\s\S]*?snookerReturnDetail: nextDetail,[\s\S]*?snookerScrollY: 0/);
+  assert.match(ui, /const restoreMode = state\?\.snookerEventMode/);
+  assert.match(ui, /const restoreSeason = state\?\.snookerEventSeason/);
+  assert.match(ui, /window\.scrollTo\(\{ top: restoreScrollY, behavior: "auto" \}\)/);
   assert.match(ui, /type MatchReturnState =[\s\S]*?kind: "event"[\s\S]*?slug: string; tab: EventTab; scrollY: number/);
   assert.match(ui, /matchReturnState\.current = \{ kind: "event", slug: eventSlug, tab: detail\.tab, scrollY: window\.scrollY \}/);
-  assert.match(ui, /restore\?\.kind === "event" && restore\.slug === eventSlug[\s\S]*?setDetail\(\{ type: "event", slug: eventSlug, tab: restore\.tab \}\)/);
+  assert.match(ui, /snookerReturnDetail: detail,[\s\S]*?snookerScrollY: window\.scrollY/);
+  assert.match(ui, /state\?\.snookerOrigin && state\.snookerReturnDetail[\s\S]*?setDetail\(state\.snookerReturnDetail\)/);
 });
 
 test("event tabs are already sticky below the detail header", async () => {

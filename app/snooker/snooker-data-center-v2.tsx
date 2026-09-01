@@ -116,6 +116,9 @@ type SnookerHistoryState = {
   snookerPlayerDetail?: string;
   snookerRankingDetail?: boolean;
   snookerTechnicalDetail?: string;
+  snookerScrollY?: number;
+  snookerEventMode?: EventListMode;
+  snookerEventSeason?: string;
 };
 
 const navItems: Array<{ id: NavId; label: string; labelEn: string; icon: string }> = [
@@ -1355,16 +1358,25 @@ export default function SnookerDataCenterV2({
         setRequestedTechnicalMetric(null);
         setActiveView(state.snookerReturnView ?? state.snookerView ?? urlView);
         setDetail(state.snookerReturnDetail);
-        window.scrollTo({ top: 0, behavior: "auto" });
+        window.requestAnimationFrame(() => window.scrollTo({ top: state.snookerScrollY ?? 0, behavior: "auto" }));
         return;
       }
 
       setRequestedTechnicalMetric(null);
       setDetail(null);
       setActiveView(urlView);
-      if (urlView === "players") {
-        window.requestAnimationFrame(() => window.scrollTo({ top: playerDirectoryScrollY.current, behavior: "auto" }));
+      const eventRestore = eventReturnState.current;
+      if (urlView === "matches") {
+        const restoreMode = state?.snookerEventMode ?? (eventRestore?.view === "matches" ? eventRestore.mode : null);
+        const restoreSeason = state?.snookerEventSeason ?? (eventRestore?.view === "matches" ? eventRestore.season : null);
+        if (restoreMode) setEventListMode(restoreMode);
+        if (restoreSeason) setSelectedSeason(restoreSeason);
       }
+      const restoreScrollY = state?.snookerScrollY
+        ?? (urlView === "players" ? playerDirectoryScrollY.current : eventRestore?.scrollY ?? 0);
+      window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollY, behavior: "auto" }));
+      eventReturnState.current = null;
+      matchReturnState.current = null;
     };
 
     window.addEventListener("popstate", onPopState);
@@ -1433,28 +1445,28 @@ export default function SnookerDataCenterV2({
     return task;
   };
   const openEvent = (slug: string, tab: EventTab = "overview") => {
+    const nextDetail: DetailState = { type: "event", slug, tab };
     if (detail === null) {
       eventReturnState.current = { view: activeView, mode: eventListMode, season: selectedSeason, scrollY: window.scrollY };
+      const currentState = window.history.state as SnookerHistoryState | null;
+      window.history.replaceState({
+        ...currentState,
+        snookerView: activeView,
+        snookerScrollY: window.scrollY,
+        snookerEventMode: eventListMode,
+        snookerEventSeason: selectedSeason,
+      } satisfies SnookerHistoryState, "", window.location.href);
     }
-    setDetail({ type: "event", slug, tab });
+    window.history.pushState({
+      snookerView: activeView,
+      snookerOrigin: true,
+      snookerReturnView: activeView,
+      snookerReturnDetail: nextDetail,
+      snookerScrollY: 0,
+    } satisfies SnookerHistoryState, "", window.location.href);
+    setDetail(nextDetail);
     void ensureEventDetail(slug);
     window.scrollTo({ top: 0, behavior: "auto" });
-  };
-  // Preserve the existing return-state restoration for browser history and future shared navigation.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const closeEvent = () => {
-    const restore = eventReturnState.current;
-    setDetail(null);
-    if (restore) {
-      setActiveView(restore.view);
-      if (restore.view === "matches") {
-        setEventListMode(restore.mode);
-        setSelectedSeason(restore.season);
-      }
-      window.requestAnimationFrame(() => window.scrollTo({ top: restore.scrollY, behavior: "auto" }));
-    }
-    eventReturnState.current = null;
-    matchReturnState.current = null;
   };
   const openMatch = (matchId: string, eventSlug: string) => {
     if (detail?.type === "event" && detail.slug === eventSlug) {
@@ -1462,29 +1474,28 @@ export default function SnookerDataCenterV2({
     } else {
       matchReturnState.current = { kind: "root", view: activeView, scrollY: window.scrollY };
     }
+    const currentState = window.history.state as SnookerHistoryState | null;
+    window.history.replaceState({
+      ...currentState,
+      snookerView: activeView,
+      snookerOrigin: detail?.type === "event" ? true : currentState?.snookerOrigin,
+      snookerReturnView: activeView,
+      snookerReturnDetail: detail,
+      snookerScrollY: window.scrollY,
+    } satisfies SnookerHistoryState, "", window.location.href);
+    const nextDetail: DetailState = { type: "match", matchId, eventSlug };
+    window.history.pushState({
+      snookerView: activeView,
+      snookerOrigin: true,
+      snookerReturnView: activeView,
+      snookerReturnDetail: nextDetail,
+      snookerScrollY: 0,
+    } satisfies SnookerHistoryState, "", window.location.href);
     void ensureEventDetail(eventSlug);
     void ensureMatchDetail(matchId);
     setMatchDataTab("match");
-    setDetail({ type: "match", matchId, eventSlug });
+    setDetail(nextDetail);
     window.scrollTo({ top: 0, behavior: "auto" });
-  };
-  // Preserve the existing return-state restoration after removing visible detail-page back controls.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const closeMatch = (eventSlug: string) => {
-    const restore = matchReturnState.current;
-    if (restore?.kind === "event" && restore.slug === eventSlug) {
-      setDetail({ type: "event", slug: eventSlug, tab: restore.tab });
-      window.requestAnimationFrame(() => window.scrollTo({ top: restore.scrollY, behavior: "auto" }));
-    } else if (restore?.kind === "root") {
-      setDetail(null);
-      setActiveView(restore.view);
-      window.requestAnimationFrame(() => window.scrollTo({ top: restore.scrollY, behavior: "auto" }));
-    } else {
-      setDetail(null);
-      setActiveView("home");
-      window.scrollTo({ top: 0, behavior: "auto" });
-    }
-    matchReturnState.current = null;
   };
   const openPlayer = (playerId: string) => {
     const target = players.get(playerId);

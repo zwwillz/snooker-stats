@@ -52,7 +52,7 @@ test("homepage avoids normal compare refetches while recovering an absent bootst
 test("home event and match detail stay summary-first and hydrate full detail only after entry", () => {
   assert.match(bootstrap, /detailPartial: true/);
   assert.match(ui, /existing && !existing\.detailPartial/);
-  assert.match(ui, /const openMatch = \(matchId: string, eventSlug: string\) => \{[\s\S]*?void ensureEventDetail\(eventSlug\);[\s\S]*?setDetail\(\{ type: "match", matchId, eventSlug \}\)/);
+  assert.match(ui, /const openMatch = \(matchId: string, eventSlug: string\) => \{[\s\S]*?const nextDetail: DetailState = \{ type: "match", matchId, eventSlug \};[\s\S]*?void ensureEventDetail\(eventSlug\);[\s\S]*?setDetail\(nextDetail\)/);
 });
 
 test("live striker state renders inside match detail without a second dashboard poller", () => {
