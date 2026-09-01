@@ -67,6 +67,9 @@
   display:contents;
 }
 
+.technicalStickyGap{display:none}
+.technicalTableSticky,.technicalTableBody{display:contents}
+
 .technicalMetricNav{
   position:sticky;
   top:68px;
@@ -198,7 +201,7 @@
     grid-template-columns:minmax(0,1fr) auto;
     gap:16px;
     align-items:center;
-    margin-bottom:20px;
+    margin-bottom:2px;
     padding:24px 2px 0;
   }
   .technicalDesktopIntro small{
@@ -237,17 +240,24 @@
 
   .technicalSidebar{
     position:sticky;
-    top:calc(var(--snooker-header-height,64px) + var(--technical-workspace-gap));
+    top:var(--snooker-header-height,64px);
     z-index:3;
     min-width:0;
     align-self:start;
     display:flex;
     flex-direction:column;
-    gap:10px;
+    gap:0;
+  }
+  .technicalStickyGap{
+    display:block;
+    width:100%;
+    height:var(--technical-workspace-gap);
+    flex:0 0 var(--technical-workspace-gap);
+    background:var(--bg);
   }
   .technicalMetricNav{
     position:static;
-    margin:0;
+    margin:0 0 10px;
     padding:10px;
     display:flex;
     flex-direction:column;
@@ -305,17 +315,27 @@
   .technicalTablePanel{
     min-width:0;
     min-height:0;
-    padding:0 18px 18px;
+    padding:0;
     overflow:visible;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+  }
+  .technicalTableSticky{
+    position:sticky;
+    top:var(--snooker-header-height,64px);
+    z-index:4;
+    display:block;
+    min-width:0;
   }
   .technicalTableHeader{
-    position:sticky;
-    top:calc(var(--snooker-header-height,64px) + var(--technical-workspace-gap));
-    z-index:4;
-    margin:0 -18px;
+    position:static;
+    margin:0;
     grid-template-columns:48px minmax(0,1fr) 72px 110px 14px;
     gap:11px;
     padding:18px 30px 10px;
+    border:1px solid var(--line);
     border-bottom:1px solid var(--line);
     border-radius:20px 20px 0 0;
     background:#fff;
@@ -327,8 +347,19 @@
   .technicalTableHeader span:nth-child(4){text-align:right}
   .technicalMatchesHeader,.technicalArrowHeader{display:block}
 
+  .technicalTableBody{
+    min-width:0;
+    display:block;
+    overflow:hidden;
+    border:1px solid var(--line);
+    border-top:0;
+    border-radius:0 0 20px 20px;
+    background:#fff;
+    box-shadow:0 11px 30px rgba(35,45,41,.045);
+  }
   .technicalRankingList{
     min-width:0;
+    padding:0 18px;
   }
   .technicalRankingList button{
     min-height:60px;
@@ -375,8 +406,8 @@
     outline-offset:2px;
   }
   .rankingFooterMeta{
-    margin-top:10px;
-    padding:13px 4px 0;
+    margin:10px 18px 0;
+    padding:13px 4px 14px;
     font-size:9px;
   }
   .technicalLoadingCard{margin:0}
