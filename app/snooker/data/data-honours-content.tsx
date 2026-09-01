@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { SnookerHonoursHub, SnookerHonoursList, SnookerHonoursMetricKey } from "@/lib/snooker/honours-hub";
 import shellStyles from "../snooker-data-center.module.css";
-import { HistoryRecordsSection } from "./data-history-records-content";
+import { HistoryRecordsSection } from "./data-history-records-content-v2";
 import styles from "./data.module.css";
 
 const leaderKeys: SnookerHonoursMetricKey[] = ["ranking_titles", "triple_crown_titles", "world_championship_titles", "career_147s"];
