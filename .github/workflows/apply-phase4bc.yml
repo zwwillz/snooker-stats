@@ -1,0 +1,24 @@
+name: Apply Phase 4BC
+'on':
+  push:
+    branches: ['feat/tournaments-phase4a-web']
+    paths: ['.github/workflows/apply-phase4bc.yml']
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/tournaments-phase4a-web
+      - name: Apply patch
+        run: python .github/scripts/apply-phase4bc.py
+      - name: Commit product changes
+        run: |
+          git config user.name willz
+          git config user.email zw.will@outlook.com
+          rm .github/workflows/apply-phase4bc.yml .github/scripts/apply-phase4bc.py
+          git add app/snooker/snooker-data-center-v2.tsx app/snooker/snooker-priority.module.css .github
+          git commit -m 'feat(tournaments): redesign event and match details'
+          git push origin HEAD:feat/tournaments-phase4a-web
