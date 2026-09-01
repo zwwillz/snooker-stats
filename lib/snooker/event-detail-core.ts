@@ -1,4 +1,4 @@
-import type { SnookerEvent, SnookerMatchStatus, SnookerPlayer, SnookerPrizeRow, SnookerRound } from "./domain";
+import type { SnookerEvent, SnookerEventPlayerStats, SnookerMatch, SnookerMatchStatus, SnookerPlayer, SnookerPrizeRow, SnookerRound } from "./domain";
 import { compactEventTypeLabel, normalizeEventTaxonomy } from "./taxonomy";
 import { getSnookerSupabasePublicConfig } from "./supabase-config";
 import { loadSnookerPlayersByDbIds } from "./scoped-player-data";
@@ -80,6 +80,14 @@ type DbPrize = {
   is_total: boolean;
 };
 
+type DbBreak = {
+  match_id: string;
+  player_id: string;
+  break_value: number;
+};
+
+const BREAK_BATCH_SIZE = 48;
+
 async function rest<T>(path: string, noStore = false): Promise<T> {
   if (process.env.SNOOKER_BUILD_OFFLINE === "1") throw new Error("SNOOKER_BUILD_OFFLINE");
   const response = await fetch(`${REST_URL}/${path}`, {
@@ -135,6 +143,124 @@ function chinaTimeLabel(value: string | null) {
   return `${Number(part("month"))}月${Number(part("day"))}日 ${part("hour")}:${part("minute")}`;
 }
 
+function inFilter(values: string[]) {
+  return encodeURIComponent(`(${values.join(",")})`);
+}
+
+async function loadEventBreaks(matchIds: string[]) {
+  const requests: Array<Promise<DbBreak[]>> = [];
+  for (let index = 0; index < matchIds.length; index += BREAK_BATCH_SIZE) {
+    const batch = matchIds.slice(index, index + BREAK_BATCH_SIZE);
+    requests.push(rest<DbBreak[]>(`snooker_breaks?select=match_id,player_id,break_value&match_id=in.${inFilter(batch)}`));
+  }
+  const settled = await Promise.allSettled(requests);
+  return settled.flatMap((item) => item.status === "fulfilled" ? item.value : []);
+}
+
+function finalMatch(rounds: SnookerRound[]) {
+  return rounds.find((round) => round.key === "final" || round.labelZh.trim() === "决赛")?.matches
+    .find((match) => match.status === "completed" || match.status === "walkover");
+}
+
+function roundProgressScore(match: SnookerMatch) {
+  const round = `${match.roundKey} ${match.roundLabelZh}`;
+  const semantic = /(^|[ _-])final($|[ _-])|决赛/i.test(round) && !/semi|半决赛/i.test(round)
+    ? 4
+    : /semi[-_ ]?final|半决赛/i.test(round)
+      ? 3
+      : /quarter[-_ ]?final|1\/4|四分之一/i.test(round)
+        ? 2
+        : 1;
+  return semantic * 1_000_000 + match.matchNo;
+}
+
+function buildPlayerStats(rounds: SnookerRound[], breakRows: DbBreak[], canonical: Map<string, string>): SnookerEventPlayerStats[] {
+  const matches = rounds.flatMap((round) => round.matches);
+  const stats = new Map<string, SnookerEventPlayerStats>();
+  const matchByDbId = new Map(matches.map((match) => [match.id.replace(/^db-/, ""), match]));
+  const ensure = (playerId: string) => {
+    const existing = stats.get(playerId);
+    if (existing) return existing;
+    const created: SnookerEventPlayerStats = {
+      playerId,
+      matchEntries: 0,
+      matchesPlayed: 0,
+      matchesWon: 0,
+      matchesLost: 0,
+      matchesDrawn: 0,
+      walkoversWon: 0,
+      walkoversLost: 0,
+      framesWon: 0,
+      framesLost: 0,
+      breaks50Plus: 0,
+      breaks100Plus: 0,
+      maximums: 0,
+      lastRoundKey: "",
+      lastRoundLabelZh: "",
+      isChampion: false,
+      isRunnerUp: false,
+      isActive: false,
+    };
+    stats.set(playerId, created);
+    return created;
+  };
+
+  const lastMatch = new Map<string, SnookerMatch>();
+  for (const match of matches) {
+    for (const [playerId, isPlayer1] of [[match.player1Id, true], [match.player2Id, false]] as const) {
+      const row = ensure(playerId);
+      row.matchEntries += 1;
+      const previous = lastMatch.get(playerId);
+      const progress = roundProgressScore(match);
+      const previousProgress = previous ? roundProgressScore(previous) : -1;
+      if (!previous || progress > previousProgress || (progress === previousProgress && (match.scheduledAt ?? "") > (previous.scheduledAt ?? ""))) {
+        lastMatch.set(playerId, match);
+      }
+      if (match.status === "live" || match.status === "session-break" || match.status === "upcoming") row.isActive = true;
+      if (match.status === "walkover") {
+        if (match.winnerId === playerId) row.walkoversWon += 1;
+        else if (match.winnerId) row.walkoversLost += 1;
+        continue;
+      }
+      if (match.status !== "completed") continue;
+      row.matchesPlayed += 1;
+      const framesFor = Number(isPlayer1 ? match.score1 ?? 0 : match.score2 ?? 0);
+      const framesAgainst = Number(isPlayer1 ? match.score2 ?? 0 : match.score1 ?? 0);
+      row.framesWon += framesFor;
+      row.framesLost += framesAgainst;
+      if (match.winnerId === playerId) row.matchesWon += 1;
+      else if (match.winnerId) row.matchesLost += 1;
+      else if (framesFor === framesAgainst) row.matchesDrawn += 1;
+    }
+  }
+
+  for (const [playerId, match] of lastMatch) {
+    const row = ensure(playerId);
+    row.lastRoundKey = match.roundKey;
+    row.lastRoundLabelZh = match.roundLabelZh;
+  }
+
+  for (const item of breakRows) {
+    if (!matchByDbId.has(item.match_id)) continue;
+    const playerId = canonical.get(item.player_id);
+    if (!playerId) continue;
+    const row = ensure(playerId);
+    row.breaks50Plus += item.break_value >= 50 ? 1 : 0;
+    row.breaks100Plus += item.break_value >= 100 ? 1 : 0;
+    row.maximums += item.break_value === 147 ? 1 : 0;
+    row.highestBreak = Math.max(row.highestBreak ?? 0, item.break_value);
+  }
+
+  const final = finalMatch(rounds);
+  if (final?.winnerId) {
+    ensure(final.winnerId).isChampion = true;
+    const runnerUpId = final.winnerId === final.player1Id ? final.player2Id : final.player1Id;
+    ensure(runnerUpId).isRunnerUp = true;
+  }
+
+  return [...stats.values()];
+}
+
 export type SnookerEventCoreResult = {
   event: SnookerEvent;
   players: SnookerPlayer[];
@@ -154,7 +280,10 @@ export async function loadSnookerEventCore(slug: string): Promise<SnookerEventCo
   ]);
 
   const participantDbIds = [...new Set(matchRows.flatMap((row) => [row.player1_id, row.player2_id, row.winner_id].filter((id): id is string => Boolean(id))))];
-  const scopedPlayers = await loadSnookerPlayersByDbIds(participantDbIds);
+  const [scopedPlayers, breakRows] = await Promise.all([
+    loadSnookerPlayersByDbIds(participantDbIds),
+    loadEventBreaks(matchRows.map((row) => row.id)),
+  ]);
   const canonical = scopedPlayers.canonicalByDbId;
   const matchesByRound = new Map<string, DbMatch[]>();
   for (const match of matchRows) {
@@ -218,6 +347,7 @@ export async function loadSnookerEventCore(slug: string): Promise<SnookerEventCo
     ...(row.is_total ? { isTotal: true } : {}),
   }));
   const publishedMatchCount = matchRows.length;
+  const playerStats = buildPlayerStats(rounds, breakRows, canonical);
 
   return {
     players: scopedPlayers.players,
@@ -247,6 +377,8 @@ export async function loadSnookerEventCore(slug: string): Promise<SnookerEventCo
       runnerUpPrize: event.runner_up_prize || 0,
       currency: "GBP",
       ...(prizes.length ? { prizes } : {}),
+      ...(playerStats.length ? { playerStats } : {}),
+      ...(breakRows.length ? { breakStatsAvailable: true } : {}),
       ...(event.referee_zh ? { refereeZh: event.referee_zh } : {}),
       sourceName: event.source_name || "Snooker DB",
       sourceUrl: event.source_url || "",

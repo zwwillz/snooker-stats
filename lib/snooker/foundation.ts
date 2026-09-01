@@ -109,8 +109,18 @@ export function getPlayerEventStats(playerId: string, event: SnookerEvent = comp
     else if (match.status === "completed" || match.status === "walkover") losses += 1;
   }
 
-  const roundOrder = event.rounds.map((round) => round.key);
-  const bestMatch = [...matches].sort((a, b) => roundOrder.indexOf(a.roundKey) - roundOrder.indexOf(b.roundKey))[0];
+  const roundProgressScore = (match: SnookerMatch) => {
+    const round = `${match.roundKey} ${match.roundLabelZh}`;
+    const semantic = /(^|[ _-])final($|[ _-])|决赛/i.test(round) && !/semi|半决赛/i.test(round)
+      ? 4
+      : /semi[-_ ]?final|半决赛/i.test(round)
+        ? 3
+        : /quarter[-_ ]?final|1\/4|四分之一/i.test(round)
+          ? 2
+          : 1;
+    return semantic * 1_000_000 + match.matchNo;
+  };
+  const bestMatch = [...matches].sort((a, b) => roundProgressScore(b) - roundProgressScore(a) || (b.scheduledAt ?? "").localeCompare(a.scheduledAt ?? ""))[0];
   const isActive = matches.some((match) => match.status === "live" || match.status === "session-break" || match.status === "upcoming");
 
   return {

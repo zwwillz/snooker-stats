@@ -153,6 +153,28 @@ export type SnookerPrizeRow = {
   isTotal?: boolean;
 };
 
+export type SnookerEventPlayerStats = {
+  playerId: string;
+  matchEntries: number;
+  matchesPlayed: number;
+  matchesWon: number;
+  matchesLost: number;
+  matchesDrawn: number;
+  walkoversWon: number;
+  walkoversLost: number;
+  framesWon: number;
+  framesLost: number;
+  breaks50Plus: number;
+  breaks100Plus: number;
+  maximums: number;
+  highestBreak?: number;
+  lastRoundKey: string;
+  lastRoundLabelZh: string;
+  isChampion: boolean;
+  isRunnerUp: boolean;
+  isActive: boolean;
+};
+
 export type SnookerEvent = {
   id: string;
   sourceEventId: string;
@@ -179,6 +201,8 @@ export type SnookerEvent = {
   runnerUpPrize: number;
   currency: "GBP";
   prizes?: SnookerPrizeRow[];
+  playerStats?: SnookerEventPlayerStats[];
+  breakStatsAvailable?: boolean;
   refereeZh?: string;
   sourceName: string;
   sourceUrl: string;

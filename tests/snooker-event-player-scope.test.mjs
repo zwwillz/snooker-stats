@@ -19,7 +19,7 @@ test("event detail owns participant player scope instead of depending on the hom
   assert.match(client, /for \(const player of eventScopedPlayers\)/);
   assert.doesNotMatch(client, /if \(!p1 \|\| !p2\) return null/);
   assert.match(client, /players\.get\(match\.player1Id\) \?\? fallbackPlayer/);
-  assert.match(client, /\[\.\.\.players\.values\(\)\]\.filter\(isChina\)/);
+  assert.match(client, /eventPlayerStats[\s\S]*players\.get\(stats\.playerId\)[\s\S]*isChina\(player\)/);
 });
 
 test("event core remains lightweight while match detail is targeted to one match", () => {
