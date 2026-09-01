@@ -1,0 +1,25 @@
+name: Sync tournaments branch with main
+'on':
+  push:
+    branches: ['feat/tournaments-phase4a-web']
+    paths: ['.github/workflows/sync-tournaments-main.yml']
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/tournaments-phase4a-web
+          fetch-depth: 0
+      - name: Merge latest main
+        run: |
+          git config user.name willz
+          git config user.email zw.will@outlook.com
+          git fetch origin main
+          git merge --no-edit origin/main
+          rm .github/workflows/sync-tournaments-main.yml
+          git add .github/workflows/sync-tournaments-main.yml
+          git commit -m 'chore: remove temporary sync workflow' || true
+          git push origin HEAD:feat/tournaments-phase4a-web
