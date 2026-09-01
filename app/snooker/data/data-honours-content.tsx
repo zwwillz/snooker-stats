@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { SnookerHonoursHub, SnookerHonoursList, SnookerHonoursMetricKey } from "@/lib/snooker/honours-hub";
 import shellStyles from "../snooker-data-center.module.css";
+import { HistoryRecordsSection } from "./data-history-records-content";
 import styles from "./data.module.css";
 
 const leaderKeys: SnookerHonoursMetricKey[] = ["ranking_titles", "triple_crown_titles", "world_championship_titles", "career_147s"];
@@ -57,30 +58,33 @@ export function HonoursLeadersSection({
 }) {
   const bySlug = useMemo(() => playerMap(players), [players]);
 
-  return <section className={styles.card}>
-    <div className={styles.sectionHeader}>
-      <div><small>CAREER HONOURS</small><h2>荣誉榜</h2></div>
-    </div>
-    <div className={styles.seasonLeaderGrid}>
-      {leaderKeys.map((key) => {
-        const list = metricFor(hub, key);
-        const leader = list?.rows[0];
-        const player = leader ? bySlug.get(leader.playerSlug) : undefined;
-        const tieCount = leader && list ? list.rows.filter((row) => row.value === leader.value).length : 0;
-        return <button type="button" className={styles.seasonLeaderCard} onClick={() => onOpenHonours(key)} key={key}>
-          <div className={styles.seasonLeaderLabel}><span>{list?.shortLabelZh ?? key}</span><small>{list?.labelEn ?? ""}</small></div>
-          {leader && list ? <>
-            <div className={styles.seasonLeaderMain}>
-              <HonoursAvatar player={player} compact />
-              <span><strong>{player?.nameZh ?? leader.playerSlug}</strong><small>{player?.nameEn ?? leader.playerSlug}</small></span>
-            </div>
-            <div className={styles.seasonLeaderValue}><b>{formatHonoursValue(list, leader.value)}</b><span>{tieCount > 1 ? `${tieCount} 人并列` : "当前领先"}</span></div>
-          </> : <div className={styles.seasonLeaderEmpty}>数据准备中</div>}
-        </button>;
-      })}
-    </div>
-    <button className={styles.primaryAction} type="button" onClick={() => onOpenHonours("ranking_titles")}>查看完整荣誉榜 <span>›</span></button>
-  </section>;
+  return <>
+    <section className={styles.card}>
+      <div className={styles.sectionHeader}>
+        <div><small>CAREER HONOURS</small><h2>荣誉榜</h2></div>
+      </div>
+      <div className={styles.seasonLeaderGrid}>
+        {leaderKeys.map((key) => {
+          const list = metricFor(hub, key);
+          const leader = list?.rows[0];
+          const player = leader ? bySlug.get(leader.playerSlug) : undefined;
+          const tieCount = leader && list ? list.rows.filter((row) => row.value === leader.value).length : 0;
+          return <button type="button" className={styles.seasonLeaderCard} onClick={() => onOpenHonours(key)} key={key}>
+            <div className={styles.seasonLeaderLabel}><span>{list?.shortLabelZh ?? key}</span><small>{list?.labelEn ?? ""}</small></div>
+            {leader && list ? <>
+              <div className={styles.seasonLeaderMain}>
+                <HonoursAvatar player={player} compact />
+                <span><strong>{player?.nameZh ?? leader.playerSlug}</strong><small>{player?.nameEn ?? leader.playerSlug}</small></span>
+              </div>
+              <div className={styles.seasonLeaderValue}><b>{formatHonoursValue(list, leader.value)}</b><span>{tieCount > 1 ? `${tieCount} 人并列` : "当前领先"}</span></div>
+            </> : <div className={styles.seasonLeaderEmpty}>数据准备中</div>}
+          </button>;
+        })}
+      </div>
+      <button className={styles.primaryAction} type="button" onClick={() => onOpenHonours("ranking_titles")}>查看完整荣誉榜 <span>›</span></button>
+    </section>
+    <HistoryRecordsSection />
+  </>;
 }
 
 export function HonoursDetailContent({
