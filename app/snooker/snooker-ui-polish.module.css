@@ -1,5 +1,5 @@
-.avatarPhoto{overflow:hidden;background:#e8eeeb;color:transparent}
-.avatarPhoto img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 18%}
+.avatarPhoto{overflow:hidden;background:#e8eeeb!important;color:transparent}
+.avatarPhoto img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 18%;background:transparent!important}
 .homeAvatarWrap{position:relative;display:grid;place-items:center}
 .winBadge{position:absolute;right:-4px;bottom:0;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;font-size:7px;font-weight:900;font-style:normal;box-shadow:0 0 0 2px #fff}
 .homePlayerName{display:block;max-width:108px;font-size:11px!important;font-weight:800;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
