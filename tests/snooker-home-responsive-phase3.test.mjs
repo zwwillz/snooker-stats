@@ -61,6 +61,9 @@ test("phase three homepage adapts ranking, focus matches and China players by vi
   assert.doesNotMatch(priority, /headlineRailFooter|headlineFallback/);
   assert.match(priority, /\.desktopRailControls\{display:none/);
   assert.match(priority, /@media \(min-width:1024px\)[\s\S]*\.desktopRailControls\{display:flex\}/);
+  assert.match(priority, /\.headlineViewport\{min-width:0;border-radius:20px;box-shadow:/);
+  assert.match(priority, /\.headlineCarousel>\.headlineSlide\{box-shadow:none\}/);
+  assert.match(priority, /@media \(min-width:1024px\)[\s\S]*\.headlineViewport\{border-radius:22px;box-shadow:/);
   assert.match(css, /\.homeLeadGrid>:only-child\{grid-column:1\/-1\}/);
 
   assert.match(ui, /className=\{styles\.heroEventEnglish\}>\{featuredEventCard\.nameEn\}/);
