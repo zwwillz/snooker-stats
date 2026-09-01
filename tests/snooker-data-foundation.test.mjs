@@ -86,7 +86,7 @@ test("snooker event lifecycle prioritizes the next event after the live event", 
   const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
   assert.match(uiSource, /addDateDays\(item\.endDate, 1\) === today/);
   assert.match(uiSource, /activeEventCard \?\? firstUpcomingMain \?\? graceEventCard/);
-  assert.match(uiSource, /label=\{activeEventCard \? "当前赛事" : graceEventCard \? "刚刚结束" : "下一站"\}/);
+  assert.match(uiSource, /label=\{activeEventCard \? "当前赛事" : firstUpcomingMain \? "下一站" : "刚刚结束"\}/);
   assert.match(uiSource, /nextEventCard = featuredEventCard/);
 });
 
