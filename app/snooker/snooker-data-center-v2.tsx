@@ -41,7 +41,7 @@ const PlayerDetailInline = dynamic(() => import("./players/player-detail-inline"
   loading: () => <section className={styles.card}><div className={styles.emptyState}>正在加载球员资料…</div></section>,
 });
 import { prefetchPlayerDetail, prefetchPlayerExperience } from "./players/player-detail-client";
-import { eventDetailTypeLabel } from "@/lib/snooker/taxonomy";
+import { eventDetailTypeLabel, isQualificationEvent } from "@/lib/snooker/taxonomy";
 import {
   COMPLETED_PROTECTION_MS,
   UPCOMING_PREHEAT_MS,
@@ -468,7 +468,7 @@ function roundIsSemifinal(key: string, labelZh: string) {
 
 function tournamentFinalFour(event: SnookerEvent) {
   const isLeague = /championship[-_ ]league|冠军联赛/i.test(`${event.slug} ${event.nameEn} ${event.nameZh}`);
-  if (event.status !== "completed" || event.eventStage === "qualifier" || event.eventType === "pro_qualifier" || isLeague) return null;
+  if (event.status !== "completed" || isQualificationEvent(event) || isLeague) return null;
   const finalRound = event.rounds.find((round) => roundIsFinal(round.key, round.labelZh));
   const semifinalRound = event.rounds.find((round) => roundIsSemifinal(round.key, round.labelZh));
   if (finalRound?.matches.length !== 1 || semifinalRound?.matches.length !== 2) return null;
@@ -488,26 +488,37 @@ function tournamentFinalFour(event: SnookerEvent) {
   ];
 }
 
-function roundFieldSize(event: SnookerEvent, roundKey: string) {
-  const round = event.rounds.find((item) => item.key === roundKey);
-  if (!round) return null;
-  const size = new Set(round.matches.flatMap((match) => [match.player1Id, match.player2Id])).size;
-  return size >= 2 ? size : null;
+function eventRoundResult(roundKey: string, roundLabelZh: string) {
+  const key = roundKey.trim().toLowerCase();
+  const label = roundLabelZh.trim();
+  const source = `${key} ${label}`;
+  if (roundIsFinal(key, label)) return { label: "决赛", priority: 2 };
+  if (roundIsSemifinal(key, label)) return { label: "四强", priority: 4 };
+  if (/quarter[-_ ]?final|1\/4|四分之一/i.test(source)) return { label: "八强", priority: 8 };
+
+  const field = label.match(/^(\d{1,3})\s*强$/);
+  if (field) return { label: `${Number(field[1])}强`, priority: Number(field[1]) };
+  const transition = label.match(/^(\d{1,3})\s*进\s*(\d{1,3})$/);
+  if (transition) return { label: `${Number(transition[1])}强`, priority: Number(transition[1]) };
+  const lastField = source.match(/(?:last|round[-_ ]of)[-_ ]?(\d{1,3})/i);
+  if (lastField) return { label: `${Number(lastField[1])}强`, priority: Number(lastField[1]) };
+  if (/wild[-_ ]?card|外卡/i.test(source)) return { label: "外卡轮", priority: 512 };
+  if (/qualif|资格|选拔/i.test(source)) return { label: label || "资格赛", priority: 768 };
+  return { label: label || "—", priority: 900 };
 }
 
 function eventResultLabel(event: SnookerEvent, stats: SnookerEventPlayerStats) {
   if (stats.isChampion) return "冠军";
   if (stats.isRunnerUp) return "亚军";
-  const fieldSize = roundFieldSize(event, stats.lastRoundKey);
-  const stage = fieldSize === 4 ? "四强" : fieldSize && fieldSize <= 128 ? `${fieldSize}强` : stats.lastRoundLabelZh;
+  const stage = eventRoundResult(stats.lastRoundKey, stats.lastRoundLabelZh).label;
   if (event.status !== "completed" && stats.isActive) return stage ? `已晋级${stage}` : "仍在赛";
-  return stage || stats.lastRoundLabelZh || "—";
+  return stage;
 }
 
-function eventResultPriority(event: SnookerEvent, stats: SnookerEventPlayerStats) {
+function eventResultPriority(stats: SnookerEventPlayerStats) {
   if (stats.isChampion) return 0;
   if (stats.isRunnerUp) return 1;
-  return roundFieldSize(event, stats.lastRoundKey) ?? 999;
+  return eventRoundResult(stats.lastRoundKey, stats.lastRoundLabelZh).priority;
 }
 
 function fallbackEventPlayerStats(event: SnookerEvent): SnookerEventPlayerStats[] {
@@ -1664,10 +1675,11 @@ export default function SnookerDataCenterV2({
     const calendarEvent = effectiveCalendarEvents.find((item) => item.slug === detail.slug) ?? snapshot.calendar.find((item) => item.slug === detail.slug) ?? featuredEventCard;
     const full = eventBySlug.get(detail.slug);
     if (!calendarEvent) return null;
+    const qualificationEvent = isQualificationEvent(calendarEvent);
     const isHistoricalEvent = calendarEvent.season !== initialCurrentSeason;
     const eventDetails = full ? [full] : [];
     const eventMatches = eventDetails.flatMap((event) => allMatches(event));
-    const finalEvent = full && finalOf(full) ? full : undefined;
+    const finalEvent = !qualificationEvent && full && finalOf(full) ? full : undefined;
     const final = finalEvent ? finalOf(finalEvent) : undefined;
     const champion = final?.winnerId ? players.get(final.winnerId) : undefined;
     const eventStats = eventDetails.length ? {
@@ -1678,7 +1690,7 @@ export default function SnookerDataCenterV2({
       partial: eventDetails.some((event) => event.schedulePartial),
     } : null;
     const eventPlayerStats = full ? full.playerStats ?? fallbackEventPlayerStats(full) : [];
-    const finalFour = full ? tournamentFinalFour(full) : null;
+    const finalFour = !qualificationEvent && full ? tournamentFinalFour(full) : null;
     const highestBreakStats = [...eventPlayerStats]
       .filter((stats) => stats.highestBreak !== undefined)
       .sort((a, b) => (b.highestBreak ?? 0) - (a.highestBreak ?? 0) || b.breaks100Plus - a.breaks100Plus)[0];
@@ -1692,13 +1704,13 @@ export default function SnookerDataCenterV2({
     const topWinRate = topWinRateStats ? Math.round(100 * topWinRateStats.matchesWon / topWinRateStats.matchesPlayed) : null;
     const centuries = full?.breakStatsAvailable ? eventPlayerStats.reduce((sum, stats) => sum + stats.breaks100Plus, 0) : null;
     const maximums = full?.breakStatsAvailable ? eventPlayerStats.reduce((sum, stats) => sum + stats.maximums, 0) : null;
-    const chinaStats = full ? eventPlayerStats
+    const chinaStats = !qualificationEvent && full ? eventPlayerStats
       .map((stats) => {
         const player = players.get(stats.playerId);
         return player && isChina(player) ? { player, stats } : null;
       })
       .filter((item): item is { player: SnookerPlayer; stats: SnookerEventPlayerStats } => Boolean(item))
-      .sort((a, b) => eventResultPriority(full, a.stats) - eventResultPriority(full, b.stats)
+      .sort((a, b) => eventResultPriority(a.stats) - eventResultPriority(b.stats)
         || b.stats.matchesWon - a.stats.matchesWon
         || a.player.nameZh.localeCompare(b.player.nameZh, "zh-CN")) : [];
     const prizeEvent = full;
@@ -1708,9 +1720,7 @@ export default function SnookerDataCenterV2({
     const overviewCountry = calendarEvent.countryZh;
     const overviewCity = calendarEvent.cityZh;
     const overviewVenue = calendarEvent.venueZh;
-    const showPrizePlaceholder = !prizeEvent?.prizes?.length
-      && calendarEvent.eventStage !== "qualifier"
-      && calendarEvent.eventType !== "pro_qualifier";
+    const showPrizePlaceholder = !qualificationEvent && !prizeEvent?.prizes?.length;
 
     return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
       <header className={`${styles.detailHeader} ${priority.eventNameHeader}`}><button onClick={closeEvent}>‹</button><strong>{calendarEvent.nameZh}</strong><span>{calendarEvent.season}</span></header>
@@ -1718,10 +1728,10 @@ export default function SnookerDataCenterV2({
       <div className={styles.eventTabs}><button className={detail.tab === "overview" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "overview" })}>赛事介绍</button><button className={detail.tab === "schedule" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "schedule" })}>赛程</button><button className={detail.tab === "data" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "data" })}>赛事数据</button></div>
 
       {detail.tab === "overview" ? <>
-        {calendarEvent.status === "completed" && !full && loadingEventSlugs.includes(detail.slug) ? <section className={`${polish.championCard} ${polish.championCardLoading}`} aria-label="正在加载本届冠军"><div className={polish.championLoadingMark}>冠</div><div className={polish.championText}><small>CHAMPION · 本届冠军</small><strong>正在读取冠军信息…</strong><span>决赛结果与赛程同步加载中</span></div></section> : null}
+        {!qualificationEvent && calendarEvent.status === "completed" && !full && loadingEventSlugs.includes(detail.slug) ? <section className={`${polish.championCard} ${polish.championCardLoading}`} aria-label="正在加载本届冠军"><div className={polish.championLoadingMark}>冠</div><div className={polish.championText}><small>CHAMPION · 本届冠军</small><strong>正在读取冠军信息…</strong><span>决赛结果与赛程同步加载中</span></div></section> : null}
         {finalEvent?.status === "completed" && champion ? <section className={polish.championCard}><div className={polish.championAvatar}><PlayerAvatar player={champion} size="md" /><span>冠</span></div><div className={polish.championText}><small>CHAMPION · 本届冠军</small><strong>{champion.nameZh}</strong><span>{champion.nameEn}</span></div>{final ? <div className={polish.championScore}><small>FINAL</small><b>{final.score1}:{final.score2}</b></div> : null}</section> : null}
-        <section className={styles.card}><SectionHeader eyebrow="TOURNAMENT OVERVIEW" title="赛事概览" /><div className={insight.eventOverviewGrid}><article><span>赛季</span><b>{calendarEvent.season}</b></article><article><span>赛事类型</span><b>{eventDetailTypeLabel(calendarEvent)}</b></article><article><span>比赛日期</span><b>{formatDateRange(overviewStart, overviewEnd)}</b></article><article><span>举办地</span><b>{overviewCountry} · {overviewCity}</b></article>{prizeEvent?.previousChampionZh ? <article><span>上届冠军{prizeEvent.previousChampionYear ? ` · ${prizeEvent.previousChampionYear}` : ""}</span><b>{prizeEvent.previousChampionZh}</b></article> : null}{overviewVenue ? <article><span>场馆</span><b>{overviewVenue}</b></article> : null}</div></section>
-        {prizeEvent?.prizes?.length ? <section className={styles.card}><SectionHeader eyebrow="PRIZE MONEY" title="奖金分配" action={totalPrize ? `总奖金 ${money(totalPrize.amount)}` : undefined} /><div className={polish.prizeTable}>{[...prizeEvent.prizes].sort((a, b) => a.sortOrder - b.sortOrder).map((row) => <div className={`${polish.prizeRow} ${row.isTotal ? polish.prizeTotal : ""}`} key={row.key}><span>{row.labelZh}</span><b>{money(row.amount)}</b></div>)}</div></section> : showPrizePlaceholder ? <section className={styles.card}><SectionHeader eyebrow="PRIZE MONEY" title="奖金分配" /><div className={styles.emptyState}>奖金信息待官方公布。</div></section> : null}
+        <section className={styles.card}><SectionHeader eyebrow="TOURNAMENT OVERVIEW" title="赛事概览" /><div className={insight.eventOverviewGrid}><article><span>赛季</span><b>{calendarEvent.season}</b></article><article><span>赛事类型</span><b>{eventDetailTypeLabel(calendarEvent)}</b></article><article><span>比赛日期</span><b>{formatDateRange(overviewStart, overviewEnd)}</b></article><article><span>举办地</span><b>{overviewCountry} · {overviewCity}</b></article>{!qualificationEvent && prizeEvent?.previousChampionZh ? <article><span>上届冠军{prizeEvent.previousChampionYear ? ` · ${prizeEvent.previousChampionYear}` : ""}</span><b>{prizeEvent.previousChampionZh}</b></article> : null}{overviewVenue ? <article><span>场馆</span><b>{overviewVenue}</b></article> : null}</div></section>
+        {!qualificationEvent && prizeEvent?.prizes?.length ? <section className={styles.card}><SectionHeader eyebrow="PRIZE MONEY" title="奖金分配" action={totalPrize ? `总奖金 ${money(totalPrize.amount)}` : undefined} /><div className={polish.prizeTable}>{[...prizeEvent.prizes].sort((a, b) => a.sortOrder - b.sortOrder).map((row) => <div className={`${polish.prizeRow} ${row.isTotal ? polish.prizeTotal : ""}`} key={row.key}><span>{row.labelZh}</span><b>{money(row.amount)}</b></div>)}</div></section> : showPrizePlaceholder ? <section className={styles.card}><SectionHeader eyebrow="PRIZE MONEY" title="奖金分配" /><div className={styles.emptyState}>奖金信息待官方公布。</div></section> : null}
       </> : null}
 
       {detail.tab === "schedule" ? full ? <div className={styles.roundStack}>
@@ -1736,7 +1746,7 @@ export default function SnookerDataCenterV2({
         })}</div></section> : null}
         <section className={styles.card}><SectionHeader eyebrow="TOURNAMENT DATA" title="赛事统计" /><div className={styles.statGrid}><article><small>已公布比赛</small><strong>{eventStats.matches}</strong><span>{eventStats.partial ? "赛程公布中" : "赛程已完整"}</span></article><article><small>参赛球员</small><strong>{eventStats.players}</strong><span>本届赛事</span></article><article><small>中国球员</small><strong>{eventStats.china}</strong><span>本届赛事</span></article><article><small>已完赛</small><strong>{eventStats.completed}</strong><span>{calendarEvent.status === "completed" ? "全部完成" : "截至目前"}</span></article></div></section>
         <section className={styles.card}><SectionHeader eyebrow="TOURNAMENT HIGHLIGHTS" title="赛事亮点" /><div className={`${styles.statGrid} ${styles.eventHighlights}`}><article><small>最高单杆</small><strong>{highestBreakStats?.highestBreak ?? "—"}</strong><span>{highestBreakPlayer?.nameZh ?? "暂无收录"}</span></article><article><small>胜率最高</small><strong>{topWinRate === null ? "—" : `${topWinRate}%`}</strong><span>{topWinRatePlayer ? `${topWinRatePlayer.nameZh} · ${topWinRateStats?.matchesWon}胜` : "暂无完赛数据"}</span></article><article><small>147次数</small><strong>{maximums ?? "—"}</strong><span>{maximums === null ? "暂无收录" : "本届赛事"}</span></article><article><small>破百总数</small><strong>{centuries ?? "—"}</strong><span>{centuries === null ? "暂无收录" : "本届赛事"}</span></article></div></section>
-        <section className={styles.card}><SectionHeader eyebrow="CHINA WATCH" title="中国球员战绩" />{chinaStats.length ? <div className={styles.chinaResultList}>{chinaStats.map(({ player, stats }) => <button key={player.id} onClick={() => openPlayer(player.id)}><PlayerAvatar player={player} size="sm" /><span><b>{player.nameZh}</b><small>世界第 {player.currentRank ?? "—"}</small></span><strong>{eventResultLabel(full!, stats)}</strong><em>{stats.matchesWon}胜{stats.matchesLost}负</em></button>)}</div> : <div className={styles.emptyState}>本届赛事暂无中国球员参赛记录。</div>}</section>
+        {!qualificationEvent ? <section className={styles.card}><SectionHeader eyebrow="CHINA WATCH" title="中国球员战绩" />{chinaStats.length ? <div className={styles.chinaResultList}>{chinaStats.map(({ player, stats }) => <button key={player.id} onClick={() => openPlayer(player.id)}><PlayerAvatar player={player} size="sm" /><span><b>{player.nameZh}</b><small>世界第 {player.currentRank ?? "—"}</small></span><strong>{eventResultLabel(full!, stats)}</strong><em>{stats.matchesWon}胜{stats.matchesLost}负</em></button>)}</div> : <div className={styles.emptyState}>本届赛事暂无中国球员参赛记录。</div>}</section> : null}
       </> : <section className={styles.card}><div className={styles.emptyState}>{eventLoadErrorSlugs.includes(detail.slug) ? "赛事数据加载失败，请稍后重试。" : "赛事数据将在赛程和比赛结果公布后显示。"}</div>{eventLoadErrorSlugs.includes(detail.slug) ? <button className={styles.fullButton} onClick={() => void ensureEventDetail(detail.slug)}>重新加载</button> : null}</section> : null}
     </div></main>;
   }

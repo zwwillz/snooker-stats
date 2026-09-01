@@ -1,5 +1,5 @@
 import type { SnookerEvent, SnookerEventPlayerStats, SnookerMatch, SnookerMatchStatus, SnookerPlayer, SnookerPrizeRow, SnookerRound } from "./domain";
-import { compactEventTypeLabel, normalizeEventTaxonomy } from "./taxonomy";
+import { compactEventTypeLabel, isQualificationEvent, normalizeEventTaxonomy } from "./taxonomy";
 import { getSnookerSupabasePublicConfig } from "./supabase-config";
 import { loadSnookerPlayersByDbIds } from "./scoped-player-data";
 import { SNOOKER_CACHE_SECONDS } from "./cache-policy";
@@ -174,7 +174,12 @@ function roundProgressScore(match: SnookerMatch) {
   return semantic * 1_000_000 + match.matchNo;
 }
 
-function buildPlayerStats(rounds: SnookerRound[], breakRows: DbBreak[], canonical: Map<string, string>): SnookerEventPlayerStats[] {
+function buildPlayerStats(
+  rounds: SnookerRound[],
+  breakRows: DbBreak[],
+  canonical: Map<string, string>,
+  includePlacements: boolean,
+): SnookerEventPlayerStats[] {
   const matches = rounds.flatMap((round) => round.matches);
   const stats = new Map<string, SnookerEventPlayerStats>();
   const matchByDbId = new Map(matches.map((match) => [match.id.replace(/^db-/, ""), match]));
@@ -251,7 +256,7 @@ function buildPlayerStats(rounds: SnookerRound[], breakRows: DbBreak[], canonica
     row.highestBreak = Math.max(row.highestBreak ?? 0, item.break_value);
   }
 
-  const final = finalMatch(rounds);
+  const final = includePlacements ? finalMatch(rounds) : undefined;
   if (final?.winnerId) {
     ensure(final.winnerId).isChampion = true;
     const runnerUpId = final.winnerId === final.player1Id ? final.player2Id : final.player1Id;
@@ -272,11 +277,15 @@ export async function loadSnookerEventCore(slug: string): Promise<SnookerEventCo
     `snooker_events?select=id,slug,season,name_en,name_zh,sponsor_name,type_zh,event_type,event_stage,ranking_status,start_date,end_date,country_zh,city_zh,venue_zh,venue_en,winner_prize,runner_up_prize,source_name,source_event_id,source_url,source_updated_at,referee_zh,data_ready,expected_match_count,previous_champion_name_zh,previous_champion_year&slug=eq.${encodeURIComponent(slug)}&limit=1`,
   );
   if (!event || !event.data_ready) return null;
+  const taxonomy = normalizeEventTaxonomy(event.event_type, event.event_stage, event.ranking_status, event.type_zh);
+  const qualificationEvent = isQualificationEvent({ ...taxonomy, typeZh: event.type_zh ?? undefined });
 
   const [roundRows, matchRows, prizeRows] = await Promise.all([
     rest<DbRound[]>(`snooker_rounds?select=id,event_id,round_key,label_en,label_zh,sort_order,best_of,loser_prize&event_id=eq.${event.id}&order=sort_order.asc`),
     rest<DbMatch[]>(`snooker_matches?select=id,event_id,round_id,match_no,player1_id,player2_id,score1,score2,best_of,status,scheduled_at,session_label_zh,winner_id,note,source_updated_at,completed_detected_at,current_player_side,current_break,live_frame_no&event_id=eq.${event.id}&order=match_no.asc`, true),
-    rest<DbPrize[]>(`snooker_event_prizes?select=prize_key,label_zh,label_en,amount,currency,sort_order,is_total&event_id=eq.${event.id}&order=sort_order.asc`),
+    qualificationEvent
+      ? Promise.resolve([] as DbPrize[])
+      : rest<DbPrize[]>(`snooker_event_prizes?select=prize_key,label_zh,label_en,amount,currency,sort_order,is_total&event_id=eq.${event.id}&order=sort_order.asc`),
   ]);
 
   const participantDbIds = [...new Set(matchRows.flatMap((row) => [row.player1_id, row.player2_id, row.winner_id].filter((id): id is string => Boolean(id))))];
@@ -336,7 +345,6 @@ export async function loadSnookerEventCore(slug: string): Promise<SnookerEventCo
   const startDate = event.start_date || loadedAt.slice(0, 10);
   const endDate = event.end_date || startDate;
   const status = statusFromDates(startDate, endDate);
-  const taxonomy = normalizeEventTaxonomy(event.event_type, event.event_stage, event.ranking_status, event.type_zh);
   const prizes: SnookerPrizeRow[] = prizeRows.map((row) => ({
     key: row.prize_key,
     labelZh: row.label_zh,
@@ -347,7 +355,7 @@ export async function loadSnookerEventCore(slug: string): Promise<SnookerEventCo
     ...(row.is_total ? { isTotal: true } : {}),
   }));
   const publishedMatchCount = matchRows.length;
-  const playerStats = buildPlayerStats(rounds, breakRows, canonical);
+  const playerStats = buildPlayerStats(rounds, breakRows, canonical, !qualificationEvent);
 
   return {
     players: scopedPlayers.players,
@@ -371,12 +379,12 @@ export async function loadSnookerEventCore(slug: string): Promise<SnookerEventCo
       countryZh: event.country_zh || "待定",
       venueZh: event.venue_zh || "",
       ...(event.venue_en ? { venueEn: event.venue_en } : {}),
-      ...(event.previous_champion_name_zh ? { previousChampionZh: event.previous_champion_name_zh } : {}),
-      ...(event.previous_champion_year ? { previousChampionYear: event.previous_champion_year } : {}),
-      winnerPrize: event.winner_prize || 0,
-      runnerUpPrize: event.runner_up_prize || 0,
+      ...(!qualificationEvent && event.previous_champion_name_zh ? { previousChampionZh: event.previous_champion_name_zh } : {}),
+      ...(!qualificationEvent && event.previous_champion_year ? { previousChampionYear: event.previous_champion_year } : {}),
+      winnerPrize: qualificationEvent ? 0 : event.winner_prize || 0,
+      runnerUpPrize: qualificationEvent ? 0 : event.runner_up_prize || 0,
       currency: "GBP",
-      ...(prizes.length ? { prizes } : {}),
+      ...(!qualificationEvent && prizes.length ? { prizes } : {}),
       ...(playerStats.length ? { playerStats } : {}),
       ...(breakRows.length ? { breakStatsAvailable: true } : {}),
       ...(event.referee_zh ? { refereeZh: event.referee_zh } : {}),

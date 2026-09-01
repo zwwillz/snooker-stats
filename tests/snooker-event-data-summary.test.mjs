@@ -19,6 +19,32 @@ test("event data follows the approved summary order and suppresses league final-
   assert.match(ui, /championship\[-_ \]league\|冠军联赛/);
 });
 
+test("qualifiers and tour-selection events expose only overview, statistics and highlights", async () => {
+  const [ui, taxonomy, core] = await Promise.all([
+    read("app/snooker/snooker-data-center-v2.tsx"),
+    read("lib/snooker/taxonomy.ts"),
+    read("lib/snooker/event-detail-core.ts"),
+  ]);
+  assert.match(taxonomy, /export function isQualificationEvent/);
+  assert.match(taxonomy, /eventStage === "qualifier"/);
+  assert.match(taxonomy, /eventType === "pro_qualifier"/);
+  assert.match(taxonomy, /typeZh === "资格赛"/);
+  assert.match(taxonomy, /typeZh === "选拔赛"/);
+  assert.match(ui, /const qualificationEvent = isQualificationEvent\(calendarEvent\)/);
+  assert.match(ui, /!qualificationEvent && prizeEvent\?\.prizes\?\.length/);
+  assert.match(ui, /!qualificationEvent \? <section className=\{styles\.card\}><SectionHeader eyebrow="CHINA WATCH"/);
+  assert.match(core, /buildPlayerStats\(rounds, breakRows, canonical, !qualificationEvent\)/);
+  assert.match(core, /qualificationEvent[\s\S]*Promise\.resolve\(\[\] as DbPrize\[\]\)/);
+});
+
+test("Chinese player results use round semantics instead of participant counts", async () => {
+  const ui = await read("app/snooker/snooker-data-center-v2.tsx");
+  assert.doesNotMatch(ui, /function roundFieldSize/);
+  assert.match(ui, /roundIsSemifinal\(key, label\)[\s\S]*label: "四强", priority: 4/);
+  assert.match(ui, /quarter\[-_ \]\?final\|1\\\/4\|四分之一[\s\S]*label: "八强", priority: 8/);
+  assert.match(ui, /wild\[-_ \]\?card\|外卡[\s\S]*label: "外卡轮", priority: 512/);
+});
+
 test("event aggregation uses final results and event-scoped break rows", async () => {
   const [core, foundation] = await Promise.all([
     read("lib/snooker/event-detail-core.ts"),

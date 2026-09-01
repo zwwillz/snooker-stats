@@ -74,3 +74,14 @@ export function eventDetailTypeLabel(item: Pick<SnookerCalendarEvent, "typeZh" |
   if (item.eventType === "ranking" && item.eventStage === "qualifier") return "排名赛 · 资格赛";
   return item.typeZh;
 }
+
+export function isQualificationEvent(item: {
+  eventType?: SnookerEventType;
+  eventStage?: SnookerEventStage;
+  typeZh?: string;
+}) {
+  return item.eventStage === "qualifier"
+    || item.eventType === "pro_qualifier"
+    || item.typeZh === "资格赛"
+    || item.typeZh === "选拔赛";
+}
