@@ -35,11 +35,20 @@ function cleanRecordsParams(url: URL) {
   url.searchParams.delete("record");
 }
 
+function HistorySilhouette() {
+  return <svg viewBox="0 0 120 160" aria-hidden="true">
+    <circle cx="60" cy="43" r="28" fill="currentColor" />
+    <path d="M17 150c3-39 17-63 43-63s40 24 43 63H17Z" fill="currentColor" />
+  </svg>;
+}
+
 function HistoryAvatar({ nameEn, size, className = "" }: { nameEn?: string | null; size: AvatarSize; className?: string }) {
   const src = historyPlayerAvatar(nameEn, size);
-  if (!src) return null;
+  const [failed, setFailed] = useState(false);
   return <span className={`${v4Styles.historyAvatar} ${className}`} aria-hidden="true">
-    <img src={src} alt="" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.parentElement?.remove(); }} />
+    {src && !failed
+      ? <img src={src} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
+      : <HistorySilhouette />}
   </span>;
 }
 
@@ -246,14 +255,13 @@ function CategoryDetail({
 function LeaderboardDetail({ item }: { item: HistoryRecordItem }) {
   const lead = item.rows[0] ?? null;
   const leadNationality = historyPlayerNationality(lead?.nameEn);
-  const leadAvatar = historyPlayerAvatar(lead?.nameEn, 512);
 
   return <main className={styles.detailPage}>
     <section className={styles.recordIntro}>
       <small className={v4Styles.historyUiEnglish}>{item.titleEn}</small>
       <h1>{item.titleZh}</h1>
       <p>{item.descriptionZh}</p>
-      {lead ? <div className={`${styles.recordHero} ${leadAvatar ? v4Styles.recordHeroWithAvatar : ""}`}>
+      {lead ? <div className={`${styles.recordHero} ${v4Styles.recordHeroWithAvatar}`}>
         <div className={v4Styles.heroCopy}>
           <span>{item.kind === "timeline" ? "最新一届" : "历史第一"}</span>
           <strong>{lead.value}</strong>
@@ -261,7 +269,7 @@ function LeaderboardDetail({ item }: { item: HistoryRecordItem }) {
           {lead.nameEn ? <em className={v4Styles.historyUiEnglish}>{lead.nameEn}{leadNationality ? ` · ${leadNationality}` : ""}</em> : leadNationality ? <em>{leadNationality}</em> : null}
           {lead.meta ? <small>{lead.meta}</small> : null}
         </div>
-        {leadAvatar ? <HistoryAvatar nameEn={lead.nameEn} size={512} className={v4Styles.heroAvatar} /> : null}
+        <HistoryAvatar nameEn={lead.nameEn} size={512} className={v4Styles.heroAvatar} />
       </div> : null}
     </section>
 
@@ -303,10 +311,9 @@ function ClassicRecordsPage() {
       {CLASSIC_RECORDS.map((item) => {
         const row = item.rows[0];
         if (!row) return null;
-        const people = splitRecordPeople(row.nameZh, row.nameEn);
-        const visiblePeople = people.slice(0, 2).filter((person) => Boolean(historyPlayerAvatar(person.nameEn, 256)));
+        const people = splitRecordPeople(row.nameZh, row.nameEn).slice(0, 2);
         const nationalities = people.map((person) => historyPlayerNationality(person.nameEn)).filter((value): value is string => Boolean(value));
-        return <article className={`${styles.classicCard} ${visiblePeople.length ? v4Styles.classicCardWithAvatar : ""}`} key={item.key}>
+        return <article className={`${styles.classicCard} ${v4Styles.classicCardWithAvatar}`} key={item.key}>
           <div className={v4Styles.classicCopy}>
             <small className={v4Styles.historyUiEnglish}>{item.titleEn}</small>
             <h2>{item.titleZh}</h2>
@@ -316,14 +323,14 @@ function ClassicRecordsPage() {
             {nationalities.length ? <span className={v4Styles.classicNationality}>{nationalities.join(" / ")}</span> : null}
             {row.meta ? <p>{row.meta}</p> : null}
           </div>
-          {visiblePeople.length ? <div className={v4Styles.classicAvatars} aria-hidden="true">
-            {visiblePeople.map((person, index) => <HistoryAvatar nameEn={person.nameEn} size={256} className={v4Styles.classicAvatar} key={`${item.key}-${person.nameEn ?? person.nameZh}-${index}`} />)}
-          </div> : null}
+          <div className={v4Styles.classicAvatars} aria-hidden="true">
+            {people.map((person, index) => <HistoryAvatar nameEn={person.nameEn} size={256} className={v4Styles.classicAvatar} key={`${item.key}-${person.nameEn ?? person.nameZh}-${index}`} />)}
+          </div>
         </article>;
       })}
     </section>
     <section className={styles.classicMeta}>
-      <div><small>数据说明</small><p>本页为固定静态历史快照，不会在用户访问时请求外部网站或数据库。有现成透明头像的纪录显示头像，没有头像的纪录保持纯文字卡片。</p></div>
+      <div><small>数据说明</small><p>本页为固定静态历史快照，不会在用户访问时请求外部网站或数据库。有现成透明头像时显示真实头像，没有头像时统一显示人物剪影。</p></div>
       <div><small>数据来源</small><p>{sourceNames}</p></div>
     </section>
   </main>;
