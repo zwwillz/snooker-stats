@@ -683,7 +683,7 @@ function MatchListRow({ match, players, onOpen }: { match: SnookerMatch; players
         </div>
         <div className={priority.scheduleAction}>
           <StatusPill status={match.status} label={matchDisplayStatus(match)} />
-          <span>查看比赛详情 ›</span>
+          <span className={priority.scheduleDetailAction}>查看比赛详情 ›</span>
         </div>
       </div>
     </button>
@@ -808,6 +808,7 @@ export default function SnookerDataCenterV2({
   const [matchLoadError, setMatchLoadError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<MainView>(initialPlayerSlug ? "players" : initialDataSection === "rankings" ? "data" : initialView);
   const [detail, setDetail] = useState<DetailState | null>(initialDetail);
+  const [eventHeaderCompact, setEventHeaderCompact] = useState(false);
   const [theme, setTheme] = useState<Theme>("green");
   const [sourceHealth, setSourceHealth] = useState<SourceHealth | null>(initialSourceHealth ?? null);
   const [refreshing, setRefreshing] = useState(false);
@@ -898,6 +899,30 @@ export default function SnookerDataCenterV2({
       // Theme still applies for the current document.
     }
   }, [theme]);
+
+  useEffect(() => {
+    if (detail?.type !== "event") return;
+
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
+    let frame = 0;
+    const updateCompactState = () => {
+      frame = 0;
+      const nextCompact = desktopQuery.matches && window.scrollY > 64;
+      setEventHeaderCompact((current) => current === nextCompact ? current : nextCompact);
+    };
+    const requestUpdate = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateCompactState);
+    };
+
+    requestUpdate();
+    window.addEventListener("scroll", requestUpdate, { passive: true });
+    window.addEventListener("resize", requestUpdate);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", requestUpdate);
+      window.removeEventListener("resize", requestUpdate);
+    };
+  }, [detail?.type]);
 
   const effectiveCalendarEvents = useMemo(() => {
     const bySlug = new Map(calendarEvents.map((item) => [item.slug, item]));
@@ -1415,6 +1440,8 @@ export default function SnookerDataCenterV2({
     void ensureEventDetail(slug);
     window.scrollTo({ top: 0, behavior: "auto" });
   };
+  // Preserve the existing return-state restoration for browser history and future shared navigation.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const closeEvent = () => {
     const restore = eventReturnState.current;
     setDetail(null);
@@ -1441,6 +1468,8 @@ export default function SnookerDataCenterV2({
     setDetail({ type: "match", matchId, eventSlug });
     window.scrollTo({ top: 0, behavior: "auto" });
   };
+  // Preserve the existing return-state restoration after removing visible detail-page back controls.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const closeMatch = (eventSlug: string) => {
     const restore = matchReturnState.current;
     if (restore?.kind === "event" && restore.slug === eventSlug) {
@@ -1598,15 +1627,15 @@ export default function SnookerDataCenterV2({
 
   if (detail?.type === "player") {
     const summaryPlayer = [...players.values()].find((player) => player.slug === detail.slug);
-    return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
-      {detailSiteHeader}<header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={closePlayer}>‹</button><strong>{summaryPlayer?.nameZh ?? "球员详情"}</strong><span>PLAYER</span></header>
+    return <main className={styles.appRoot} data-theme={theme}>{detailSiteHeader}<div className={styles.detailShell}>
+      <header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={closePlayer}>‹</button><strong>{summaryPlayer?.nameZh ?? "球员详情"}</strong><span>PLAYER</span></header>
       <PlayerDetailInline key={detail.slug} summaryPlayer={summaryPlayer} slug={detail.slug} />
     </div></main>;
   }
 
   if (detail?.type === "ranking") {
-    return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
-      {detailSiteHeader}<header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={closeRankings}>‹</button><strong>排名</strong><span>DATA</span></header>
+    return <main className={styles.appRoot} data-theme={theme}>{detailSiteHeader}<div className={styles.detailShell}>
+      <header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={closeRankings}>‹</button><strong>排名</strong><span>DATA</span></header>
       <RankingDetailContent
         hub={rankingHub}
         players={dataPlayers}
@@ -1622,15 +1651,15 @@ export default function SnookerDataCenterV2({
   if (detail?.type === "match") {
     const selectedEvent = eventBySlug.get(detail.eventSlug);
     if (!selectedEvent) {
-      return <main className={styles.appRoot} data-theme={theme}><div className={`${styles.detailShell} ${priority.matchDetailShell}`} data-match-detail>
-        {detailSiteHeader}<header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={() => closeMatch(detail.eventSlug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
+      return <main className={styles.appRoot} data-theme={theme}>{detailSiteHeader}<div className={`${styles.detailShell} ${priority.matchDetailShell}`} data-match-detail>
+        <header className={`${styles.detailHeader} ${priority.detailLocalHeader} ${priority.detailLocalHeaderNoBack}`}><strong>比赛详情</strong><span>MATCH</span></header>
         <section className={styles.card}><div className={styles.emptyState}>{eventLoadErrorSlugs.includes(detail.eventSlug) ? "比赛所属赛事加载失败，请稍后重试。" : "正在加载比赛信息…"}</div>{eventLoadErrorSlugs.includes(detail.eventSlug) ? <button className={styles.fullButton} onClick={() => void ensureEventDetail(detail.eventSlug)}>重新加载</button> : null}</section>
       </div></main>;
     }
     const match = allMatches(selectedEvent).find((item) => item.id === detail.matchId);
     if (!match) {
-      return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
-        {detailSiteHeader}<header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={() => closeMatch(detail.eventSlug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
+      return <main className={styles.appRoot} data-theme={theme}>{detailSiteHeader}<div className={`${styles.detailShell} ${priority.matchDetailShell}`} data-match-detail>
+        <header className={`${styles.detailHeader} ${priority.detailLocalHeader} ${priority.detailLocalHeaderNoBack}`}><strong>比赛详情</strong><span>MATCH</span></header>
         <section className={styles.card}><div className={styles.emptyState}>{loadingEventSlugs.includes(detail.eventSlug) ? "正在加载比赛信息…" : "未找到这场比赛，请返回赛程重新选择。"}</div></section>
       </div></main>;
     }
@@ -1691,10 +1720,9 @@ export default function SnookerDataCenterV2({
       ["平均单杆", "averageBreak", ""],
     ];
 
-    return <main className={styles.appRoot} data-theme={theme}><div className={`${styles.detailShell} ${priority.matchDetailShell}`} data-match-detail>
-      {detailSiteHeader}<header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={() => closeMatch(selectedEvent.slug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
+    return <main className={styles.appRoot} data-theme={theme}>{detailSiteHeader}<div className={`${styles.detailShell} ${priority.matchDetailShell}`} data-match-detail>
+      <header className={`${styles.detailHeader} ${priority.detailLocalHeader} ${priority.detailLocalHeaderNoBack}`}><strong>比赛详情</strong><span>MATCH</span></header>
       <section className={`${styles.matchHero} ${priority.matchHeroDesktop}`}>
-        <button type="button" className={priority.matchBackButton} onClick={() => closeMatch(selectedEvent.slug)}>‹ 返回赛程</button>
         <div className={styles.matchHeroMeta}><span>{!isCurrentSeasonMatch ? `${selectedEvent.season}赛季 · 历史赛事 · ` : ""}{match.roundLabelZh} · {match.timeLabelZh ?? "比赛时间待定"}</span><b>{bestOfLabel(match.bestOf)}</b></div>
         <h1>{selectedEvent.nameZh}</h1>
         <div className={styles.versusGrid}>
@@ -1812,15 +1840,10 @@ export default function SnookerDataCenterV2({
     const overviewCity = calendarEvent.cityZh;
     const overviewVenue = calendarEvent.venueZh;
 
-    return <main className={styles.appRoot} data-theme={theme}><div className={`${styles.detailShell} ${priority.eventDetailShell}`} data-event-detail>
-      {detailSiteHeader}<header className={`${styles.detailHeader} ${priority.eventNameHeader} ${priority.detailLocalHeader}`}><button onClick={closeEvent}>‹</button><strong>{calendarEvent.nameZh}</strong><span>{calendarEvent.season}</span></header>
-      <section className={`${styles.eventDetailHero} ${priority.eventDetailHeroDesktop}`}><div className={styles.eventDetailTop}><StatusPill status={calendarEvent.status} label={calendarEvent.statusLabelZh} /><span>{eventDetailTypeLabel(calendarEvent)}</span></div><h1>{calendarEvent.nameZh}</h1><p>{calendarEvent.nameEn}</p><div className={styles.eventDetailMeta}>{isHistoricalEvent ? <span>{calendarEvent.season}赛季 · 历史赛事</span> : null}<span>{formatDateRange(overviewStart, overviewEnd)}</span><span>{overviewCountry} · {overviewCity}</span></div></section>
-      <div className={priority.eventStickyNav}>
-        <div className={priority.eventStickyIdentity}>
-          <button type="button" onClick={closeEvent} aria-label="返回赛事列表">‹</button>
-          <div><strong>{calendarEvent.nameZh}</strong><small>{calendarEvent.nameEn}</small></div>
-          <span>{calendarEvent.season}</span>
-        </div>
+    return <main className={styles.appRoot} data-theme={theme}>{detailSiteHeader}<div className={`${styles.detailShell} ${priority.eventDetailShell}`} data-event-detail>
+      <header className={`${styles.detailHeader} ${priority.eventNameHeader} ${priority.detailLocalHeader} ${priority.detailLocalHeaderNoBack}`}><strong>{calendarEvent.nameZh}</strong><span>{calendarEvent.season}</span></header>
+      <div className={`${priority.eventStickyNav} ${eventHeaderCompact ? priority.eventDetailCompact : ""}`} data-event-header-state={eventHeaderCompact ? "compact" : "expanded"}>
+        <section className={`${styles.eventDetailHero} ${priority.eventDetailHeroDesktop}`}><div className={styles.eventDetailTop}><StatusPill status={calendarEvent.status} label={calendarEvent.statusLabelZh} /><span>{eventDetailTypeLabel(calendarEvent)}</span></div><h1>{calendarEvent.nameZh}</h1><p>{calendarEvent.nameEn}</p><div className={styles.eventDetailMeta}>{isHistoricalEvent ? <span className={priority.eventHeroHistory}>{calendarEvent.season}赛季 · 历史赛事</span> : null}<span>{formatDateRange(overviewStart, overviewEnd)}</span><span>{overviewCountry} · {overviewCity}</span></div></section>
         <div className={`${styles.eventTabs} ${priority.eventDetailTabs}`}><button className={detail.tab === "overview" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "overview" })}>赛事介绍</button><button className={detail.tab === "schedule" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "schedule" })}>赛程</button><button className={detail.tab === "data" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "data" })}>赛事数据</button></div>
       </div>
 

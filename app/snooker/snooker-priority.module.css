@@ -324,7 +324,7 @@
 @media (min-width:1024px) and (max-width:1180px){.eventCenterLayout{grid-template-columns:184px minmax(0,1fr);gap:16px}.eventTableHead,.eventListPanel :global([class*="calendarList"])>button{grid-template-columns:76px minmax(0,1.55fr) 96px minmax(150px,1fr) 16px;gap:2px 10px}}
 
 
-/* TOURNAMENTS_PHASE4BC_CORE */
+/* TOURNAMENTS_PHASE4A_DETAIL_CORE */
 .eventDetailHeroDesktop,.matchHeroDesktop{min-width:0}
 .matchContextBar{margin:12px 14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line)}
 .matchContextBar>span{min-width:0;padding:11px 12px;background:#fff}
@@ -334,7 +334,7 @@
 .matchDetailBody{display:block}
 
 @media (min-width:1024px){
-  .eventDetailShell,.matchDetailShell{width:min(1180px,calc(100% - 40px));margin:0 auto;background:#f7f8f7;box-shadow:0 0 70px rgba(25,35,31,.07)}
+  .eventDetailShell,.matchDetailShell{width:min(1120px,calc(100% - 40px));margin:0 auto;background:transparent;box-shadow:none}
   .eventDetailShell :global([class*="detailHeader"]),.matchDetailShell :global([class*="detailHeader"]){height:var(--snooker-header-height);padding:0 22px}
   .eventDetailHeroDesktop{padding:28px 30px 26px;border-radius:0 0 24px 24px;background:radial-gradient(circle at 92% 0,rgba(255,255,255,.15),transparent 34%),linear-gradient(135deg,var(--accent-dark),var(--accent))}
   .eventDetailHeroDesktop h1{max-width:820px;margin:20px 0 5px;font-size:34px;line-height:1.18}
@@ -382,20 +382,20 @@
 }
 
 
-/* TOURNAMENTS_PHASE4BC_WEB_REDESIGN_V2 */
+/* TOURNAMENTS_PHASE4A_DETAIL_REFINEMENT */
 .detailSiteHeader{display:none}
 .detailLocalHeader{display:flex}
+.detailLocalHeaderNoBack{justify-content:center}
+.detailLocalHeaderNoBack>span{position:absolute;right:18px}
 .eventStickyNav{display:contents}
-.eventStickyIdentity{display:none}
 .scheduleDesktopMatch{display:none}
 .scheduleMobileMatch{display:block}
-.matchBackButton{display:none}
 
 @media (min-width:1024px){
   /* Every secondary/tertiary web page keeps the same website navigation. */
   .detailSiteHeader{display:flex!important;z-index:80;background:rgba(255,255,255,.96)}
   .detailLocalHeader{display:none!important}
-  .eventDetailShell,.matchDetailShell{width:min(1180px,calc(100% - 40px));margin:0 auto;background:#f7f8f7}
+  .eventDetailShell,.matchDetailShell{width:min(1120px,calc(100% - 40px));margin:0 auto;background:transparent;box-shadow:none}
 
   /* Recent tournaments: one card per row, action fixed on the right. */
   .recentEventGrid{grid-template-columns:1fr!important;gap:10px!important}
@@ -408,18 +408,22 @@
   .eventListPanel :global([class*="currentEventBanner"]){position:relative;padding-right:170px!important}
   .eventListPanel :global([class*="currentEventBanner"])>span{position:absolute;right:24px;top:50%;margin:0!important;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.14);transform:translateY(-50%);font-size:10.5px!important}
 
-  /* Event detail: full green hero, then a compact green event identity + three tabs stick below the website nav. */
-  .eventDetailHeroDesktop{padding:30px 32px 28px!important;border-radius:0!important}
-  .eventDetailHeroDesktop h1{margin:19px 0 6px!important;font-size:34px!important}
-  .eventDetailHeroDesktop>p{font-size:11px!important}
-  .eventStickyNav{position:sticky;top:var(--snooker-header-height);z-index:65;display:block;background:#fff;box-shadow:0 8px 22px rgba(35,45,41,.08)}
-  .eventStickyIdentity{height:48px;padding:0 22px;display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:center;color:#fff;background:linear-gradient(135deg,var(--accent-dark),var(--accent))}
-  .eventStickyIdentity>button{width:30px;height:30px;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:rgba(255,255,255,.08);color:#fff;font-size:22px;line-height:1;cursor:pointer}
-  .eventStickyIdentity>div{min-width:0}.eventStickyIdentity strong,.eventStickyIdentity small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .eventStickyIdentity strong{font-size:14px}.eventStickyIdentity small{margin-top:2px;color:rgba(255,255,255,.62);font-size:8.5px}
-  .eventStickyIdentity>span{font-size:9px;font-weight:800;color:rgba(255,255,255,.74)}
+  /* The original event hero and its tabs form one real sticky region. */
+  .eventStickyNav{position:sticky;top:var(--snooker-header-height);z-index:65;display:block;background:#fff;border-radius:0 0 22px 22px;box-shadow:0 8px 22px rgba(35,45,41,.08);overflow:hidden}
+  .eventDetailHeroDesktop{position:relative;max-height:230px;padding:30px 32px 28px!important;border-radius:0!important;overflow:hidden;transition:max-height .24s ease,padding .24s ease}
+  .eventDetailHeroDesktop h1{max-width:76%;margin:19px 0 6px!important;overflow:hidden;font-size:34px!important;line-height:1.18;text-overflow:ellipsis;white-space:nowrap;transition:font-size .24s ease,margin .24s ease}
+  .eventDetailHeroDesktop>p{max-width:76%;overflow:hidden;font-size:11px!important;text-overflow:ellipsis;white-space:nowrap;transition:font-size .24s ease}
+  .eventDetailHeroDesktop :global([class*="eventDetailMeta"]){transition:margin .24s ease,font-size .24s ease}
+  .eventDetailCompact .eventDetailHeroDesktop{max-height:98px;padding:12px 24px 10px!important}
+  .eventDetailCompact .eventDetailHeroDesktop :global([class*="eventDetailTop"]){position:absolute;top:12px;right:24px;display:block;margin:0}
+  .eventDetailCompact .eventDetailHeroDesktop :global([class*="eventDetailTop"]) :global([class*="statusPill"]){display:none!important}
+  .eventDetailCompact .eventDetailHeroDesktop :global([class*="eventDetailTop"])>span{display:inline-flex;min-height:26px;align-items:center;padding:0 10px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(255,255,255,.08);color:#fff;font-size:9.5px!important;font-weight:850;white-space:nowrap}
+  .eventDetailCompact .eventDetailHeroDesktop h1{margin:0 0 2px!important;font-size:20px!important}
+  .eventDetailCompact .eventDetailHeroDesktop>p{font-size:9px!important;line-height:1.25}
+  .eventDetailCompact .eventDetailHeroDesktop :global([class*="eventDetailMeta"]){max-width:76%;margin-top:6px!important;gap:12px!important;overflow:hidden;flex-wrap:nowrap!important;font-size:9px!important;white-space:nowrap}
+  .eventDetailCompact .eventHeroHistory{display:none}
   .eventDetailTabs{position:static!important;top:auto!important;margin:0!important;padding:0 22px!important;box-shadow:none!important;border-bottom:1px solid var(--line)}
-  .eventDetailTabs button{height:52px!important;font-size:12px!important}
+  .eventDetailTabs button{height:50px!important;font-size:12px!important}
 
   /* All three event tabs use desktop spacing and readable typography. */
   .eventDetailShell>.eventOverviewCard,.eventDetailShell>.eventPrizeCard,.eventDetailShell> :global([class*="championCard"]),.eventDetailShell> :global([class*="card"]){margin-left:22px;margin-right:22px}
@@ -455,12 +459,12 @@
   .schedulePlayers :global([class*="avatar_lg"]){width:62px;height:62px;font-size:13px}
   .scheduleScore{text-align:center;white-space:nowrap}.scheduleScore b{display:block;font-size:26px;letter-spacing:-.045em}.scheduleScore small{display:block;margin-top:5px;color:var(--muted);font-size:10px;font-weight:750}
   .scheduleAction{height:100%;padding-left:18px;border-left:1px solid var(--line);display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:14px}
-  .scheduleAction :global([class*="statusPill"]){font-size:9px!important}.scheduleAction>span{padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--accent-strong);font-size:10.5px;font-weight:900;white-space:nowrap}
+  .scheduleAction :global([class*="statusPill"]){font-size:9px!important}
+  .scheduleDetailAction{padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--accent-strong);font-size:10.5px;font-weight:900;white-space:nowrap}
   .scheduleMatchCard:hover{border-color:color-mix(in srgb,var(--accent) 24%,var(--line))!important;background:#fff!important;box-shadow:0 9px 24px rgba(35,45,41,.05)}
 
   /* Match detail: matchup first, then frames, then stats. Never side-by-side. */
   .matchHeroDesktop{position:relative;padding:25px 34px 30px!important;border-radius:0!important}
-  .matchBackButton{display:inline-flex;position:absolute;left:22px;top:20px;z-index:2;align-items:center;padding:8px 11px;border:1px solid rgba(255,255,255,.22);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:10px;font-weight:800;cursor:pointer}
   .matchHeroDesktop :global([class*="matchHeroMeta"]){font-size:10px!important}
   .matchHeroDesktop h1{font-size:20px!important}
   .matchHeroDesktop :global([class*="versusGrid"]){max-width:820px!important;grid-template-columns:minmax(0,1fr) 180px minmax(0,1fr)!important;gap:32px!important}
@@ -483,5 +487,5 @@
   .schedulePlayers{grid-template-columns:minmax(82px,1fr) 54px 78px 54px minmax(82px,1fr);gap:10px}
   .schedulePlayers :global([class*="avatar_lg"]){width:54px;height:54px}
   .schedulePlayerName strong{font-size:14px}.schedulePlayerName small{font-size:9px}.scheduleScore b{font-size:23px}
-  .scheduleAction{padding-left:13px}.scheduleAction>span{padding:9px 10px;font-size:9.5px}
+  .scheduleAction{padding-left:13px}.scheduleDetailAction{padding:9px 10px;font-size:9.5px}
 }

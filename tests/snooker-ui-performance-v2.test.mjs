@@ -128,11 +128,14 @@ test("recent events use current-season raw events and avoid duplicating the feat
     read("app/snooker/snooker-ui-polish.module.css"),
   ]);
 
-  assert.match(ui, /const recentEvents = seasonCalendar/);
-  assert.match(ui, /const recentListEvents = featuredEventCard \? recentEvents\.filter\(\(item\) => item\.id !== featuredEventCard\.id\)/);
+  assert.match(ui, /const recentFeaturedEvent = activeEventCard/);
+  assert.match(ui, /const recentCompletedEvents = \[\.\.\.mainSeasonEvents\]/);
+  assert.match(ui, /const recentCardEvents = \[firstUpcomingCurrent, \.\.\.recentCompletedEvents\]/);
+  assert.match(ui, /item\?\.id !== recentFeaturedEvent\?\.id/);
   assert.match(ui, /eventStatusText.*eventStatusClass\(item\.status\).*eventStatusLabel\(item\)/s);
-  assert.match(ui, /<StatusPill status="type" label=\{item\.typeZh\} \/>/);
-  assert.match(ui, /eyebrow="RECENT TOURNAMENTS" title="近期赛事" action="本赛季"/);
+  assert.match(ui, /<StatusPill status="type" label=\{typeZh\} \/>/);
+  assert.match(ui, /eyebrow="RECENT TOURNAMENTS" title="近期赛事" action="最多 5 站"/);
+  assert.match(ui, /查看本赛季完整赛历/);
   assert.match(ui, /actionClassName=\{`\$\{polish\.eventStatusText\} \$\{eventStatusClass\(nextEventCard\.status\)\}`\}/);
   assert.match(css, /\.eventStatusLive>span\{background:#eaf3ff!important;color:#2465a8!important\}/);
   assert.match(css, /\.eventStatusUpcoming>span\{background:#fff0e6!important;color:#bd5615!important\}/);
