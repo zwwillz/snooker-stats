@@ -82,12 +82,28 @@ test("snooker frontend is database-first and only relevant headline matches poll
   assert.match(priorityCss, /grid-template-columns:minmax\(0,1fr\) auto minmax\(0,1fr\)/);
 });
 
-test("snooker event lifecycle keeps a finished event featured for one day then advances", async () => {
+test("snooker event lifecycle prioritizes the next event after the live event", async () => {
   const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
   assert.match(uiSource, /addDateDays\(item\.endDate, 1\) === today/);
-  assert.match(uiSource, /activeEventCard \?\? graceEventCard \?\? firstUpcomingMain/);
+  assert.match(uiSource, /activeEventCard \?\? firstUpcomingMain \?\? graceEventCard/);
   assert.match(uiSource, /label=\{activeEventCard \? "当前赛事" : graceEventCard \? "刚刚结束" : "下一站"\}/);
   assert.match(uiSource, /nextEventCard = featuredEventCard/);
+});
+
+test("phase 4 event and match details keep desktop hierarchy without widening the data load", async () => {
+  const [uiSource, priorityCss] = await Promise.all([
+    read("app/snooker/snooker-data-center-v2.tsx"),
+    read("app/snooker/snooker-priority.module.css"),
+  ]);
+  assert.match(uiSource, /data-event-detail/);
+  assert.match(uiSource, /data-match-detail/);
+  assert.match(uiSource, /matchContextBar/);
+  assert.match(uiSource, /matchDetailBodyWithData/);
+  assert.match(uiSource, /eventScheduleStack/);
+  assert.match(priorityCss, /TOURNAMENTS_PHASE4BC_CORE/);
+  assert.match(priorityCss, /grid-template-columns:minmax\(0,1.2fr\) minmax\(380px,.8fr\)/);
+  assert.match(priorityCss, /position:sticky;top:var\(--snooker-header-height\)/);
+  assert.doesNotMatch(uiSource, /Promise\.all\([^)]*ensureMatchDetail/);
 });
 
 test("recent events and the season calendar follow individual WST events", async () => {
