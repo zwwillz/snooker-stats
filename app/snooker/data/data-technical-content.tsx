@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { SnookerTechnicalHub, SnookerTechnicalList, SnookerTechnicalMetricKey } from "@/lib/snooker/technical-hub";
 import styles from "./data.module.css";
@@ -108,10 +108,42 @@ export function TechnicalDetailContent({
   const bySlug = useMemo(() => playerMap(players), [players]);
   const selected = metricFor(hub, selectedKey) ?? hub.lists[0] ?? null;
   const updated = capturedLabel(hub.capturedAt);
+  const tableTopSentinelRef = useRef<HTMLDivElement>(null);
+  const [tablePinned, setTablePinned] = useState(false);
+
+  useEffect(() => {
+    const sentinel = tableTopSentinelRef.current;
+    if (!sentinel) return;
+
+    const desktop = window.matchMedia("(min-width:1024px)");
+    let observer: IntersectionObserver | null = null;
+
+    const syncObserver = () => {
+      observer?.disconnect();
+      observer = null;
+      setTablePinned(false);
+      if (!desktop.matches) return;
+
+      observer = new IntersectionObserver(([entry]) => {
+        setTablePinned(entry.boundingClientRect.top <= 64);
+      }, {
+        root: null,
+        rootMargin: "-64px 0px 0px 0px",
+        threshold: 0,
+      });
+      observer.observe(sentinel);
+    };
+
+    syncObserver();
+    desktop.addEventListener("change", syncObserver);
+    return () => {
+      observer?.disconnect();
+      desktop.removeEventListener("change", syncObserver);
+    };
+  }, []);
 
   return <div className={detailStyles.detailContent}>
     <aside className={detailStyles.technicalSidebar}>
-      <div className={detailStyles.technicalStickyGap} aria-hidden="true" />
       <div className={detailStyles.technicalMetricNav} role="tablist" aria-label="技术榜指标">
         {hub.lists.map((list) => <button
           type="button"
@@ -126,8 +158,8 @@ export function TechnicalDetailContent({
     </aside>
 
     {selected ? <section className={`${styles.card} ${detailStyles.technicalTablePanel}`}>
-      <div className={detailStyles.technicalTableSticky}>
-        <div className={detailStyles.technicalStickyGap} aria-hidden="true" />
+      <div ref={tableTopSentinelRef} className={detailStyles.technicalTableSentinel} aria-hidden="true" />
+      <div className={`${detailStyles.technicalTableSticky} ${tablePinned ? detailStyles.technicalTableStickyPinned : ""}`}>
         <div className={detailStyles.technicalTableHeader}><span>排名</span><span>球员</span><span className={detailStyles.technicalMatchesHeader}>场次</span><span>{selected.shortLabelZh}</span><span className={detailStyles.technicalArrowHeader} aria-hidden="true" /></div>
       </div>
       <div className={detailStyles.technicalTableBody}>

@@ -33,7 +33,7 @@ test("phase two desktop shell keeps each main view inside an intentional content
   assert.match(css, /\.contentHome,\.contentMatches,\.contentPlayers,\.contentData\{max-width:none\}/);
 });
 
-test("technical leaderboard uses one page scroll with an opaque real sticky gap", async () => {
+test("technical leaderboard keeps one page scroll with split sticky offsets and clean pinned corners", async () => {
   const technical = await read("app/snooker/data/data-technical-content.tsx");
   const css = await read("app/snooker/data/technical-detail.module.css");
   const shellCss = await read("app/snooker/snooker-data-center.module.css");
@@ -46,21 +46,21 @@ test("technical leaderboard uses one page scroll with an opaque real sticky gap"
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.detailContent\{[\s\S]*grid-template-columns:230px minmax\(0,1fr\);[\s\S]*align-items:start/);
   assert.doesNotMatch(css, /\.detailContent\{[^}]*position:sticky/);
   assert.doesNotMatch(css, /\.detailContent\{[^}]*height:calc\(100dvh/);
-  assert.match(technical, /className=\{detailStyles\.technicalStickyGap\}\s+aria-hidden="true"/);
-  assert.match(technical, /className=\{detailStyles\.technicalTableSticky\}/);
-  assert.match(technical, /className=\{detailStyles\.technicalTableBody\}/);
-  assert.match(css, /\.technicalSidebar\{[\s\S]*position:sticky;[\s\S]*top:var\(--snooker-header-height,64px\)/);
-  assert.match(css, /\.technicalStickyGap\{[\s\S]*height:var\(--technical-workspace-gap\);[\s\S]*background:var\(--bg\)/);
+  assert.match(css, /\.technicalSidebar\{[\s\S]*position:sticky;[\s\S]*top:calc\(var\(--snooker-header-height,64px\) \+ var\(--technical-workspace-gap\)\)/);
+  assert.match(technical, /ref=\{tableTopSentinelRef\}/);
+  assert.match(technical, /new IntersectionObserver/);
+  assert.match(technical, /rootMargin:\s*"-64px 0px 0px 0px"/);
+  assert.match(technical, /tablePinned \? detailStyles\.technicalTableStickyPinned/);
   assert.match(css, /\.technicalTableSticky\{[\s\S]*position:sticky;[\s\S]*top:var\(--snooker-header-height,64px\);[\s\S]*z-index:4/);
-  assert.match(css, /\.technicalTableHeader\{[\s\S]*position:static;[\s\S]*background:#fff/);
+  assert.match(css, /\.technicalTableHeader\{[\s\S]*border-radius:20px 20px 0 0;[\s\S]*background:#fff/);
+  assert.match(css, /\.technicalTableStickyPinned \.technicalTableHeader\{[\s\S]*border-radius:0/);
   assert.match(css, /\.technicalTableBody\{[\s\S]*overflow:hidden;[\s\S]*border-top:0;[\s\S]*background:#fff/);
-  assert.doesNotMatch(technical, /tableScrollRef|technicalTableScroll/);
-  assert.doesNotMatch(css, /\.technicalTableScroll/);
+  assert.doesNotMatch(technical, /technicalStickyGap|tableScrollRef|technicalTableScroll/);
+  assert.doesNotMatch(css, /technicalStickyGap|\.technicalTableScroll|\.technicalPage::before/);
   assert.doesNotMatch(css, /overflow-y:auto|scrollbar-gutter:stable/);
   assert.match(css, /\.technicalTablePanel\{[\s\S]*overflow:visible;[\s\S]*background:transparent/);
-  assert.doesNotMatch(technical, /technicalStickyGutter/);
-  assert.doesNotMatch(technical, /technicalTableStickyHead/);
-  assert.doesNotMatch(css, /technicalStickyGutter|technicalTableStickyHead|\.technicalPage::before/);
+  assert.doesNotMatch(technical, /technicalStickyGutter|technicalTableStickyHead/);
+  assert.doesNotMatch(css, /technicalStickyGutter|technicalTableStickyHead/);
   assert.match(css, /\.technicalMetricNav button small\{[\s\S]*display:block/);
   assert.match(css, /\.technicalMatches\{[\s\S]*display:block!important/);
   assert.match(css, /\.technicalRankingList button:nth-child\(-n\+3\)>strong/);
@@ -72,7 +72,7 @@ test("technical leaderboard uses one page scroll with an opaque real sticky gap"
   assert.match(technical, /className=\{detailStyles\.technicalDesktopBack\}/);
   assert.match(css, /\.technicalDesktopBack\{display:none\}/);
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.technicalMobileHeader\{display:none\}/);
-  assert.match(css, /\.technicalDesktopIntro\{[\s\S]*margin-bottom:2px;[\s\S]*padding:24px 2px 0/);
+  assert.match(css, /\.technicalDesktopIntro\{[\s\S]*margin-bottom:20px;[\s\S]*padding:24px 2px 0/);
   assert.match(technical, /data-technical-detail="true"/);
   assert.match(shellCss, /\.contentData:has\(\[data-technical-detail\]\)>\.dataStatus\{display:none\}/);
   assert.match(shellCss, /@media \(max-width:1023px\)[\s\S]*\.shell:has\(\[data-technical-detail\]\)>\.header,[\s\S]*\.bottomNav,[\s\S]*\.buildMark\{display:none\}/);

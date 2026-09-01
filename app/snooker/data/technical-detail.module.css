@@ -67,7 +67,7 @@
   display:contents;
 }
 
-.technicalStickyGap{display:none}
+.technicalTableSentinel{display:none}
 .technicalTableSticky,.technicalTableBody{display:contents}
 
 .technicalMetricNav{
@@ -201,7 +201,7 @@
     grid-template-columns:minmax(0,1fr) auto;
     gap:16px;
     align-items:center;
-    margin-bottom:2px;
+    margin-bottom:20px;
     padding:24px 2px 0;
   }
   .technicalDesktopIntro small{
@@ -240,24 +240,17 @@
 
   .technicalSidebar{
     position:sticky;
-    top:var(--snooker-header-height,64px);
+    top:calc(var(--snooker-header-height,64px) + var(--technical-workspace-gap));
     z-index:3;
     min-width:0;
     align-self:start;
     display:flex;
     flex-direction:column;
-    gap:0;
-  }
-  .technicalStickyGap{
-    display:block;
-    width:100%;
-    height:var(--technical-workspace-gap);
-    flex:0 0 var(--technical-workspace-gap);
-    background:var(--bg);
+    gap:10px;
   }
   .technicalMetricNav{
     position:static;
-    margin:0 0 10px;
+    margin:0;
     padding:10px;
     display:flex;
     flex-direction:column;
@@ -322,6 +315,13 @@
     background:transparent;
     box-shadow:none;
   }
+  .technicalTableSentinel{
+    display:block;
+    width:100%;
+    height:1px;
+    margin-bottom:-1px;
+    pointer-events:none;
+  }
   .technicalTableSticky{
     position:sticky;
     top:var(--snooker-header-height,64px);
@@ -341,6 +341,9 @@
     background:#fff;
     font-size:9px;
     font-weight:800;
+  }
+  .technicalTableStickyPinned .technicalTableHeader{
+    border-radius:0;
   }
   .technicalTableHeader span:nth-child(2){padding-left:48px}
   .technicalTableHeader span:nth-child(3),
