@@ -111,6 +111,7 @@ export function TechnicalDetailContent({
 
   return <div className={detailStyles.detailContent}>
     <aside className={detailStyles.technicalSidebar}>
+      <div className={detailStyles.technicalStickyGap} aria-hidden="true" />
       <div className={detailStyles.technicalMetricNav} role="tablist" aria-label="技术榜指标">
         {hub.lists.map((list) => <button
           type="button"
@@ -125,24 +126,29 @@ export function TechnicalDetailContent({
     </aside>
 
     {selected ? <section className={`${styles.card} ${detailStyles.technicalTablePanel}`}>
-      <div className={detailStyles.technicalTableHeader}><span>排名</span><span>球员</span><span className={detailStyles.technicalMatchesHeader}>场次</span><span>{selected.shortLabelZh}</span><span className={detailStyles.technicalArrowHeader} aria-hidden="true" /></div>
-      <div className={detailStyles.technicalRankingList}>
-        {selected.rows.map((row) => {
-          const player = bySlug.get(row.playerSlug);
-          return <button type="button" onClick={() => onOpenPlayer(row.playerSlug)} key={`${selected.key}-${row.playerId}`}>
-            <strong>{row.rank}</strong>
-            <TechnicalAvatar player={player} compact />
-            <span><b>{player?.nameZh ?? row.playerSlug}</b><small>{player?.nameEn ?? row.playerSlug}{row.matchesPlayed ? ` · ${row.matchesPlayed}场` : ""}</small></span>
-            <span className={detailStyles.technicalMatches}>{row.matchesPlayed ?? "—"}</span>
-            <em>{formatMetricValue(selected, row.value)}</em>
-            <i>›</i>
-          </button>;
-        })}
-        {!selected.rows.length ? <div className={styles.emptyState}>当前赛季暂无该项数据。</div> : null}
+      <div className={detailStyles.technicalTableSticky}>
+        <div className={detailStyles.technicalStickyGap} aria-hidden="true" />
+        <div className={detailStyles.technicalTableHeader}><span>排名</span><span>球员</span><span className={detailStyles.technicalMatchesHeader}>场次</span><span>{selected.shortLabelZh}</span><span className={detailStyles.technicalArrowHeader} aria-hidden="true" /></div>
       </div>
-      <div className={detailStyles.rankingFooterMeta}>
-        <span>{hub.seasonLabel} · {hub.sourceName}{updated ? ` · 更新 ${updated}` : ""}</span>
-        {selected.minMatches > 0 ? <span>口径：至少完成 {selected.minMatches} 场比赛</span> : <span>仅统计当前职业巡回赛球员</span>}
+      <div className={detailStyles.technicalTableBody}>
+        <div className={detailStyles.technicalRankingList}>
+          {selected.rows.map((row) => {
+            const player = bySlug.get(row.playerSlug);
+            return <button type="button" onClick={() => onOpenPlayer(row.playerSlug)} key={`${selected.key}-${row.playerId}`}>
+              <strong>{row.rank}</strong>
+              <TechnicalAvatar player={player} compact />
+              <span><b>{player?.nameZh ?? row.playerSlug}</b><small>{player?.nameEn ?? row.playerSlug}{row.matchesPlayed ? ` · ${row.matchesPlayed}场` : ""}</small></span>
+              <span className={detailStyles.technicalMatches}>{row.matchesPlayed ?? "—"}</span>
+              <em>{formatMetricValue(selected, row.value)}</em>
+              <i>›</i>
+            </button>;
+          })}
+          {!selected.rows.length ? <div className={styles.emptyState}>当前赛季暂无该项数据。</div> : null}
+        </div>
+        <div className={detailStyles.rankingFooterMeta}>
+          <span>{hub.seasonLabel} · {hub.sourceName}{updated ? ` · 更新 ${updated}` : ""}</span>
+          {selected.minMatches > 0 ? <span>口径：至少完成 {selected.minMatches} 场比赛</span> : <span>仅统计当前职业巡回赛球员</span>}
+        </div>
       </div>
     </section> : <section className={styles.card}><div className={styles.emptyState}>技术榜数据正在准备中。</div></section>}
   </div>;
