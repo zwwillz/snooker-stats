@@ -1,0 +1,113 @@
+name: Phase 4A responsive visual smoke v2
+
+on:
+  push:
+    branches: [feat/tournaments-phase4a-web]
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/tournaments-phase4a-web
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+          cache: npm
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false puppeteer-core@24
+      - name: Locate Chrome
+        run: |
+          CHROME_PATH="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_PATH"
+          echo "CHROME_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
+          "$CHROME_PATH" --version
+      - name: Start application
+        run: |
+          npm run dev -- --hostname 127.0.0.1 --port 3000 > /tmp/phase4a-next.log 2>&1 &
+          echo $! > /tmp/phase4a-next.pid
+          for i in $(seq 1 60); do
+            if curl -fsS --max-time 5 'http://127.0.0.1:3000/?view=matches' >/tmp/phase4a-page.html; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/phase4a-next.log
+          exit 1
+      - name: Check responsive layout and capture screenshots
+        run: |
+          mkdir -p visual-artifacts
+          cat > .phase4a-visual.mjs <<'JS'
+          import puppeteer from 'puppeteer-core';
+          import fs from 'node:fs';
+
+          const browser = await puppeteer.launch({
+            executablePath: process.env.CHROME_PATH,
+            headless: true,
+            args: ['--no-sandbox', '--disable-dev-shm-usage'],
+          });
+          const widths = [320, 375, 390, 430, 768, 1024, 1280, 1440, 1920];
+          const screenshots = new Set([320, 390, 1024, 1440, 1920]);
+          const results = [];
+          let failed = false;
+
+          for (const width of widths) {
+            const page = await browser.newPage();
+            await page.setViewport({ width, height: width >= 1024 ? 1000 : 900, deviceScaleFactor: 1 });
+            await page.goto('http://127.0.0.1:3000/?view=matches', { waitUntil: 'networkidle2', timeout: 120000 });
+            await page.waitForSelector('[aria-label="赛事浏览与筛选"]', { timeout: 30000 });
+            const state = await page.evaluate(() => {
+              const sidebar = document.querySelector('[aria-label="赛事浏览与筛选"]');
+              const layout = sidebar?.parentElement;
+              const tableHead = [...document.querySelectorAll('[aria-hidden="true"]')].find((el) => el.textContent?.includes('日期 / 状态') && el.textContent?.includes('赛事') && el.textContent?.includes('地点'));
+              return {
+                layoutDisplay: layout ? getComputedStyle(layout).display : null,
+                sidebarDisplay: sidebar ? getComputedStyle(sidebar).display : null,
+                tableHeadDisplay: tableHead ? getComputedStyle(tableHead).display : null,
+                scrollWidth: document.documentElement.scrollWidth,
+                clientWidth: document.documentElement.clientWidth,
+                hasHorizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+                title: document.querySelector('h1')?.textContent?.trim() || null,
+              };
+            });
+            const desktop = width >= 1024;
+            const checks = {
+              title: state.title === '赛事',
+              noHorizontalOverflow: !state.hasHorizontalOverflow,
+              layout: desktop ? state.layoutDisplay === 'grid' : state.layoutDisplay === 'contents',
+              sidebar: desktop ? state.sidebarDisplay === 'flex' : state.sidebarDisplay === 'contents',
+              tableHead: desktop ? state.tableHeadDisplay === 'grid' : state.tableHeadDisplay === 'none',
+            };
+            const ok = Object.values(checks).every(Boolean);
+            if (!ok) failed = true;
+            results.push({ width, desktop, ok, checks, ...state });
+            console.log(JSON.stringify({ width, ok, checks, state }));
+            if (screenshots.has(width)) {
+              await page.screenshot({ path: `visual-artifacts/tournaments-${width}.png`, fullPage: true });
+            }
+            await page.close();
+          }
+          await browser.close();
+          fs.writeFileSync('visual-artifacts/results.json', JSON.stringify(results, null, 2));
+          if (failed) process.exit(1);
+          JS
+          node .phase4a-visual.mjs
+          rm -f .phase4a-visual.mjs
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4a-responsive-screenshots-v2
+          path: visual-artifacts
+          if-no-files-found: error
+          retention-days: 14
+      - name: Show server log on failure
+        if: failure()
+        run: cat /tmp/phase4a-next.log || true
+      - name: Stop application
+        if: always()
+        run: kill "$(cat /tmp/phase4a-next.pid)" 2>/dev/null || true
