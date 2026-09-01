@@ -10,7 +10,7 @@ import type {
 } from "@/lib/snooker/ranking-hub";
 import { technicalMetricKey, type SnookerTechnicalHub, type SnookerTechnicalMetricKey } from "@/lib/snooker/technical-hub";
 import { honoursMetricKey, type SnookerHonoursHub, type SnookerHonoursMetricKey } from "@/lib/snooker/honours-hub";
-import { SeasonLeadersSection, TechnicalDetailPage } from "./data-technical-content";
+import { SeasonLeadersSection, TechnicalDetailLoadingPage, TechnicalDetailPage } from "./data-technical-content";
 import { HonoursDetailOverlay, HonoursLeadersSection } from "./data-honours-content";
 import PlayerCompareTeaser from "../compare/player-compare-teaser";
 import styles from "./data.module.css";
@@ -388,10 +388,7 @@ export function DataHubContent({
   };
 
   if (technicalKey && !technicalHub?.online) {
-    return <section className={styles.card} data-technical-detail="true" aria-label="加载技术榜">
-      <div className={styles.sectionHeader}><div><small>TECHNICAL LEADERBOARD</small><h2>本赛季球员技术榜</h2></div></div>
-      <div className={styles.technicalLoading}>正在加载技术榜数据…</div>
-    </section>;
+    return <TechnicalDetailLoadingPage onClose={closeTechnical} />;
   }
 
   if (honoursKey && !honoursHub?.online) {

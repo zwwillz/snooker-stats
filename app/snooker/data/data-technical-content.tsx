@@ -109,6 +109,7 @@ export function TechnicalDetailContent({
   const updated = capturedLabel(hub.capturedAt);
 
   return <div className={styles.detailContent}>
+    <div className={styles.technicalStickyGutter} aria-hidden="true" />
     <aside className={styles.technicalSidebar}>
       <div className={styles.technicalMetricNav} role="tablist" aria-label="技术榜指标">
         {hub.lists.map((list) => <button
@@ -164,12 +165,30 @@ export function TechnicalDetailPage({
   onOpenPlayer: (slug: string) => void;
   onClose: () => void;
 }) {
-  return <section className={styles.technicalPage} data-technical-detail="true" aria-labelledby="technical-page-title">
-    <header className={styles.technicalPageHeader}>
-      <button className={styles.technicalMobileBack} type="button" onClick={onClose}><span aria-hidden="true">‹</span> 返回数据</button>
-      <div><small>TECHNICAL LEADERBOARD</small><h1 id="technical-page-title">本赛季球员技术榜</h1><p>本赛季球员技术表现与比赛效率排名。</p></div>
+  return <section className={styles.technicalPage} data-technical-detail="true" aria-label="本赛季球员技术榜">
+    <header className={styles.technicalMobileHeader}>
+      <button type="button" onClick={onClose} aria-label="返回数据"><span aria-hidden="true">‹</span></button>
+      <strong>本赛季球员技术榜</strong>
+      <span>DATA</span>
+    </header>
+    <header className={styles.technicalDesktopIntro}>
+      <div><small>TECHNICAL LEADERBOARD</small><h1>本赛季球员技术榜</h1><p>本赛季球员技术表现与比赛效率排名。</p></div>
       <strong>{hub.seasonLabel}</strong>
     </header>
     <TechnicalDetailContent hub={hub} players={players} selectedKey={selectedKey} onSelectKey={onSelectKey} onOpenPlayer={onOpenPlayer} onClose={onClose} />
+  </section>;
+}
+
+export function TechnicalDetailLoadingPage({ onClose }: { onClose: () => void }) {
+  return <section className={styles.technicalPage} data-technical-detail="true" aria-label="正在加载本赛季球员技术榜">
+    <header className={styles.technicalMobileHeader}>
+      <button type="button" onClick={onClose} aria-label="返回数据"><span aria-hidden="true">‹</span></button>
+      <strong>本赛季球员技术榜</strong>
+      <span>DATA</span>
+    </header>
+    <header className={styles.technicalDesktopIntro}>
+      <div><small>TECHNICAL LEADERBOARD</small><h1>本赛季球员技术榜</h1><p>本赛季球员技术表现与比赛效率排名。</p></div>
+    </header>
+    <section className={`${styles.card} ${styles.technicalLoadingCard}`}><div className={styles.technicalLoading}>正在加载技术榜数据…</div></section>
   </section>;
 }
