@@ -507,18 +507,25 @@ function eventRoundResult(roundKey: string, roundLabelZh: string) {
   return { label: label || "—", priority: 900 };
 }
 
+function eventPlayerBestResult(event: SnookerEvent, playerId: string) {
+  const results = allMatches(event)
+    .filter((match) => match.player1Id === playerId || match.player2Id === playerId)
+    .map((match) => eventRoundResult(match.roundKey, match.roundLabelZh));
+  return results.sort((a, b) => a.priority - b.priority)[0] ?? { label: "—", priority: 900 };
+}
+
 function eventResultLabel(event: SnookerEvent, stats: SnookerEventPlayerStats) {
   if (stats.isChampion) return "冠军";
   if (stats.isRunnerUp) return "亚军";
-  const stage = eventRoundResult(stats.lastRoundKey, stats.lastRoundLabelZh).label;
+  const stage = eventPlayerBestResult(event, stats.playerId).label;
   if (event.status !== "completed" && stats.isActive) return stage ? `已晋级${stage}` : "仍在赛";
   return stage;
 }
 
-function eventResultPriority(stats: SnookerEventPlayerStats) {
+function eventResultPriority(event: SnookerEvent, stats: SnookerEventPlayerStats) {
   if (stats.isChampion) return 0;
   if (stats.isRunnerUp) return 1;
-  return eventRoundResult(stats.lastRoundKey, stats.lastRoundLabelZh).priority;
+  return eventPlayerBestResult(event, stats.playerId).priority;
 }
 
 function fallbackEventPlayerStats(event: SnookerEvent): SnookerEventPlayerStats[] {
@@ -1710,7 +1717,7 @@ export default function SnookerDataCenterV2({
         return player && isChina(player) ? { player, stats } : null;
       })
       .filter((item): item is { player: SnookerPlayer; stats: SnookerEventPlayerStats } => Boolean(item))
-      .sort((a, b) => eventResultPriority(a.stats) - eventResultPriority(b.stats)
+      .sort((a, b) => eventResultPriority(full, a.stats) - eventResultPriority(full, b.stats)
         || b.stats.matchesWon - a.stats.matchesWon
         || a.player.nameZh.localeCompare(b.player.nameZh, "zh-CN")) : [];
     const prizeEvent = full;
@@ -1720,7 +1727,6 @@ export default function SnookerDataCenterV2({
     const overviewCountry = calendarEvent.countryZh;
     const overviewCity = calendarEvent.cityZh;
     const overviewVenue = calendarEvent.venueZh;
-    const showPrizePlaceholder = !qualificationEvent && !prizeEvent?.prizes?.length;
 
     return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
       <header className={`${styles.detailHeader} ${priority.eventNameHeader}`}><button onClick={closeEvent}>‹</button><strong>{calendarEvent.nameZh}</strong><span>{calendarEvent.season}</span></header>
@@ -1731,7 +1737,7 @@ export default function SnookerDataCenterV2({
         {!qualificationEvent && calendarEvent.status === "completed" && !full && loadingEventSlugs.includes(detail.slug) ? <section className={`${polish.championCard} ${polish.championCardLoading}`} aria-label="正在加载本届冠军"><div className={polish.championLoadingMark}>冠</div><div className={polish.championText}><small>CHAMPION · 本届冠军</small><strong>正在读取冠军信息…</strong><span>决赛结果与赛程同步加载中</span></div></section> : null}
         {finalEvent?.status === "completed" && champion ? <section className={polish.championCard}><div className={polish.championAvatar}><PlayerAvatar player={champion} size="md" /><span>冠</span></div><div className={polish.championText}><small>CHAMPION · 本届冠军</small><strong>{champion.nameZh}</strong><span>{champion.nameEn}</span></div>{final ? <div className={polish.championScore}><small>FINAL</small><b>{final.score1}:{final.score2}</b></div> : null}</section> : null}
         <section className={styles.card}><SectionHeader eyebrow="TOURNAMENT OVERVIEW" title="赛事概览" /><div className={insight.eventOverviewGrid}><article><span>赛季</span><b>{calendarEvent.season}</b></article><article><span>赛事类型</span><b>{eventDetailTypeLabel(calendarEvent)}</b></article><article><span>比赛日期</span><b>{formatDateRange(overviewStart, overviewEnd)}</b></article><article><span>举办地</span><b>{overviewCountry} · {overviewCity}</b></article>{!qualificationEvent && prizeEvent?.previousChampionZh ? <article><span>上届冠军{prizeEvent.previousChampionYear ? ` · ${prizeEvent.previousChampionYear}` : ""}</span><b>{prizeEvent.previousChampionZh}</b></article> : null}{overviewVenue ? <article><span>场馆</span><b>{overviewVenue}</b></article> : null}</div></section>
-        {!qualificationEvent && prizeEvent?.prizes?.length ? <section className={styles.card}><SectionHeader eyebrow="PRIZE MONEY" title="奖金分配" action={totalPrize ? `总奖金 ${money(totalPrize.amount)}` : undefined} /><div className={polish.prizeTable}>{[...prizeEvent.prizes].sort((a, b) => a.sortOrder - b.sortOrder).map((row) => <div className={`${polish.prizeRow} ${row.isTotal ? polish.prizeTotal : ""}`} key={row.key}><span>{row.labelZh}</span><b>{money(row.amount)}</b></div>)}</div></section> : showPrizePlaceholder ? <section className={styles.card}><SectionHeader eyebrow="PRIZE MONEY" title="奖金分配" /><div className={styles.emptyState}>奖金信息待官方公布。</div></section> : null}
+        {!qualificationEvent && prizeEvent?.prizes?.length ? <section className={styles.card}><SectionHeader eyebrow="PRIZE MONEY" title="奖金分配" action={totalPrize ? `总奖金 ${money(totalPrize.amount)}` : undefined} /><div className={polish.prizeTable}>{[...prizeEvent.prizes].sort((a, b) => a.sortOrder - b.sortOrder).map((row) => <div className={`${polish.prizeRow} ${row.isTotal ? polish.prizeTotal : ""}`} key={row.key}><span>{row.labelZh}</span><b>{money(row.amount)}</b></div>)}</div></section> : null}
       </> : null}
 
       {detail.tab === "schedule" ? full ? <div className={styles.roundStack}>

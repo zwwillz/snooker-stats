@@ -43,6 +43,17 @@ test("Chinese player results use round semantics instead of participant counts",
   assert.match(ui, /roundIsSemifinal\(key, label\)[\s\S]*label: "四强", priority: 4/);
   assert.match(ui, /quarter\[-_ \]\?final\|1\\\/4\|四分之一[\s\S]*label: "八强", priority: 8/);
   assert.match(ui, /wild\[-_ \]\?card\|外卡[\s\S]*label: "外卡轮", priority: 512/);
+  assert.match(ui, /function eventPlayerBestResult\(event: SnookerEvent, playerId: string\)[\s\S]*allMatches\(event\)[\s\S]*match\.player1Id === playerId \|\| match\.player2Id === playerId/);
+  assert.match(ui, /eventPlayerBestResult\(event, stats\.playerId\)\.label/);
+  assert.match(ui, /eventResultPriority\(full, a\.stats\) - eventResultPriority\(full, b\.stats\)/);
+  assert.doesNotMatch(ui, /eventRoundResult\(stats\.lastRoundKey, stats\.lastRoundLabelZh\)/);
+});
+
+test("missing prize distributions stay hidden instead of showing a misleading placeholder", async () => {
+  const ui = await read("app/snooker/snooker-data-center-v2.tsx");
+  assert.match(ui, /!qualificationEvent && prizeEvent\?\.prizes\?\.length \? <section/);
+  assert.doesNotMatch(ui, /showPrizePlaceholder/);
+  assert.doesNotMatch(ui, /奖金信息待官方公布/);
 });
 
 test("event aggregation uses final results and event-scoped break rows", async () => {
