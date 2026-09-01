@@ -106,11 +106,16 @@ test("phase 4 event and match details keep desktop hierarchy without widening th
   assert.doesNotMatch(uiSource, /Promise\.all\([^)]*ensureMatchDetail/);
 });
 
-test("recent events and the season calendar follow individual WST events", async () => {
+test("recent events stay capped at five cards and the season calendar keeps individual WST events", async () => {
   const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
-  assert.match(uiSource, /const recentEvents = seasonCalendar/);
-  assert.match(uiSource, /item\.endDate < today \|\| isActiveOn\(item, today\) \|\| item\.id === firstUpcomingCurrent\?\.id \|\| item\.id === featuredEventCard\?\.id/);
-  assert.match(uiSource, /recentListEvents\.map/);
+  assert.match(uiSource, /const recentFeaturedEvent = activeEventCard/);
+  assert.match(uiSource, /const recentCompletedEvents = \[\.\.\.mainSeasonEvents\]/);
+  assert.match(uiSource, /\.slice\(0, 3\)/);
+  assert.match(uiSource, /const recentCardEvents = \[firstUpcomingCurrent, \.\.\.recentCompletedEvents\]/);
+  assert.match(uiSource, /\.slice\(0, 4\)/);
+  assert.match(uiSource, /recentCardEvents\.map/);
+  assert.match(uiSource, /最多 5 站/);
+  assert.match(uiSource, /查看本赛季完整赛历/);
   assert.match(uiSource, /selectedSeasonEvents\.map/);
   assert.doesNotMatch(uiSource, /多阶段赛事合并为一站/);
 });
