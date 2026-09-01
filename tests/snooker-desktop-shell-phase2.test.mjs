@@ -54,8 +54,9 @@ test("technical leaderboard is a desktop table pilot while mobile keeps the comp
   assert.match(css, /\.technicalDesktopBack\{display:none\}/);
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.technicalMobileBack\{display:none\}/);
   assert.doesNotMatch(css, /\.technicalPage::before/);
-  assert.match(css, /\.technicalSidebar\{position:sticky;top:calc\(var\(--snooker-header-height,68px\) \+ 18px\)/);
-  assert.match(css, /\.technicalTableStickyHead\{position:sticky;top:var\(--snooker-header-height,68px\);z-index:2;margin:-18px -18px 0;padding:18px 0 0;background:#f3f5f4\}/);
+  assert.match(css, /\.technicalSidebar\{position:sticky;top:var\(--snooker-header-height,68px\)/);
+  assert.match(css, /\.technicalTableStickyHead\{position:sticky;top:var\(--snooker-header-height,68px\);z-index:2;margin:0 -18px;background:transparent\}/);
+  assert.doesNotMatch(css, /\.technicalTableStickyHead\{[^}]*padding-top:/);
   assert.match(css, /\.technicalTableHeader\{grid-template-columns:[^}]+border-radius:20px 20px 0 0/);
   assert.doesNotMatch(css, /\.technicalTableHeader\{position:sticky/);
   assert.doesNotMatch(css, /\.technicalTableHeader::before/);

@@ -14,14 +14,14 @@
 @media (min-width:1024px){
   .technicalPageHeader{grid-template-columns:minmax(0,1fr) auto;padding:24px 2px 20px}.technicalMobileBack{display:none}.technicalPageHeader h1{font-size:36px}.technicalPageHeader p{font-size:11px}
   .detailContent{display:grid;grid-template-columns:230px minmax(0,1fr);align-items:start;gap:18px;padding:0 0 34px}
-  .technicalSidebar{position:sticky;top:calc(var(--snooker-header-height,68px) + 18px);z-index:3;display:flex;flex-direction:column;gap:10px}
+  .technicalSidebar{position:sticky;top:var(--snooker-header-height,68px);z-index:3;display:flex;flex-direction:column;gap:10px}
   .technicalMetricNav{position:static;top:auto;z-index:auto;margin:0;padding:10px;border:1px solid var(--line);border-radius:18px;background:#fff;display:flex;flex-direction:column;gap:6px;overflow:visible;box-shadow:0 12px 34px rgba(35,45,41,.035)}
   .technicalDesktopBack{width:100%;min-height:42px;padding:10px 14px;border:0;border-radius:12px;background:var(--accent-soft);color:var(--accent-strong);display:flex;align-items:center;justify-content:center;gap:5px;font-size:10px;font-weight:850;cursor:pointer}.technicalDesktopBack span{font-size:18px;line-height:1}
   .technicalMetricNav button{width:100%;min-height:50px;padding:8px 11px;border-radius:12px;align-items:flex-start;text-align:left;display:flex;flex-direction:column;justify-content:center;gap:3px}
   .technicalMetricNav button span{font-size:12px}.technicalMetricNav button small{display:block;color:#9aa19d;font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
   .technicalMetricNav button.technicalMetricActive small{color:rgba(255,255,255,.72)}
   .technicalTableCard{min-width:0;padding:0 18px 18px}
-  .technicalTableStickyHead{position:sticky;top:var(--snooker-header-height,68px);z-index:2;margin:-18px -18px 0;padding:18px 0 0;background:#f3f5f4}
+  .technicalTableStickyHead{position:sticky;top:var(--snooker-header-height,68px);z-index:2;margin:0 -18px;background:transparent}
   .technicalTableHeader{grid-template-columns:48px minmax(0,1fr) 72px 110px 14px;gap:11px;padding:23px 30px 10px;border:1px solid var(--line);border-radius:20px 20px 0 0;background:#fff;box-shadow:0 12px 34px rgba(35,45,41,.035);font-size:9px;font-weight:800}
   .technicalTableHeader span:nth-child(2){padding-left:48px}.technicalTableHeader span:nth-child(3),.technicalTableHeader span:nth-child(4){text-align:right}.technicalMatchesHeader,.technicalArrowHeader{display:block}
   .technicalRankingList button{min-height:60px;padding:6px 12px;grid-template-columns:48px 38px minmax(0,1fr) 72px 110px 14px;gap:10px;border-radius:11px;transition:background .14s ease}
