@@ -1399,6 +1399,7 @@ export default function SnookerDataCenterV2({
     const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     if (currentUrl !== nextUrl) window.history.pushState({ snookerView: view }, "", nextUrl);
     else window.history.replaceState({ snookerView: view }, "", nextUrl);
+    window.dispatchEvent(new Event("snooker:root-navigation"));
     setActiveView(view);
     warmRootView(view);
     window.scrollTo({ top: 0, behavior: "auto" });

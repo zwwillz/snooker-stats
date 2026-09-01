@@ -54,6 +54,16 @@ test("technical leaderboard is a desktop table pilot while mobile keeps the comp
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.technicalMobileBack\{display:none\}/);
   assert.match(css, /\.technicalSidebar\{position:sticky;top:calc\(var\(--snooker-header-height,68px\) \+ 18px\)/);
   assert.match(css, /\.technicalTableHeader\{position:sticky;top:calc\(var\(--snooker-header-height,68px\) \+ 18px\)/);
+  assert.match(css, /\.technicalTableHeader::before\{content:"";position:absolute;left:-18px;right:-18px;top:-18px;height:18px;background:var\(--bg\);pointer-events:none\}/);
   assert.match(technical, /data-technical-detail="true"/);
   assert.match(shellCss, /\.contentData:has\(\[data-technical-detail\]\)>\.dataStatus\{display:none\}/);
+});
+
+test("main navigation always exits nested data views", async () => {
+  const ui = await read("app/snooker/snooker-data-center-v2.tsx");
+  const data = await read("app/snooker/data/data-ranking-content.tsx");
+
+  assert.match(ui, /window\.dispatchEvent\(new Event\("snooker:root-navigation"\)\)/);
+  assert.match(data, /window\.addEventListener\("snooker:root-navigation", syncTechnicalFromUrl\)/);
+  assert.match(data, /window\.addEventListener\("snooker:root-navigation", syncHonoursFromUrl\)/);
 });

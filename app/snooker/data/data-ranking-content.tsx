@@ -295,7 +295,11 @@ export function DataHubContent({
     };
     syncTechnicalFromUrl();
     window.addEventListener("popstate", syncTechnicalFromUrl);
-    return () => window.removeEventListener("popstate", syncTechnicalFromUrl);
+    window.addEventListener("snooker:root-navigation", syncTechnicalFromUrl);
+    return () => {
+      window.removeEventListener("popstate", syncTechnicalFromUrl);
+      window.removeEventListener("snooker:root-navigation", syncTechnicalFromUrl);
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -305,7 +309,11 @@ export function DataHubContent({
     };
     syncHonoursFromUrl();
     window.addEventListener("popstate", syncHonoursFromUrl);
-    return () => window.removeEventListener("popstate", syncHonoursFromUrl);
+    window.addEventListener("snooker:root-navigation", syncHonoursFromUrl);
+    return () => {
+      window.removeEventListener("popstate", syncHonoursFromUrl);
+      window.removeEventListener("snooker:root-navigation", syncHonoursFromUrl);
+    };
   }, []);
 
   const openTechnical = (key: SnookerTechnicalMetricKey) => {
