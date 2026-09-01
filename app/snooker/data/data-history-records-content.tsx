@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import {
   HISTORY_RECORD_CATEGORIES,
   historyRecordCategory,
@@ -58,7 +58,6 @@ export function HistoryRecordsSection() {
 
   const category = group ? historyRecordCategory(group) : null;
   const selected = recordKey ? historyRecordItem(recordKey) : null;
-  const categoryItems = useMemo(() => group ? historyRecordItemsForCategory(group) : [], [group]);
 
   const openCategory = (key: HistoryRecordCategoryKey) => {
     const url = new URL(window.location.href);
@@ -113,7 +112,7 @@ export function HistoryRecordsSection() {
     setRecordKey(null);
   };
 
-  return <>
+  return <div className={styles.mountMarker}>
     <section className={`${dataStyles.card} ${styles.hubCard}`}>
       <div className={dataStyles.sectionHeader}>
         <div><small>HISTORY &amp; RECORDS</small><h2>历史与纪录</h2></div>
@@ -143,7 +142,7 @@ export function HistoryRecordsSection() {
         {selected ? <RecordDetail item={selected} /> : <CategoryDetail categoryKey={group} onOpenRecord={openRecord} />}
       </div>
     </div> : null}
-  </>;
+  </div>;
 }
 
 function CategoryDetail({
