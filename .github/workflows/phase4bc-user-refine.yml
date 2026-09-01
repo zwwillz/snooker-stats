@@ -1,0 +1,277 @@
+name: Phase4BC user refinement
+
+on:
+  push:
+    branches:
+      - feat/tournaments-phase4a-web
+
+permissions:
+  contents: write
+
+jobs:
+  refine:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/tournaments-phase4a-web
+          fetch-depth: 0
+
+      - name: Sync latest main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge origin/main --no-edit
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Apply requested tournament web refinements
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          ui_path = Path('app/snooker/snooker-data-center-v2.tsx')
+          css_path = Path('app/snooker/snooker-priority.module.css')
+          test_path = Path('tests/tournaments-phase4.test.mjs')
+
+          ui = ui_path.read_text()
+          css = css_path.read_text()
+          test = test_path.read_text()
+
+          def replace_once(text, old, new, label):
+              if old not in text:
+                  raise SystemExit(f'missing expected source for {label}')
+              return text.replace(old, new, 1)
+
+          # Track the desktop event hero compact state. CSS only consumes this state on web widths.
+          ui = replace_once(
+              ui,
+              '  const [detail, setDetail] = useState<DetailState | null>(initialDetail);\n  const [theme, setTheme] = useState<Theme>("green");',
+              '  const [detail, setDetail] = useState<DetailState | null>(initialDetail);\n  const [eventHeaderCompact, setEventHeaderCompact] = useState(false);\n  const [theme, setTheme] = useState<Theme>("green");',
+              'event compact state',
+          )
+
+          player_query_anchor = '  const [playerQuery, setPlayerQuery] = useState("");'
+          compact_effect = '''  const [playerQuery, setPlayerQuery] = useState("");
+  useEffect(() => {
+    if (detail?.type !== "event") {
+      setEventHeaderCompact(false);
+      return;
+    }
+    const updateEventHeader = () => {
+      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+      setEventHeaderCompact(isDesktop && window.scrollY > 84);
+    };
+    updateEventHeader();
+    window.addEventListener("scroll", updateEventHeader, { passive: true });
+    window.addEventListener("resize", updateEventHeader);
+    return () => {
+      window.removeEventListener("scroll", updateEventHeader);
+      window.removeEventListener("resize", updateEventHeader);
+    };
+  }, [detail]);'''
+          ui = replace_once(ui, player_query_anchor, compact_effect, 'event compact effect')
+
+          # The event detail shell exposes compact state to the original green hero.
+          ui = replace_once(
+              ui,
+              '<div className={`${styles.detailShell} ${priority.eventDetailShell}`} data-event-detail>',
+              '<div className={`${styles.detailShell} ${priority.eventDetailShell} ${eventHeaderCompact ? priority.eventDetailCompact : ""}`} data-event-detail>',
+              'event detail compact class',
+          )
+
+          # Move the original green hero into the sticky stack. It is the hero itself that shrinks;
+          # no second event-name strip is created.
+          hero_pattern = re.compile(
+              r'      (<section className=\{`\$\{styles\.eventDetailHero\} \$\{priority\.eventDetailHeroDesktop\}`\}>.*?</section>)\n      <div className=\{priority\.eventStickyNav\}>',
+              re.S,
+          )
+          hero_match = hero_pattern.search(ui)
+          if not hero_match:
+              raise SystemExit('missing event hero/sticky structure')
+          hero = hero_match.group(1).strip()
+          ui = hero_pattern.sub('      <div className={priority.eventStickyNav}>\n        ' + hero, ui, count=1)
+
+          # Remove the previously-added duplicate compact green identity row entirely.
+          identity_pattern = re.compile(
+              r'        <div className=\{priority\.eventStickyIdentity\}>\n.*?          <span>\{calendarEvent\.season\}</span>\n        </div>\n',
+              re.S,
+          )
+          ui, identity_count = identity_pattern.subn('', ui, count=1)
+          if identity_count != 1:
+              raise SystemExit(f'expected one eventStickyIdentity, removed {identity_count}')
+
+          # Mark the historical-only meta so the compact hero can keep only date/location.
+          ui = replace_once(
+              ui,
+              '{isHistoricalEvent ? <span>{calendarEvent.season}赛季 · 历史赛事</span> : null}',
+              '{isHistoricalEvent ? <span className={priority.eventHeroHistory}>{calendarEvent.season}赛季 · 历史赛事</span> : null}',
+              'historical event meta class',
+          )
+
+          # Only the detail action gets the green action treatment. StatusPill keeps its native
+          # live/upcoming/completed/walkover color rules.
+          ui = replace_once(
+              ui,
+              '<span>查看比赛详情 ›</span>',
+              '<span className={priority.scheduleDetailAction}>查看比赛详情 ›</span>',
+              'schedule detail action class',
+          )
+          css = css.replace('.scheduleAction>span', '.scheduleAction>.scheduleDetailAction')
+          if '.scheduleAction>span{' in css:
+              raise SystemExit('schedule status override still present')
+
+          marker = '/* TOURNAMENTS_PHASE4BC_WEB_REDESIGN_V3 */'
+          if marker not in css:
+              css += r'''
+
+/* TOURNAMENTS_PHASE4BC_WEB_REDESIGN_V3 */
+/* Event/match detail pages use the site canvas and full-bleed website header on web. */
+.eventDetailShell .detailLocalHeader>button,
+.matchDetailShell .detailLocalHeader>button,
+.matchBackButton{display:none!important}
+
+@media (min-width:1024px){
+  .detailSiteHeader{
+    width:100vw!important;
+    max-width:none!important;
+    margin-left:calc((100% - 100vw)/2)!important;
+    padding-left:clamp(24px,4vw,56px)!important;
+    padding-right:clamp(24px,4vw,56px)!important;
+    background:rgba(255,255,255,.96)!important;
+    border-bottom:1px solid rgba(231,236,233,.92)!important;
+    box-shadow:0 1px 0 rgba(231,236,233,.35);
+  }
+
+  .eventDetailShell,.matchDetailShell{
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+
+  /* The original green event hero and its three tabs form one sticky unit. */
+  .eventStickyNav{
+    position:sticky!important;
+    top:var(--snooker-header-height)!important;
+    z-index:65!important;
+    display:block!important;
+    overflow:visible;
+    background:#fff;
+    box-shadow:0 8px 22px rgba(35,45,41,.08);
+  }
+  .eventStickyIdentity{display:none!important}
+  .eventStickyNav .eventDetailHeroDesktop{
+    position:relative;
+    max-height:220px;
+    overflow:hidden;
+    padding:30px 32px 28px!important;
+    border-radius:0!important;
+    transition:max-height .24s ease,padding .24s ease;
+  }
+  .eventDetailTabs{
+    position:static!important;
+    top:auto!important;
+    margin:0!important;
+    box-shadow:none!important;
+  }
+
+  /* Scrolled state: keep event names, date/location and event type, then tabs. */
+  .eventDetailCompact .eventDetailHeroDesktop{
+    max-height:98px;
+    padding:13px 24px 11px!important;
+  }
+  .eventDetailCompact .eventDetailHeroDesktop :global([class*="eventDetailTop"]){
+    position:absolute;
+    top:13px;
+    right:24px;
+    display:block;
+    margin:0!important;
+  }
+  .eventDetailCompact .eventDetailHeroDesktop :global([class*="eventDetailTop"]) :global([class*="statusPill"]){
+    display:none!important;
+  }
+  .eventDetailCompact .eventDetailHeroDesktop :global([class*="eventDetailTop"])>span{
+    display:inline-flex;
+    align-items:center;
+    min-height:26px;
+    padding:0 10px;
+    border:1px solid rgba(255,255,255,.24);
+    border-radius:999px;
+    background:rgba(255,255,255,.08);
+    color:#fff;
+    font-size:9.5px!important;
+    font-weight:850;
+    white-space:nowrap;
+  }
+  .eventDetailCompact .eventDetailHeroDesktop h1{
+    max-width:68%;
+    margin:0 0 2px!important;
+    overflow:hidden;
+    font-size:20px!important;
+    line-height:1.15;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .eventDetailCompact .eventDetailHeroDesktop>p{
+    max-width:68%;
+    overflow:hidden;
+    color:rgba(255,255,255,.66)!important;
+    font-size:9px!important;
+    line-height:1.25;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .eventDetailCompact .eventDetailHeroDesktop :global([class*="eventDetailMeta"]){
+    max-width:76%;
+    margin-top:7px!important;
+    gap:12px!important;
+    overflow:hidden;
+    flex-wrap:nowrap!important;
+    font-size:9px!important;
+    white-space:nowrap;
+  }
+  .eventDetailCompact .eventHeroHistory{display:none!important}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .eventStickyNav .eventDetailHeroDesktop{transition:none!important}
+}
+'''
+
+          # Lock the corrected behavior in the phase-4 regression contract.
+          test = test.replace(
+              '  assert.match(priorityCss, /TOURNAMENTS_PHASE4BC_WEB_REDESIGN_V2/);',
+              '  assert.match(priorityCss, /TOURNAMENTS_PHASE4BC_WEB_REDESIGN_V2/);\n  assert.match(priorityCss, /TOURNAMENTS_PHASE4BC_WEB_REDESIGN_V3/);',
+          )
+          test = test.replace(
+              '  assert.match(uiSource, /eventStickyIdentity/);',
+              '  assert.match(uiSource, /eventHeaderCompact/);\n  assert.match(uiSource, /eventStickyNav/);\n  assert.doesNotMatch(uiSource, /className=\\{priority\\.eventStickyIdentity\\}/);',
+          )
+          test = test.replace(
+              '  assert.match(uiSource, /scheduleDesktopMatch/);',
+              '  assert.match(uiSource, /scheduleDesktopMatch/);\n  assert.match(uiSource, /scheduleDetailAction/);\n  assert.match(priorityCss, /\\.scheduleAction>\\.scheduleDetailAction/);\n  assert.doesNotMatch(priorityCss, /\\.scheduleAction>span\\{/);',
+          )
+
+          ui_path.write_text(ui)
+          css_path.write_text(css)
+          test_path.write_text(test)
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate
+        run: npm test
+
+      - name: Commit refinement
+        run: |
+          rm .github/workflows/phase4bc-user-refine.yml
+          git add app/snooker/snooker-data-center-v2.tsx app/snooker/snooker-priority.module.css tests/tournaments-phase4.test.mjs .github/workflows/phase4bc-user-refine.yml
+          git status --short
+          git commit -m "refactor(tournaments): refine sticky event web header"
+          git push origin HEAD:feat/tournaments-phase4a-web
