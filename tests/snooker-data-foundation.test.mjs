@@ -82,19 +82,51 @@ test("snooker frontend is database-first and only relevant headline matches poll
   assert.match(priorityCss, /grid-template-columns:minmax\(0,1fr\) auto minmax\(0,1fr\)/);
 });
 
-test("snooker event lifecycle keeps a finished event featured for one day then advances", async () => {
+test("snooker event lifecycle prioritizes the next event after the live event", async () => {
   const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
   assert.match(uiSource, /addDateDays\(item\.endDate, 1\) === today/);
-  assert.match(uiSource, /activeEventCard \?\? graceEventCard \?\? firstUpcomingMain/);
-  assert.match(uiSource, /label=\{activeEventCard \? "当前赛事" : graceEventCard \? "刚刚结束" : "下一站"\}/);
+  assert.match(uiSource, /activeEventCard \?\? firstUpcomingMain \?\? graceEventCard/);
+  assert.match(uiSource, /label=\{activeEventCard \? "当前赛事" : firstUpcomingMain \? "下一站" : "刚刚结束"\}/);
   assert.match(uiSource, /nextEventCard = featuredEventCard/);
 });
 
-test("recent events and the season calendar follow individual WST events", async () => {
+test("phase 4 event and match details keep desktop hierarchy without widening the data load", async () => {
+  const [uiSource, priorityCss] = await Promise.all([
+    read("app/snooker/snooker-data-center-v2.tsx"),
+    read("app/snooker/snooker-priority.module.css"),
+  ]);
+  assert.match(uiSource, /data-event-detail/);
+  assert.match(uiSource, /data-match-detail/);
+  assert.doesNotMatch(uiSource, /matchContextBar/);
+  assert.match(uiSource, /detailSiteHeader/);
+  assert.match(uiSource, /eventHeaderCompact/);
+  assert.match(uiSource, /data-event-header-state/);
+  assert.match(uiSource, /eventStickyNav/);
+  assert.doesNotMatch(uiSource, /eventStickyIdentity/);
+  assert.doesNotMatch(uiSource, /matchBackButton/);
+  assert.match(uiSource, /scheduleDesktopMatch/);
+  assert.match(uiSource, /scheduleDetailAction/);
+  assert.match(uiSource, /eventScheduleStack/);
+  assert.match(priorityCss, /TOURNAMENTS_PHASE4A_DETAIL_REFINEMENT/);
+  assert.match(priorityCss, /grid-template-columns:1fr!important/);
+  assert.match(priorityCss, /position:sticky;top:var\(--snooker-header-height\)/);
+  assert.match(priorityCss, /\.eventDetailCompact \.eventDetailHeroDesktop/);
+  assert.match(priorityCss, /\.scheduleDetailAction\{/);
+  assert.doesNotMatch(priorityCss, /\.scheduleAction>span/);
+  assert.match(priorityCss, /matchDetailBody,.matchDetailBodyWithData\{display:flex!important;flex-direction:column!important/);
+  assert.doesNotMatch(uiSource, /Promise\.all\([^)]*ensureMatchDetail/);
+});
+
+test("recent events stay capped at five cards and the season calendar keeps individual WST events", async () => {
   const uiSource = await read("app/snooker/snooker-data-center-v2.tsx");
-  assert.match(uiSource, /const recentEvents = seasonCalendar/);
-  assert.match(uiSource, /item\.endDate < today \|\| isActiveOn\(item, today\) \|\| item\.id === firstUpcomingCurrent\?\.id \|\| item\.id === featuredEventCard\?\.id/);
-  assert.match(uiSource, /recentListEvents\.map/);
+  assert.match(uiSource, /const recentFeaturedEvent = activeEventCard/);
+  assert.match(uiSource, /const recentCompletedEvents = \[\.\.\.mainSeasonEvents\]/);
+  assert.match(uiSource, /\.slice\(0, 3\)/);
+  assert.match(uiSource, /const recentCardEvents = \[firstUpcomingCurrent, \.\.\.recentCompletedEvents\]/);
+  assert.match(uiSource, /\.slice\(0, 4\)/);
+  assert.match(uiSource, /recentCardEvents\.map/);
+  assert.match(uiSource, /最多 5 站/);
+  assert.match(uiSource, /查看本赛季完整赛历/);
   assert.match(uiSource, /selectedSeasonEvents\.map/);
   assert.doesNotMatch(uiSource, /多阶段赛事合并为一站/);
 });

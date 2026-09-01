@@ -68,14 +68,19 @@ test("tournament catalog follows individual WST events instead of merged series"
   assert.doesNotMatch(ui, /合并去重/);
 });
 
-test("recent tournaments keep the original live, just-finished, next-event priority", async () => {
+test("recent tournaments show the live event, next event and three latest completed events", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
   assert.match(ui, /const activeEventCard = mainSeasonEvents\.find\(\(item\) => isActiveOn\(item, today\)\)/);
   assert.match(ui, /const graceEventCard = \[\.\.\.mainSeasonEvents\]\.reverse\(\)\.find\(\(item\) => item\.endDate < today && addDateDays\(item\.endDate, 1\) === today\)/);
-  assert.match(ui, /const featuredEventCard = activeEventCard \?\? graceEventCard \?\? firstUpcomingMain/);
-  assert.match(ui, /const recentEvents = seasonCalendar/);
+  assert.match(ui, /const featuredEventCard = activeEventCard \?\? firstUpcomingMain \?\? graceEventCard/);
+  assert.match(ui, /const recentFeaturedEvent = activeEventCard/);
+  assert.match(ui, /const recentCompletedEvents = \[\.\.\.mainSeasonEvents\]/);
+  assert.match(ui, /\.slice\(0, 3\)/);
+  assert.match(ui, /const recentCardEvents = \[firstUpcomingCurrent, \.\.\.recentCompletedEvents\]/);
+  assert.match(ui, /\.slice\(0, 4\)/);
   assert.match(ui, /eventListMode === "calendar" \? <SeasonSelector/);
-  assert.match(ui, /action="本赛季"/);
+  assert.match(ui, /action="最多 5 站"/);
+  assert.match(ui, /查看本赛季完整赛历/);
 });
 
 test("historical match detail only exposes official match statistics", async () => {

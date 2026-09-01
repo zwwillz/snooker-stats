@@ -46,7 +46,9 @@ test("frontend follows raw WST events while historical seasons use a lightweight
   assert.match(ui, /function seasonOptionsFromCurrent/);
   assert.match(ui, /const seasonOptions = useMemo\(\(\) => seasonOptionsFromCurrent\(initialCurrentSeason\)/);
   assert.match(ui, /const selectedSeasonEvents = useMemo\(\(\) => effectiveCalendarEvents/);
-  assert.match(ui, /const recentEvents = seasonCalendar/);
+  assert.match(ui, /const recentFeaturedEvent = activeEventCard/);
+  assert.match(ui, /const recentCompletedEvents = \[\.\.\.mainSeasonEvents\]/);
+  assert.match(ui, /const recentCardEvents = \[firstUpcomingCurrent, \.\.\.recentCompletedEvents\]/);
   assert.match(ui, /\/api\/snooker\/v1\/calendar\?season=\$\{encodeURIComponent\(season\)\}/);
   assert.match(ui, /loadedCalendarSeasons.*initialCurrentSeason/);
   assert.doesNotMatch(ui, /SnookerEventSeries/);
