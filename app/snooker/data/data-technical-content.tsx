@@ -111,7 +111,6 @@ export function TechnicalDetailContent({
 
   return <div className={detailStyles.detailContent}>
     <aside className={detailStyles.technicalSidebar}>
-      <div className={detailStyles.technicalStickyGap} aria-hidden="true" />
       <div className={detailStyles.technicalMetricNav} role="tablist" aria-label="技术榜指标">
         {hub.lists.map((list) => <button
           type="button"
@@ -127,7 +126,6 @@ export function TechnicalDetailContent({
 
     {selected ? <section className={`${styles.card} ${detailStyles.technicalTablePanel}`}>
       <div className={detailStyles.technicalTableSticky}>
-        <div className={detailStyles.technicalStickyGap} aria-hidden="true" />
         <div className={detailStyles.technicalTableHeader}><span>排名</span><span>球员</span><span className={detailStyles.technicalMatchesHeader}>场次</span><span>{selected.shortLabelZh}</span><span className={detailStyles.technicalArrowHeader} aria-hidden="true" /></div>
       </div>
       <div className={detailStyles.technicalTableBody}>
