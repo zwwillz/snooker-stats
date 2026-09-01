@@ -18,7 +18,11 @@ test("phase 4 tournament experience keeps the approved event hierarchy", async (
   assert.match(uiSource, /查看本赛季完整赛历/);
   assert.match(uiSource, /data-event-detail/);
   assert.match(uiSource, /data-match-detail/);
-  assert.match(priorityCss, /TOURNAMENTS_PHASE4BC_CORE/);
+  assert.match(priorityCss, /TOURNAMENTS_PHASE4BC_WEB_REDESIGN_V2/);
+  assert.match(uiSource, /detailSiteHeader/);
+  assert.match(uiSource, /eventStickyIdentity/);
+  assert.match(uiSource, /scheduleDesktopMatch/);
+  assert.doesNotMatch(uiSource, /matchContextBar/);
 });
 
 test("phase 4 detail pages keep event and match data scoped on demand", async () => {

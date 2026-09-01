@@ -97,12 +97,15 @@ test("phase 4 event and match details keep desktop hierarchy without widening th
   ]);
   assert.match(uiSource, /data-event-detail/);
   assert.match(uiSource, /data-match-detail/);
-  assert.match(uiSource, /matchContextBar/);
-  assert.match(uiSource, /matchDetailBodyWithData/);
+  assert.doesNotMatch(uiSource, /matchContextBar/);
+  assert.match(uiSource, /detailSiteHeader/);
+  assert.match(uiSource, /eventStickyIdentity/);
+  assert.match(uiSource, /scheduleDesktopMatch/);
   assert.match(uiSource, /eventScheduleStack/);
-  assert.match(priorityCss, /TOURNAMENTS_PHASE4BC_CORE/);
-  assert.match(priorityCss, /grid-template-columns:minmax\(0,1.2fr\) minmax\(380px,.8fr\)/);
+  assert.match(priorityCss, /TOURNAMENTS_PHASE4BC_WEB_REDESIGN_V2/);
+  assert.match(priorityCss, /grid-template-columns:1fr!important/);
   assert.match(priorityCss, /position:sticky;top:var\(--snooker-header-height\)/);
+  assert.match(priorityCss, /matchDetailBody,.matchDetailBodyWithData\{display:flex!important;flex-direction:column!important/);
   assert.doesNotMatch(uiSource, /Promise\.all\([^)]*ensureMatchDetail/);
 });
 

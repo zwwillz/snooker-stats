@@ -199,6 +199,20 @@ function formatMonthDay(value: string) {
   return `${month}/${day}`;
 }
 
+function formatMatchDateZh(value?: string) {
+  if (!value) return "日期待定";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "日期待定";
+  return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "numeric", day: "numeric" }).format(date);
+}
+
+function formatMatchTimeZh(value?: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
+}
+
 function formatUpdatedAt(value?: string) {
   if (!value) return "更新时间待确认";
   const date = new Date(value);
@@ -623,22 +637,53 @@ function MatchListRow({ match, players, onOpen }: { match: SnookerMatch; players
   const p1 = players.get(match.player1Id) ?? fallbackPlayer(match.player1Id);
   const p2 = players.get(match.player2Id) ?? fallbackPlayer(match.player2Id);
   const score = match.status === "walkover" ? "W : O" : `${match.score1 ?? "-"} : ${match.score2 ?? "-"}`;
+  const timeLabel = formatMatchTimeZh(match.scheduledAt) ?? match.timeLabelZh ?? "时间待定";
   return (
-    <button className={`${styles.matchRow} ${priority.horizontalMatchRow}`} data-schedule-match-id={match.id} onClick={onOpen}>
-      <div className={styles.matchRowMeta}>
-        <span>{match.timeLabelZh ?? match.roundLabelZh}{match.matchNo ? ` · #${match.matchNo}` : ""}</span>
-        <span>{bestOfLabel(match.bestOf)}</span>
-        <StatusPill status={match.status} label={matchDisplayStatus(match)} />
-      </div>
-      <div className={priority.matchVersusRow}>
-        <div className={polish.matchPlayerCell}>
-          <PlayerAvatar player={p1} size="sm" />
-          <span>{p1.shortNameZh}{match.status === "walkover" && match.winnerId && match.winnerId !== p1.id ? <em className={polish.withdrawnBadge}>退赛</em> : null}{match.winnerId === p1.id ? <em className={polish.matchWin}>胜</em> : null}</span>
+    <button className={`${styles.matchRow} ${priority.horizontalMatchRow} ${priority.scheduleMatchCard}`} data-schedule-match-id={match.id} onClick={onOpen}>
+      <div className={priority.scheduleMobileMatch}>
+        <div className={styles.matchRowMeta}>
+          <span>{match.timeLabelZh ?? match.roundLabelZh}{match.matchNo ? ` · #${match.matchNo}` : ""}</span>
+          <span>{bestOfLabel(match.bestOf)}</span>
+          <StatusPill status={match.status} label={matchDisplayStatus(match)} />
         </div>
-        <b className={match.status === "live" ? priority.liveScoreText : ""}>{score}</b>
-        <div className={`${polish.matchPlayerCell} ${polish.matchPlayerRight}`}>
-          <span>{match.winnerId === p2.id ? <em className={polish.matchWin}>胜</em> : null}{p2.shortNameZh}{match.status === "walkover" && match.winnerId && match.winnerId !== p2.id ? <span className={polish.withdrawnBadge}>退赛</span> : null}</span>
-          <PlayerAvatar player={p2} size="sm" />
+        <div className={priority.matchVersusRow}>
+          <div className={polish.matchPlayerCell}>
+            <PlayerAvatar player={p1} size="sm" />
+            <span>{p1.shortNameZh}{match.status === "walkover" && match.winnerId && match.winnerId !== p1.id ? <em className={polish.withdrawnBadge}>退赛</em> : null}{match.winnerId === p1.id ? <em className={polish.matchWin}>胜</em> : null}</span>
+          </div>
+          <b className={match.status === "live" ? priority.liveScoreText : ""}>{score}</b>
+          <div className={`${polish.matchPlayerCell} ${polish.matchPlayerRight}`}>
+            <span>{match.winnerId === p2.id ? <em className={polish.matchWin}>胜</em> : null}{p2.shortNameZh}{match.status === "walkover" && match.winnerId && match.winnerId !== p2.id ? <span className={polish.withdrawnBadge}>退赛</span> : null}</span>
+            <PlayerAvatar player={p2} size="sm" />
+          </div>
+        </div>
+      </div>
+
+      <div className={priority.scheduleDesktopMatch}>
+        <div className={priority.scheduleMeta}>
+          <strong>{timeLabel}</strong>
+          <span>{formatMatchDateZh(match.scheduledAt)}</span>
+          <small>{match.matchNo ? `#${match.matchNo}` : "#—"}</small>
+        </div>
+        <div className={priority.schedulePlayers}>
+          <div className={`${priority.schedulePlayerName} ${priority.schedulePlayerLeft}`}>
+            <strong>{p1.nameZh}</strong>
+            <small>{p1.nameEn}</small>
+          </div>
+          <PlayerAvatar player={p1} size="lg" />
+          <div className={priority.scheduleScore}>
+            <b className={match.status === "live" ? priority.liveScoreText : ""}>{score}</b>
+            <small>{bestOfLabel(match.bestOf)}</small>
+          </div>
+          <PlayerAvatar player={p2} size="lg" />
+          <div className={`${priority.schedulePlayerName} ${priority.schedulePlayerRight}`}>
+            <strong>{p2.nameZh}</strong>
+            <small>{p2.nameEn}</small>
+          </div>
+        </div>
+        <div className={priority.scheduleAction}>
+          <StatusPill status={match.status} label={matchDisplayStatus(match)} />
+          <span>查看比赛详情 ›</span>
         </div>
       </div>
     </button>
@@ -1545,17 +1590,23 @@ export default function SnookerDataCenterV2({
     window.scrollTo({ top: 0, behavior: "auto" });
   };
 
+  const detailSiteHeader = <header className={`${styles.header} ${priority.detailSiteHeader}`}>
+    <button className={styles.brand} onClick={() => changeView("home")}><span>S</span><div><strong>147数据局</strong><small>中文斯诺克数据平台 · CN SNOOKER STATS</small></div></button>
+    <nav className={styles.desktopNav} aria-label="主要导航">{navItems.map((item) => <a key={item.id} href={item.id === "home" ? "/" : `/?view=${item.id}`} aria-current={item.id === activeView ? "page" : undefined} className={item.id === activeView ? styles.desktopNavActive : ""} onPointerEnter={() => warmRootView(item.id)} onFocus={() => warmRootView(item.id)} onTouchStart={() => warmRootView(item.id)} onClick={(event) => { event.preventDefault(); changeView(item.id); }}><span>{item.label}</span><small>{item.labelEn}</small></a>)}</nav>
+    <div className={styles.headerRight}><div className={styles.themeSwitch} role="group" aria-label="主题颜色"><button className={theme === "green" ? styles.themeActive : ""} onClick={() => setTheme("green")} aria-pressed={theme === "green"}>绿</button><button className={theme === "red" ? styles.themeActive : ""} onClick={() => setTheme("red")} aria-pressed={theme === "red"}>红</button></div></div>
+  </header>;
+
   if (detail?.type === "player") {
     const summaryPlayer = [...players.values()].find((player) => player.slug === detail.slug);
     return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
-      <header className={styles.detailHeader}><button onClick={closePlayer}>‹</button><strong>{summaryPlayer?.nameZh ?? "球员详情"}</strong><span>PLAYER</span></header>
+      {detailSiteHeader}<header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={closePlayer}>‹</button><strong>{summaryPlayer?.nameZh ?? "球员详情"}</strong><span>PLAYER</span></header>
       <PlayerDetailInline key={detail.slug} summaryPlayer={summaryPlayer} slug={detail.slug} />
     </div></main>;
   }
 
   if (detail?.type === "ranking") {
     return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
-      <header className={styles.detailHeader}><button onClick={closeRankings}>‹</button><strong>排名</strong><span>DATA</span></header>
+      {detailSiteHeader}<header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={closeRankings}>‹</button><strong>排名</strong><span>DATA</span></header>
       <RankingDetailContent
         hub={rankingHub}
         players={dataPlayers}
@@ -1572,14 +1623,14 @@ export default function SnookerDataCenterV2({
     const selectedEvent = eventBySlug.get(detail.eventSlug);
     if (!selectedEvent) {
       return <main className={styles.appRoot} data-theme={theme}><div className={`${styles.detailShell} ${priority.matchDetailShell}`} data-match-detail>
-        <header className={styles.detailHeader}><button onClick={() => closeMatch(detail.eventSlug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
+        {detailSiteHeader}<header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={() => closeMatch(detail.eventSlug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
         <section className={styles.card}><div className={styles.emptyState}>{eventLoadErrorSlugs.includes(detail.eventSlug) ? "比赛所属赛事加载失败，请稍后重试。" : "正在加载比赛信息…"}</div>{eventLoadErrorSlugs.includes(detail.eventSlug) ? <button className={styles.fullButton} onClick={() => void ensureEventDetail(detail.eventSlug)}>重新加载</button> : null}</section>
       </div></main>;
     }
     const match = allMatches(selectedEvent).find((item) => item.id === detail.matchId);
     if (!match) {
       return <main className={styles.appRoot} data-theme={theme}><div className={styles.detailShell}>
-        <header className={styles.detailHeader}><button onClick={() => closeMatch(detail.eventSlug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
+        {detailSiteHeader}<header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={() => closeMatch(detail.eventSlug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
         <section className={styles.card}><div className={styles.emptyState}>{loadingEventSlugs.includes(detail.eventSlug) ? "正在加载比赛信息…" : "未找到这场比赛，请返回赛程重新选择。"}</div></section>
       </div></main>;
     }
@@ -1641,8 +1692,9 @@ export default function SnookerDataCenterV2({
     ];
 
     return <main className={styles.appRoot} data-theme={theme}><div className={`${styles.detailShell} ${priority.matchDetailShell}`} data-match-detail>
-      <header className={styles.detailHeader}><button onClick={() => closeMatch(selectedEvent.slug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
+      {detailSiteHeader}<header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={() => closeMatch(selectedEvent.slug)}>‹</button><strong>比赛详情</strong><span>MATCH</span></header>
       <section className={`${styles.matchHero} ${priority.matchHeroDesktop}`}>
+        <button type="button" className={priority.matchBackButton} onClick={() => closeMatch(selectedEvent.slug)}>‹ 返回赛程</button>
         <div className={styles.matchHeroMeta}><span>{!isCurrentSeasonMatch ? `${selectedEvent.season}赛季 · 历史赛事 · ` : ""}{match.roundLabelZh} · {match.timeLabelZh ?? "比赛时间待定"}</span><b>{bestOfLabel(match.bestOf)}</b></div>
         <h1>{selectedEvent.nameZh}</h1>
         <div className={styles.versusGrid}>
@@ -1652,15 +1704,7 @@ export default function SnookerDataCenterV2({
         </div>
       </section>
 
-      <div className={priority.matchContextBar} aria-label="比赛信息">
-        <span><small>轮次</small><b>{match.roundLabelZh}</b></span>
-        <span><small>时间</small><b>{match.timeLabelZh ?? "待定"}</b></span>
-        {match.tableLabelZh ? <span><small>球台</small><b>{match.tableLabelZh}</b></span> : null}
-        {match.sessionLabelZh ? <span><small>阶段</small><b>{match.sessionLabelZh}</b></span> : null}
-        <span><small>赛制</small><b>{bestOfLabel(match.bestOf)}</b></span>
-      </div>
-
-      <div className={`${priority.matchDetailBody} ${hasMatchupData ? priority.matchDetailBodyWithData : ""}`}>
+      <div className={priority.matchDetailBody}>
       <section className={`${styles.frameSection} ${priority.matchFramePanel}`}>
         <div className={styles.frameHead}><span>单杆<br />(50+)</span><span>分数</span><b>局</b><span>分数</span><span>单杆<br />(50+)</span></div>
         {match.frames?.length ? match.frames.map((frame) => {
@@ -1769,9 +1813,16 @@ export default function SnookerDataCenterV2({
     const overviewVenue = calendarEvent.venueZh;
 
     return <main className={styles.appRoot} data-theme={theme}><div className={`${styles.detailShell} ${priority.eventDetailShell}`} data-event-detail>
-      <header className={`${styles.detailHeader} ${priority.eventNameHeader}`}><button onClick={closeEvent}>‹</button><strong>{calendarEvent.nameZh}</strong><span>{calendarEvent.season}</span></header>
+      {detailSiteHeader}<header className={`${styles.detailHeader} ${priority.eventNameHeader} ${priority.detailLocalHeader}`}><button onClick={closeEvent}>‹</button><strong>{calendarEvent.nameZh}</strong><span>{calendarEvent.season}</span></header>
       <section className={`${styles.eventDetailHero} ${priority.eventDetailHeroDesktop}`}><div className={styles.eventDetailTop}><StatusPill status={calendarEvent.status} label={calendarEvent.statusLabelZh} /><span>{eventDetailTypeLabel(calendarEvent)}</span></div><h1>{calendarEvent.nameZh}</h1><p>{calendarEvent.nameEn}</p><div className={styles.eventDetailMeta}>{isHistoricalEvent ? <span>{calendarEvent.season}赛季 · 历史赛事</span> : null}<span>{formatDateRange(overviewStart, overviewEnd)}</span><span>{overviewCountry} · {overviewCity}</span></div></section>
-      <div className={`${styles.eventTabs} ${priority.eventDetailTabs}`}><button className={detail.tab === "overview" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "overview" })}>赛事介绍</button><button className={detail.tab === "schedule" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "schedule" })}>赛程</button><button className={detail.tab === "data" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "data" })}>赛事数据</button></div>
+      <div className={priority.eventStickyNav}>
+        <div className={priority.eventStickyIdentity}>
+          <button type="button" onClick={closeEvent} aria-label="返回赛事列表">‹</button>
+          <div><strong>{calendarEvent.nameZh}</strong><small>{calendarEvent.nameEn}</small></div>
+          <span>{calendarEvent.season}</span>
+        </div>
+        <div className={`${styles.eventTabs} ${priority.eventDetailTabs}`}><button className={detail.tab === "overview" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "overview" })}>赛事介绍</button><button className={detail.tab === "schedule" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "schedule" })}>赛程</button><button className={detail.tab === "data" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "data" })}>赛事数据</button></div>
+      </div>
 
       {detail.tab === "overview" ? <>
         {!qualificationEvent && calendarEvent.status === "completed" && !full && loadingEventSlugs.includes(detail.slug) ? <section className={`${polish.championCard} ${polish.championCardLoading}`} aria-label="正在加载本届冠军"><div className={polish.championLoadingMark}>冠</div><div className={polish.championText}><small>CHAMPION · 本届冠军</small><strong>正在读取冠军信息…</strong><span>决赛结果与赛程同步加载中</span></div></section> : null}
@@ -1782,7 +1833,7 @@ export default function SnookerDataCenterV2({
 
       {detail.tab === "schedule" ? full ? <div className={`${styles.roundStack} ${priority.eventScheduleStack}`}>
         {full.schedulePartial ? <div className={insight.partialNotice}><b>赛程陆续公布中</b><span className={polish.partialText}>目前已公布 {full.publishedMatchCount ?? allMatches(full).length} 场比赛，更多赛程公布后将在这里更新。</span></div> : null}
-        {orderedScheduleRounds(full).map((round) => <section className={styles.card} key={round.key}><SectionHeader title={round.labelZh} action={bestOfLabel(round.bestOf)} /><div className={styles.matchList}>{round.matches.map((match) => <MatchListRow key={match.id} match={match} players={players} onOpen={() => openMatch(match.id, full.slug)} />)}</div></section>)}
+        {orderedScheduleRounds(full).map((round) => <section className={styles.card} key={round.key}><SectionHeader eyebrow="ROUND" title={round.labelZh} /><div className={styles.matchList}>{round.matches.map((match) => <MatchListRow key={match.id} match={match} players={players} onOpen={() => openMatch(match.id, full.slug)} />)}</div></section>)}
       </div> : <section className={styles.card}><div className={styles.emptyState}>{loadingEventSlugs.includes(detail.slug) ? "正在加载赛程…" : eventLoadErrorSlugs.includes(detail.slug) ? "赛程加载失败，请稍后重试。" : "详细赛程暂未公布。"}</div>{eventLoadErrorSlugs.includes(detail.slug) ? <button className={styles.fullButton} onClick={() => void ensureEventDetail(detail.slug)}>重新加载</button> : null}</section> : null}
 
       {detail.tab === "data" ? eventStats ? <>
