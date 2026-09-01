@@ -52,9 +52,9 @@ test("technical leaderboard is a desktop table pilot while mobile keeps the comp
   assert.match(technical, /className=\{styles\.technicalDesktopBack\}/);
   assert.match(css, /\.technicalDesktopBack\{display:none\}/);
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.technicalMobileBack\{display:none\}/);
-  assert.match(css, /\.technicalSidebar\{position:sticky;top:calc\(var\(--snooker-header-height,68px\) \+ 18px\)/);
-  assert.match(css, /\.technicalTableHeader\{position:sticky;top:calc\(var\(--snooker-header-height,68px\) \+ 18px\)/);
-  assert.match(css, /\.technicalTableHeader::before\{content:"";position:absolute;left:-18px;right:-18px;top:-18px;height:18px;background:var\(--bg\);pointer-events:none\}/);
+  assert.match(css, /\.technicalSidebar\{position:sticky;top:var\(--snooker-header-height,68px\)/);
+  assert.match(css, /\.technicalTableHeader\{position:sticky;top:var\(--snooker-header-height,68px\)/);
+  assert.doesNotMatch(css, /\.technicalTableHeader::before/);
   assert.match(technical, /data-technical-detail="true"/);
   assert.match(shellCss, /\.contentData:has\(\[data-technical-detail\]\)>\.dataStatus\{display:none\}/);
 });
