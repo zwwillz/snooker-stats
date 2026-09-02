@@ -9,7 +9,6 @@ test("phase two adds one semantic desktop navigation without replacing mobile na
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
   const css = await read("app/snooker/snooker-data-center.module.css");
   const header = await read("app/snooker/public-site-header.tsx");
-  const headerCss = await read("app/snooker/public-site-header.module.css");
 
   assert.match(ui, /labelEn:\s*"HOME"/);
   assert.match(ui, /<PublicSiteHeader active=\{activeView\}/);
@@ -18,8 +17,10 @@ test("phase two adds one semantic desktop navigation without replacing mobile na
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.shell\{width:100%/);
   assert.match(css, /\.appRoot\{--snooker-header-height:64px/);
   assert.match(css, /\.header\{height:var\(--snooker-header-height\);padding:0 max\(20px,calc\(\(100% - 1120px\)\/2\)\)/);
-  assert.match(headerCss, /\.header\{display:none\}/);
-  assert.match(headerCss, /@media \(min-width:1024px\)[\s\S]*\.header\{[\s\S]*display:flex/);
+  assert.match(header, /import styles from "\.\/snooker-data-center\.module\.css"/);
+  assert.match(header, /priority\.detailSiteHeader/);
+  assert.match(css, /\.desktopNav\{display:none\}/);
+  assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.desktopNav\{[\s\S]*display:flex/);
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.bottomNav\{display:none\}/);
 });
 

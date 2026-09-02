@@ -6,19 +6,22 @@ const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
 test("web headers share one 64px navigation geometry and hide page-specific actions", async () => {
-  const [shared, sharedCss, rootUi, compare, about] = await Promise.all([
+  const [shared, siteCss, rootUi, compare, compareCss, about] = await Promise.all([
     read("app/snooker/public-site-header.tsx"),
-    read("app/snooker/public-site-header.module.css"),
+    read("app/snooker/snooker-data-center.module.css"),
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("app/snooker/compare/player-compare-client.tsx"),
+    read("app/snooker/compare/player-compare.module.css"),
     read("app/about/about-chrome.tsx"),
   ]);
-  assert.match(sharedCss, /height:64px;min-height:64px/);
+  assert.match(shared, /import styles from "\.\/snooker-data-center\.module\.css"/);
+  assert.match(siteCss, /\.header\{height:var\(--snooker-header-height\);padding:0 max\(20px,calc\(\(100% - 1120px\)\/2\)\)/);
   assert.match(shared, /className=\{styles\.themeSwitch\}/);
   assert.match(rootUi, /<PublicSiteHeader active=\{activeView\}/);
   assert.match(compare, /<PublicSiteHeader active="players" \/>/);
   assert.match(about, /<PublicSiteHeader \/>/);
   assert.doesNotMatch(compare, /shareButton|navigator\.clipboard/);
+  assert.match(compareCss, /\.mobileTopbar\{display:none!important\}/);
 });
 
 test("player tournament and data sidebars share titled card hierarchy", async () => {
