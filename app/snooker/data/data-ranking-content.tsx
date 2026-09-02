@@ -478,6 +478,28 @@ export function RankingDetailContent({
   const playerByUuid = useMemo(() => playerByUuidMap(players), [players]);
   const selected = listFor(hub, selectedKey);
   const rows = selected?.rows ?? [];
+  const rankingTableSentinelRef = useRef<HTMLDivElement>(null);
+  const [rankingTablePinned, setRankingTablePinned] = useState(false);
+
+  useEffect(() => {
+    const sentinel = rankingTableSentinelRef.current;
+    if (!sentinel) return;
+    const desktop = window.matchMedia("(min-width:1024px)");
+    let observer: IntersectionObserver | null = null;
+    const syncObserver = () => {
+      observer?.disconnect();
+      observer = null;
+      setRankingTablePinned(false);
+      if (!desktop.matches) return;
+      observer = new IntersectionObserver(([entry]) => {
+        setRankingTablePinned(entry.boundingClientRect.top <= 64);
+      }, { root: null, rootMargin: "-64px 0px 0px 0px", threshold: 0 });
+      observer.observe(sentinel);
+    };
+    syncObserver();
+    desktop.addEventListener("change", syncObserver);
+    return () => { observer?.disconnect(); desktop.removeEventListener("change", syncObserver); };
+  }, []);
 
   return <div className={styles.detailContent}>
     <header className={styles.rankingDesktopIntro}>
@@ -485,6 +507,7 @@ export function RankingDetailContent({
       <strong>{rows.length ? `${rows.length} 位球员` : "数据中心"}</strong>
     </header>
     <div className={styles.detailNavStack}>
+      <div className={styles.dataSidebarHeading}><small>RANKING FILTER</small><strong>排名筛选</strong></div>
       <div className={styles.sectionTabs} role="tablist" aria-label="排名栏目">
         {sectionTabs.map((item) => <button type="button" role="tab" aria-selected={section === item.id} className={section === item.id ? styles.sectionActive : ""} onClick={() => onSelectSection(item.id)} key={item.id}>{item.label}</button>)}
       </div>
@@ -492,7 +515,8 @@ export function RankingDetailContent({
     </div>
 
     {section === "current" ? selected ? <section className={`${styles.card} ${styles.rankingTableCard}`}>
-      <div className={styles.rankingTableHeader}><span>排名</span><span>球员</span><span>排名金额</span></div>
+      <div ref={rankingTableSentinelRef} className={styles.rankingTableSentinel} aria-hidden="true" />
+      <div className={`${styles.rankingTableHeader} ${rankingTablePinned ? styles.rankingTableHeaderPinned : ""}`}><span>排名</span><span>球员</span><span>排名金额</span></div>
       <div className={styles.fullRankingList}>
         {rows.map((row) => {
           const player = rankingPlayer(row, playerByUuid, playerBySlug);

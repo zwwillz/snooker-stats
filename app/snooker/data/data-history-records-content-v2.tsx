@@ -117,6 +117,7 @@ export function HistoryRecordsSection() {
 
   useEffect(() => {
     if (!group) return;
+    if (window.matchMedia("(min-width:1024px)").matches) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = previous; };
@@ -181,7 +182,7 @@ export function HistoryRecordsSection() {
   const overlayTitle = selected?.titleZh ?? (group === "classic" ? CLASSIC_RECORD_ENTRY.titleZh : category?.titleZh ?? "历史与纪录");
 
   return <>
-    <section className={`${dataStyles.card} ${styles.hubCard}`}>
+    <section className={`${dataStyles.card} ${styles.hubCard} ${group ? styles.hubCardHiddenDesktop : ""}`}>
       <div className={dataStyles.sectionHeader}>
         <div><small>HISTORY &amp; RECORDS</small><h2>历史与纪录</h2></div>
         <span className={styles.sectionCount}>5 个入口</span>
@@ -216,12 +217,23 @@ export function HistoryRecordsSection() {
           <strong>{overlayTitle}</strong>
           <span>DATA</span>
         </header>
-        <div className={styles.desktopDetailBar}>
-          <button type="button" onClick={selected ? backToCategory : closeRecords}><span aria-hidden="true">‹</span> {selected ? `返回${category?.titleZh ?? "分类"}` : "返回数据"}</button>
-          <span>历史与纪录</span>
+        <div className={styles.historyDesktopLayout}>
+          <aside className={styles.historySidebar} aria-label="历史与纪录分类">
+            <div className={styles.historySidebarHeading}><small>HISTORY &amp; RECORDS</small><strong>历史与纪录</strong></div>
+            <div className={styles.historyCategoryNav}>
+              {HISTORY_RECORD_CATEGORIES.map((item) => <div className={styles.historyNavGroup} key={item.key}>
+                <button type="button" className={group === item.key ? styles.historyNavActive : ""} onClick={() => openGroup(item.key)}>{item.titleZh}</button>
+                {group === item.key ? <div className={styles.historyRecordNav}>
+                  {historyLeaderboardItemsForCategory(item.key).map((record) => <button type="button" className={recordKey === record.key ? styles.historyRecordActive : ""} onClick={() => openLeaderboard(record)} key={record.key}>{record.titleZh}</button>)}
+                </div> : null}
+              </div>)}
+              <div className={styles.historyNavGroup}><button type="button" className={group === "classic" ? styles.historyNavActive : ""} onClick={() => openGroup("classic")}>{CLASSIC_RECORD_ENTRY.titleZh}</button></div>
+            </div>
+          </aside>
+          <div className={styles.historyDetailMain}>
+            {selected ? <LeaderboardDetail item={selected} /> : group === "classic" ? <ClassicRecordsPage /> : category ? <CategoryDetail categoryKey={category.key} onOpenLeaderboard={openLeaderboard} /> : null}
+          </div>
         </div>
-
-        {selected ? <LeaderboardDetail item={selected} /> : group === "classic" ? <ClassicRecordsPage /> : category ? <CategoryDetail categoryKey={category.key} onOpenLeaderboard={openLeaderboard} /> : null}
       </div>
     </div> : null}
   </>;

@@ -176,7 +176,7 @@ export function PlayerDirectoryContent({
         <aside className={styles.directorySidebar} aria-label="球员筛选">
           <div className={styles.directorySidebarHeading}>
             <small>PLAYER FILTER</small>
-            <strong>筛选球员</strong>
+            <strong>球员筛选</strong>
           </div>
           <div className={styles.filters}>
             {filters.map((item) => (

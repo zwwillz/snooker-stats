@@ -36,15 +36,18 @@ test("ranking and honours details follow the technical leaderboard web pattern",
   assert.match(detailCss, /\.honoursRankingList button\{grid-template-columns:48px 38px minmax\(0,1fr\) 110px 14px\}/);
 });
 
-test("history secondary and tertiary pages stay below global navigation at full web width", async () => {
+test("history secondary and tertiary pages use browser scroll and a nested left menu", async () => {
   const [content, css] = await Promise.all([
     read("app/snooker/data/data-history-records-content-v2.tsx"),
     read("app/snooker/data/data-history-records.module.css"),
   ]);
 
-  assert.match(content, /className=\{styles\.desktopDetailBar\}/);
-  assert.match(css, /\.overlay\{top:var\(--snooker-header-height,64px\)/);
-  assert.match(css, /\.overlayScroll\{width:min\(1120px,calc\(100% - 40px\)\);height:100%/);
+  assert.doesNotMatch(content, /desktopDetailBar/);
+  assert.match(content, /className=\{styles\.historySidebar\}/);
+  assert.match(content, /className=\{styles\.historyRecordNav\}/);
+  assert.match(content, /window\.matchMedia\("\(min-width:1024px\)"\)\.matches/);
+  assert.match(css, /\.overlay\{position:static;inset:auto/);
+  assert.match(css, /\.overlayScroll\{width:100%;height:auto;margin:0;overflow:visible/);
   assert.match(css, /\.mobileHeader\{display:none\}/);
-  assert.match(css, /\.desktopDetailBar\{min-height:54px;position:sticky/);
+  assert.match(css, /\.historyDesktopLayout\{display:grid;grid-template-columns:230px minmax\(0,1fr\)/);
 });

@@ -144,6 +144,7 @@ export function TechnicalDetailContent({
 
   return <div className={detailStyles.detailContent}>
     <aside className={detailStyles.technicalSidebar}>
+      <div className={detailStyles.technicalSidebarHeading}><small>TECHNICAL FILTER</small><strong>技术榜单</strong></div>
       <div className={detailStyles.technicalMetricNav} role="tablist" aria-label="技术榜指标">
         {hub.lists.map((list) => <button
           type="button"
