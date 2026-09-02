@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { SnookerPlayerDetail, SnookerPlayerSeasonStats } from "@/lib/snooker/player-data";
 import styles from "./player.module.css";
 import detailUi from "./player-detail-refresh.module.css";
@@ -96,7 +96,13 @@ const TREND_METRICS: TrendMetricDefinition[] = [
   },
 ];
 
-export function PlayerDetailContent({ player }: { player: SnookerPlayerDetail }) {
+export function PlayerDetailContent({
+  player,
+  compareAction,
+}: {
+  player: SnookerPlayerDetail;
+  compareAction?: ReactNode;
+}) {
   const [seasonYear, setSeasonYear] = useState(player.seasons[0]?.seasonStartYear ?? null);
   const [trendMetric, setTrendMetric] = useState<TrendMetricKey>("winRate");
   const [bioExpanded, setBioExpanded] = useState(false);
@@ -284,6 +290,8 @@ export function PlayerDetailContent({ player }: { player: SnookerPlayerDetail })
           </div>
         </section>
       ) : null}
+
+      {compareAction}
 
       <section className={styles.card}>
         <div className={styles.sectionHeader}><div><small>PROFILE</small><h2>球员简介</h2></div></div>

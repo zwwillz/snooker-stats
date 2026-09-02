@@ -168,8 +168,8 @@ test("player directory and player detail share one root shell and focused data p
   assert.match(loader, /rpc\/snooker_player_detail_public/);
   assert.match(loader, /next: \{ revalidate: 300 \}/);
   assert.match(api, /getSnookerPlayerDetailFast/);
-  assert.match(playerCss, /\.directoryToolbar \.searchBox input\{/);
-  assert.match(playerCss, /\.directoryToolbar \.filters button\{/);
+  assert.match(playerCss, /\.searchBox input\{/);
+  assert.match(playerCss, /\.filters button\{/);
 });
 
 test("slim homepage keeps all root tabs local and loads complete data only after activation", async () => {

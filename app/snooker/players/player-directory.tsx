@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SnookerPlayerListItem, SnookerPlayerStatus } from "@/lib/snooker/player-data";
 import { prefetchPlayerExperience } from "./player-detail-client";
 import styles from "./player.module.css";
@@ -76,6 +76,8 @@ export function PlayerDirectoryContent({
 }) {
   const directoryRef = useRef<HTMLDivElement | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const searchSentinelRef = useRef<HTMLDivElement | null>(null);
+  const [searchStuck, setSearchStuck] = useState(false);
   const filtered = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase("zh-CN");
     return players.filter(isConcretePlayer).filter((player) => {
@@ -128,6 +130,35 @@ export function PlayerDirectoryContent({
     return () => observer.disconnect();
   }, [hasMore, loadingMore, onLoadMore]);
 
+  useEffect(() => {
+    const sentinel = searchSentinelRef.current;
+    if (!sentinel) return;
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+      const desktop = window.matchMedia("(min-width: 1024px)").matches;
+      const headerHeight = Number.parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue("--snooker-header-height"),
+      ) || 64;
+      const stuck = desktop && sentinel.getBoundingClientRect().top <= headerHeight;
+      setSearchStuck((current) => current === stuck ? current : stuck);
+    };
+    const scheduleUpdate = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+    };
+  }, []);
+
   const warmHighPriority = (player: SnookerPlayerListItem) => {
     prefetchPlayerExperience(player.slug, player.avatarUrl, "high");
     onPrefetchPlayer?.(player);
@@ -141,71 +172,81 @@ export function PlayerDirectoryContent({
         <p>世界斯诺克球员数据库。中文名、英文标准名、世界排名与球员资料统一由独立数据中心维护。</p>
       </section>
 
-      <div className={styles.directoryToolbar}>
-        <label className={styles.searchBox}>
-          <span>⌕</span>
-          <input
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="搜索中文名 / 英文名"
-            aria-label="搜索球员"
-          />
-        </label>
-        <div className={styles.filters}>
-          {filters.map((item) => (
-            <button className={filter === item.id ? styles.filterActive : ""} onClick={() => onFilterChange(item.id)} key={item.id}>
-              {item.label}
-            </button>
-          ))}
+      <div className={styles.directoryLayout}>
+        <aside className={styles.directorySidebar} aria-label="球员筛选">
+          <div className={styles.directorySidebarHeading}>
+            <small>PLAYER FILTER</small>
+            <strong>筛选球员</strong>
+          </div>
+          <div className={styles.filters}>
+            {filters.map((item) => (
+              <button className={filter === item.id ? styles.filterActive : ""} onClick={() => onFilterChange(item.id)} key={item.id}>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <div className={styles.directoryMain}>
+          <div className={styles.searchSentinel} ref={searchSentinelRef} aria-hidden="true" />
+          <label className={`${styles.searchBox} ${searchStuck ? styles.searchBoxStuck : ""}`}>
+            <span>⌕</span>
+            <input
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              placeholder="搜索中文名 / 英文名"
+              aria-label="搜索球员"
+            />
+          </label>
+
+          <section className={styles.card}>
+            <div className={styles.directorySummary}>
+              <span>按官方世界排名排列</span>
+              <b>{filtered.length} 名球员</b>
+            </div>
+            <div className={styles.playerDirectory} ref={directoryRef}>
+              {filtered.length ? filtered.map((player) => {
+                const status = resolvedPlayerStatus(player);
+                const statusLabel = playerStatusLabel(status);
+                return (
+                  <button
+                    type="button"
+                    className={styles.playerRow}
+                    data-player-slug={player.slug}
+                    onPointerEnter={() => warmHighPriority(player)}
+                    onFocus={() => warmHighPriority(player)}
+                    onTouchStart={() => warmHighPriority(player)}
+                    onClick={() => onOpenPlayer(player)}
+                    key={player.id}
+                  >
+                    <span className={styles.listAvatar}>
+                      {player.avatarUrl ? <img src={player.avatarUrl} alt="" loading="lazy" decoding="async" /> : <span>{initials(player.nameEn)}</span>}
+                    </span>
+                    <span className={styles.rowMain}>
+                      <b>{player.nameZh}</b>
+                      <small>{player.nameEn}</small>
+                      <p>
+                        {player.nationalityZh ?? "国籍待补充"}
+                        {statusLabel ? <i data-player-status={status}>{statusLabel}</i> : null}
+                      </p>
+                    </span>
+                    <span className={styles.rowEnd}>
+                      <span className={styles.rankBlock}>
+                        <b>{player.currentRank === null ? "—" : `#${player.currentRank}`}</b>
+                        <small>{points(player.rankingPoints)}</small>
+                      </span>
+                      <span className={styles.rowArrow}>›</span>
+                    </span>
+                  </button>
+                );
+              }) : <div className={styles.emptyState}>没有找到匹配的球员。<br />可以尝试中文名、英文名或切换筛选条件。</div>}
+              {hasMore ? <div className={styles.emptyState} ref={loadMoreRef}>
+                {loadingMore ? "正在加载更多球员…" : <button type="button" onClick={onLoadMore}>继续加载历史球员</button>}
+              </div> : null}
+            </div>
+          </section>
         </div>
       </div>
-
-      <section className={styles.card}>
-        <div className={styles.directorySummary}>
-          <span>按官方世界排名排列</span>
-          <b>{filtered.length} 名球员</b>
-        </div>
-        <div className={styles.playerDirectory} ref={directoryRef}>
-          {filtered.length ? filtered.map((player) => {
-            const status = resolvedPlayerStatus(player);
-            const statusLabel = playerStatusLabel(status);
-            return (
-              <button
-                type="button"
-                className={styles.playerRow}
-                data-player-slug={player.slug}
-                onPointerEnter={() => warmHighPriority(player)}
-                onFocus={() => warmHighPriority(player)}
-                onTouchStart={() => warmHighPriority(player)}
-                onClick={() => onOpenPlayer(player)}
-                key={player.id}
-              >
-                <span className={styles.listAvatar}>
-                  {player.avatarUrl ? <img src={player.avatarUrl} alt="" loading="lazy" decoding="async" /> : <span>{initials(player.nameEn)}</span>}
-                </span>
-                <span className={styles.rowMain}>
-                  <b>{player.nameZh}</b>
-                  <small>{player.nameEn}</small>
-                  <p>
-                    {player.nationalityZh ?? "国籍待补充"}
-                    {statusLabel ? <i data-player-status={status}>{statusLabel}</i> : null}
-                  </p>
-                </span>
-                <span className={styles.rowEnd}>
-                  <span className={styles.rankBlock}>
-                    <b>{player.currentRank === null ? "—" : `#${player.currentRank}`}</b>
-                    <small>{points(player.rankingPoints)}</small>
-                  </span>
-                  <span className={styles.rowArrow}>›</span>
-                </span>
-              </button>
-            );
-          }) : <div className={styles.emptyState}>没有找到匹配的球员。<br />可以尝试中文名、英文名或切换筛选条件。</div>}
-          {hasMore ? <div className={styles.emptyState} ref={loadMoreRef}>
-            {loadingMore ? "正在加载更多球员…" : <button type="button" onClick={onLoadMore}>继续加载历史球员</button>}
-          </div> : null}
-        </div>
-      </section>
     </>
   );
 }

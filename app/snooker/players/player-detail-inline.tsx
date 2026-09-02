@@ -101,10 +101,17 @@ export default function PlayerDetailInline({
     }
   };
 
+  const compareAction = player?.isCurrentTour ? (
+    <section className={styles.card}>
+      <Link className={styles.compareAction} href={compareHref} prefetch={true} onPointerEnter={() => router.prefetch(compareHref)} onPointerDown={() => router.prefetch(compareHref)} onFocus={() => router.prefetch(compareHref)} onClick={rememberCompareReturn}>
+        <span><small>PLAYER COMPARE</small><strong>与其他球员比较</strong><em>将该球员固定在左侧，选择另一名职业球员开始对比</em></span><b>›</b>
+      </Link>
+    </section>
+  ) : null;
+
   return (
     <div className={styles.content}>
-      {player ? <PlayerDetailContent player={player} /> : <section className={styles.card}><div className={styles.emptyState}>正在加载球员资料…</div></section>}
-      {player?.isCurrentTour ? <section className={styles.card}><Link className={styles.compareAction} href={compareHref} prefetch={true} onPointerEnter={() => router.prefetch(compareHref)} onPointerDown={() => router.prefetch(compareHref)} onFocus={() => router.prefetch(compareHref)} onClick={rememberCompareReturn}><span><small>PLAYER COMPARE</small><strong>与其他球员比较</strong><em>将该球员固定在左侧，选择另一名职业球员开始对比</em></span><b>›</b></Link></section> : null}
+      {player ? <PlayerDetailContent player={player} compareAction={compareAction} /> : <section className={styles.card}><div className={styles.emptyState}>正在加载球员资料…</div></section>}
       {loadFailed ? <section className={styles.card}><div className={styles.emptyState}>深度球员资料暂时未能加载，基础资料仍可正常查看。</div></section> : null}
     </div>
   );

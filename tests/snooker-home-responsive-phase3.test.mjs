@@ -36,7 +36,7 @@ test("phase three compacts only the desktop header and shares its sticky offset"
   assert.match(css, /\.brand>span\{width:36px;height:36px;font-size:16px\}/);
   assert.match(css, /\.themeSwitch button\{width:30px;height:25px;font-size:9px/);
   assert.match(dataCss, /top:var\(--snooker-header-height,68px\)/);
-  assert.match(playerCss, /\.directoryToolbar\{top:var\(--snooker-header-height,68px\)\}/);
+  assert.match(playerCss, /\.searchBox\{position:sticky;top:var\(--snooker-header-height,64px\)/);
 });
 
 test("phase three homepage adapts ranking, focus matches and China players by viewport and item count", async () => {
