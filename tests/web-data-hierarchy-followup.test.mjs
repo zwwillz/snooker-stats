@@ -52,5 +52,6 @@ test("history secondary and tertiary pages use browser scroll and a nested left 
   assert.match(css, /\.overlayScroll\{width:100%;height:auto;margin:0;overflow:visible/);
   assert.match(css, /\.mobileHeader\{display:none\}/);
   assert.match(css, /\.historyDesktopLayout\{display:grid;grid-template-columns:230px minmax\(0,1fr\)/);
-  assert.match(css, /\.historySidebar\{[\s\S]*?top:var\(--snooker-header-height,64px\)/);
+  assert.match(css, /\.historySidebar\{[\s\S]*?top:calc\(var\(--snooker-header-height,64px\) \+ 18px\)/);
+  assert.match(css, /\.historySidebar\{[\s\S]*?max-height:calc\(100dvh - var\(--snooker-header-height,64px\) - 36px\)/);
 });

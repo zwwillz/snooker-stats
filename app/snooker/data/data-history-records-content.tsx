@@ -136,7 +136,7 @@ export function HistoryRecordsSection() {
         <header className={styles.mobileHeader}>
           <button type="button" onClick={selected ? backToCategory : closeRecords} aria-label="返回"><span aria-hidden="true">‹</span></button>
           <strong>{selected?.titleZh ?? category.titleZh}</strong>
-          <span>DATA</span>
+          <span>STATS</span>
         </header>
 
         {selected ? <RecordDetail item={selected} /> : <CategoryDetail categoryKey={group} onOpenRecord={openRecord} />}

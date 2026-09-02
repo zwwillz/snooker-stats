@@ -12,7 +12,7 @@ const items: Array<{ id: PublicNavId; href: string; label: string; labelEn: stri
   { id: "home", href: "/", label: "首页", labelEn: "HOME" },
   { id: "matches", href: "/?view=matches", label: "赛事", labelEn: "TOURNAMENTS" },
   { id: "players", href: "/?view=players", label: "球员", labelEn: "PLAYERS" },
-  { id: "data", href: "/?view=data", label: "数据", labelEn: "DATA" },
+  { id: "data", href: "/?view=data", label: "数据", labelEn: "STATS" },
 ];
 
 export default function PublicSiteHeader({

@@ -206,7 +206,7 @@ export function TechnicalDetailPage({
     <header className={detailStyles.technicalMobileHeader}>
       <button type="button" onClick={onClose} aria-label="返回数据"><span aria-hidden="true">‹</span></button>
       <strong>本赛季球员技术榜</strong>
-      <span>DATA</span>
+      <span>STATS</span>
     </header>
     <header className={detailStyles.technicalDesktopIntro}>
       <div><small>TECHNICAL LEADERBOARD</small><h1>本赛季球员技术榜</h1><p>本赛季球员技术表现与比赛效率排名。</p></div>
@@ -221,7 +221,7 @@ export function TechnicalDetailLoadingPage({ onClose }: { onClose: () => void })
     <header className={detailStyles.technicalMobileHeader}>
       <button type="button" onClick={onClose} aria-label="返回数据"><span aria-hidden="true">‹</span></button>
       <strong>本赛季球员技术榜</strong>
-      <span>DATA</span>
+      <span>STATS</span>
     </header>
     <header className={detailStyles.technicalDesktopIntro}>
       <div><small>TECHNICAL LEADERBOARD</small><h1>本赛季球员技术榜</h1><p>本赛季球员技术表现与比赛效率排名。</p></div>

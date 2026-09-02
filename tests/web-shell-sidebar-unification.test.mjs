@@ -36,7 +36,7 @@ test("player tournament and data sidebars share titled card hierarchy", async ()
   assert.match(player, /<strong>球员筛选<\/strong>/);
   assert.match(eventUi, /<small>TOURNAMENT FILTER<\/small><strong>赛事筛选<\/strong>/);
   assert.match(eventCss, /\.eventSidebarHeading\{display:flex;flex-direction:column/);
-  assert.match(ranking, /<small>RANKING FILTER<\/small><strong>排名筛选<\/strong>/);
+  assert.match(ranking, /<small>RANKING LISTS<\/small><strong>排名榜单<\/strong>/);
   assert.match(technical, /<small>TECHNICAL FILTER<\/small><strong>技术榜单<\/strong>/);
   assert.match(history, /className=\{styles\.historyRecordNav\}/);
 });

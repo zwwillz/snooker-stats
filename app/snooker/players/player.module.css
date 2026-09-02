@@ -105,8 +105,10 @@
   .directorySidebar .filters button{width:100%;min-height:40px;padding:9px 13px;border-radius:11px;text-align:left;font-size:12px}
   .directoryMain{grid-column:2;grid-row:1;display:block;min-width:0}
   .searchSentinel{display:block;width:1px;height:1px;margin-bottom:-1px;pointer-events:none}
-  .searchBox{position:sticky;top:var(--snooker-header-height,64px);z-index:35;height:62px;padding:0 20px;border-radius:18px 18px 0 0;border-bottom-color:transparent;background:rgba(255,255,255,.97);box-shadow:0 9px 24px rgba(35,45,41,.055);backdrop-filter:blur(16px);transition:border-radius .12s ease}
+  .searchBox{position:sticky;top:var(--snooker-header-height,64px);z-index:35;height:62px;padding:0 20px;border-color:color-mix(in srgb,var(--accent) 18%,var(--line));border-radius:18px 18px 0 0;border-bottom-color:var(--line);background:#fff;box-shadow:0 9px 24px rgba(35,45,41,.075);backdrop-filter:blur(16px);transition:border-radius .12s ease}
   .searchBoxStuck{border-radius:0!important}
+  .searchBox>span{color:var(--accent);font-size:18px;font-weight:850}
+  .searchBox input::placeholder{color:#8c9590;opacity:1}
   .searchBox input{font-size:14px}
 
   /* Keep the directory deliberately scannable: one player per row. */
