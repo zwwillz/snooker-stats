@@ -42,6 +42,9 @@ test("desktop sticky menus remain visible and preserve the agreed widths", async
 
   assert.match(eventCss, /\.eventCenterLayout\{display:grid;grid-template-columns:190px minmax\(0,1fr\)/);
   assert.match(playerCss, /\.directoryLayout\{display:grid;grid-template-columns:190px minmax\(0,1fr\)/);
+  assert.match(eventCss, /@media \(min-width:1024px\) and \(max-width:1120px\)\{\.eventCenterLayout\{grid-template-columns:172px minmax\(0,1fr\);gap:16px\}\.eventSidebar\{padding:16px\}\}/);
+  assert.match(playerCss, /@media \(min-width:1024px\) and \(max-width:1120px\)\{[\s\S]*?\.directoryLayout\{grid-template-columns:172px minmax\(0,1fr\);gap:16px\}[\s\S]*?\.directorySidebar\{padding:16px\}/);
+  assert.doesNotMatch(eventCss, /eventCenterLayout\{grid-template-columns:(?:184|200)px/);
   assert.match(rankingCss, /\.detailContent\{padding:24px 0 42px;display:grid;grid-template-columns:230px minmax\(0,1fr\)/);
   assert.match(detailCss, /grid-template-columns:230px minmax\(0,1fr\)/);
   assert.match(detailCss, /\.technicalSidebar\{[\s\S]*max-height:calc\(100dvh - var\(--snooker-header-height,64px\) - \(var\(--technical-workspace-gap\) \* 2\)\)/);
