@@ -8,16 +8,18 @@ const read = (path) => readFile(new URL(path, root), "utf8");
 test("phase two adds one semantic desktop navigation without replacing mobile navigation", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
   const css = await read("app/snooker/snooker-data-center.module.css");
+  const header = await read("app/snooker/public-site-header.tsx");
+  const headerCss = await read("app/snooker/public-site-header.module.css");
 
   assert.match(ui, /labelEn:\s*"HOME"/);
-  assert.match(ui, /className=\{styles\.desktopNav\}\s+aria-label="主要导航"/);
-  assert.match(ui, /aria-current=\{item\.id === activeView \? "page" : undefined\}/);
+  assert.match(ui, /<PublicSiteHeader active=\{activeView\}/);
+  assert.match(header, /aria-current=\{active === item\.id \? "page" : undefined\}/);
   assert.match(ui, /className=\{`\$\{styles\.bottomNav\} \$\{polish\.fastNav\}`\}/);
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.shell\{width:100%/);
   assert.match(css, /\.appRoot\{--snooker-header-height:64px/);
   assert.match(css, /\.header\{height:var\(--snooker-header-height\);padding:0 max\(20px,calc\(\(100% - 1120px\)\/2\)\)/);
-  assert.match(css, /\.desktopNav\{display:none\}/);
-  assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.desktopNav\{[\s\S]*display:flex/);
+  assert.match(headerCss, /\.header\{display:none\}/);
+  assert.match(headerCss, /@media \(min-width:1024px\)[\s\S]*\.header\{[\s\S]*display:flex/);
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.bottomNav\{display:none\}/);
 });
 
@@ -74,7 +76,7 @@ test("technical leaderboard keeps one page scroll with split sticky offsets and 
   assert.match(css, /@media \(min-width:1024px\)[\s\S]*\.technicalMobileHeader\{display:none\}/);
   assert.match(css, /\.technicalDesktopIntro\{[\s\S]*margin-bottom:20px;[\s\S]*padding:24px 2px 0/);
   assert.match(technical, /data-technical-detail="true"/);
-  assert.match(shellCss, /\.contentData:has\(\[data-technical-detail\]\)>\.dataStatus\{display:none\}/);
+  assert.doesNotMatch(shellCss, /\.dataStatus/);
   assert.match(shellCss, /@media \(max-width:1023px\)[\s\S]*\.shell:has\(\[data-technical-detail\]\)>\.header,[\s\S]*\.bottomNav,[\s\S]*\.buildMark\{display:none\}/);
   assert.match(shellCss, /\.contentData:has\(\[data-technical-detail\]\)\{width:100%;max-width:none;margin:0;padding:0;gap:0\}/);
   assert.doesNotMatch(technical, />‹<\/span> 返回数据/);

@@ -10,9 +10,10 @@ import type {
 } from "@/lib/snooker/ranking-hub";
 import { technicalMetricKey, type SnookerTechnicalHub, type SnookerTechnicalMetricKey } from "@/lib/snooker/technical-hub";
 import { honoursMetricKey, type SnookerHonoursHub, type SnookerHonoursMetricKey } from "@/lib/snooker/honours-hub";
+import { CLASSIC_RECORDS, historyLeaderboardItem, historyRecordCategory, type HistoryRecordItem } from "@/lib/snooker/history-records-v4";
 import { SeasonLeadersSection, TechnicalDetailLoadingPage, TechnicalDetailPage } from "./data-technical-content";
 import { HonoursDetailLoadingPage, HonoursDetailPage, HonoursLeadersSection } from "./data-honours-content";
-import { HistoryRecordsSection } from "./data-history-records-content-v2";
+import { HistoryRecordsDetailPage, HistoryRecordsSection, type HistoryRecordsViewKey } from "./data-history-records-content-v2";
 import PlayerCompareTeaser from "../compare/player-compare-teaser";
 import styles from "./data.module.css";
 
@@ -223,6 +224,8 @@ export function DataHubContent({
     honoursCache?.players ?? [],
   ));
   const [honoursKey, setHonoursKey] = useState<SnookerHonoursMetricKey | null>(null);
+  const [historyGroup, setHistoryGroup] = useState<HistoryRecordsViewKey | null>(null);
+  const [historyRecordKey, setHistoryRecordKey] = useState<string | null>(null);
   const technicalSectionRef = useRef<HTMLDivElement | null>(null);
   const honoursSectionRef = useRef<HTMLDivElement | null>(null);
   const resolvedPlayers = useMemo(() => mergePlayers(players, deferredPlayers), [players, deferredPlayers]);
@@ -300,6 +303,35 @@ export function DataHubContent({
     return () => {
       window.removeEventListener("popstate", syncTechnicalFromUrl);
       window.removeEventListener("snooker:root-navigation", syncTechnicalFromUrl);
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const syncHistoryFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("view") !== "data" || params.get("section") !== "records") {
+        setHistoryGroup(null);
+        setHistoryRecordKey(null);
+        return;
+      }
+      const groupParam = params.get("group");
+      const recordParam = params.get("record");
+      const category = historyRecordCategory(groupParam);
+      const leaderboard = historyLeaderboardItem(recordParam);
+      if (groupParam === "classic" || CLASSIC_RECORDS.some((item) => item.key === recordParam)) {
+        setHistoryGroup("classic");
+        setHistoryRecordKey(null);
+        return;
+      }
+      setHistoryGroup(category?.key ?? null);
+      setHistoryRecordKey(leaderboard && category && leaderboard.category === category.key ? leaderboard.key : null);
+    };
+    syncHistoryFromUrl();
+    window.addEventListener("popstate", syncHistoryFromUrl);
+    window.addEventListener("snooker:root-navigation", syncHistoryFromUrl);
+    return () => {
+      window.removeEventListener("popstate", syncHistoryFromUrl);
+      window.removeEventListener("snooker:root-navigation", syncHistoryFromUrl);
     };
   }, []);
 
@@ -388,6 +420,58 @@ export function DataHubContent({
     setHonoursKey(null);
   };
 
+  const openHistoryGroup = (key: HistoryRecordsViewKey) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", "data");
+    url.searchParams.delete("player");
+    url.searchParams.set("section", "records");
+    url.searchParams.set("group", key);
+    url.searchParams.delete("record");
+    url.searchParams.delete("metric");
+    url.searchParams.delete("honour");
+    url.searchParams.delete("list");
+    window.history.pushState({ ...(window.history.state ?? {}), snookerHistoryRecords: "group" }, "", url.pathname + url.search + url.hash);
+    setHistoryGroup(key);
+    setHistoryRecordKey(null);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+
+  const openHistoryRecord = (item: HistoryRecordItem) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", "data");
+    url.searchParams.set("section", "records");
+    url.searchParams.set("group", item.category);
+    url.searchParams.set("record", item.key);
+    window.history.pushState({ ...(window.history.state ?? {}), snookerHistoryRecords: "record" }, "", url.pathname + url.search + url.hash);
+    setHistoryGroup(item.category);
+    setHistoryRecordKey(item.key);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+
+  const backHistory = () => {
+    if (historyRecordKey) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("record");
+      window.history.replaceState({ ...(window.history.state ?? {}), snookerHistoryRecords: "group" }, "", url.pathname + url.search + url.hash);
+      setHistoryRecordKey(null);
+      window.scrollTo({ top: 0, behavior: "auto" });
+      return;
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", "data");
+    url.searchParams.delete("section");
+    url.searchParams.delete("group");
+    url.searchParams.delete("record");
+    window.history.replaceState({ ...(window.history.state ?? {}), snookerView: "data" }, "", url.pathname + url.search + url.hash);
+    setHistoryGroup(null);
+    setHistoryRecordKey(null);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+
+  if (historyGroup) {
+    return <HistoryRecordsDetailPage group={historyGroup} recordKey={historyRecordKey} onSelectGroup={openHistoryGroup} onSelectRecord={openHistoryRecord} onBack={backHistory} />;
+  }
+
   if (technicalKey && !technicalHub?.online) {
     return <TechnicalDetailLoadingPage onClose={closeTechnical} />;
   }
@@ -450,7 +534,7 @@ export function DataHubContent({
       <div className={styles.technicalLoading}>正在加载职业生涯荣誉数据…</div>
     </section>}</div>
 
-    <div className={styles.dataHistorySlot}><HistoryRecordsSection /></div>
+    <div className={styles.dataHistorySlot}><HistoryRecordsSection onOpenGroup={openHistoryGroup} /></div>
     </div>
 
     {infoOpen ? <RankingInfoModal hub={hub} onClose={() => setInfoOpen(false)} /> : null}

@@ -18,5 +18,5 @@ test("homepage-only modules do not depend on portals or DOM view discovery", () 
 
 test("home cards disappear and return with the root home state", () => {
   assert.match(ui, /activeView === "home" \? <>/);
-  assert.match(ui, /activeView !== "home" \? <div className=\{styles\.dataStatus\}/);
+  assert.doesNotMatch(ui, /styles\.dataStatus/);
 });

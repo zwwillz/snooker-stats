@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
@@ -10,19 +10,13 @@ import type {
   PlayerCompareSeason,
   PlayerCompareSnapshot,
 } from "@/lib/snooker/player-compare";
+import PublicSiteHeader from "../public-site-header";
 import styles from "./player-compare.module.css";
 
 type CompareTab = "season" | "career" | "h2h" | "honours";
 type SelectorSide = "left" | "right" | null;
 type PlayerFilter = "all" | "top16" | "china";
 type Trend = "higher" | "lower" | "neutral";
-
-const websiteNav = [
-  { href: "/", label: "首页", labelEn: "HOME" },
-  { href: "/?view=matches", label: "赛事", labelEn: "TOURNAMENTS" },
-  { href: "/?view=players", label: "球员", labelEn: "PLAYERS", active: true },
-  { href: "/?view=data", label: "数据", labelEn: "DATA" },
-];
 
 type MetricRowProps = {
   label: string;
@@ -356,16 +350,6 @@ export default function PlayerCompareClient({
   const [selectorSide, setSelectorSide] = useState<SelectorSide>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem("snooker-theme");
-      if (stored === "green" || stored === "red") document.documentElement.dataset.snookerTheme = stored;
-    } catch {
-      // Keep the default compare theme when storage is unavailable.
-    }
-  }, []);
 
   const load = async (nextPlayers: [string, string], season?: string) => {
     if (!nextPlayers[0] || !nextPlayers[1] || nextPlayers[0] === nextPlayers[1]) return;
@@ -422,29 +406,17 @@ export default function PlayerCompareClient({
     router.replace("/?view=data", { scroll: false });
   };
 
-  const share = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setCopied(false);
-    }
-  };
-
   const [leftPlayer, rightPlayer] = data?.players ?? [players.find((player) => player.slug === selected[0]), players.find((player) => player.slug === selected[1])];
 
   return <main className={styles.page}>
-    <header className={styles.topbar}>
+    <PublicSiteHeader active="players" />
+    <header className={`${styles.topbar} ${styles.mobileTopbar}`}>
       <button type="button" className={styles.backLink} onClick={goBack} aria-label="返回上一页">‹</button>
       <Link className={styles.compareBrand} href="/" aria-label="返回147数据局首页">
         <span className={styles.brandMark}>S</span>
         <span className={styles.brandText}><strong>147数据局</strong><small>中文斯诺克数据平台 · CN SNOOKER STATS</small></span>
       </Link>
-      <nav className={styles.desktopNav} aria-label="主要导航">
-        {websiteNav.map((item) => <Link aria-current={item.active ? "page" : undefined} className={item.active ? styles.desktopNavActive : ""} href={item.href} key={item.href}><span>{item.label}</span><small>{item.labelEn}</small></Link>)}
-      </nav>
-      <button type="button" className={styles.shareButton} onClick={share}>{copied ? "已复制" : "分享"}</button>
+      <span className={styles.mobileHeaderSpacer} aria-hidden="true" />
     </header>
 
     <section className={styles.hero}>

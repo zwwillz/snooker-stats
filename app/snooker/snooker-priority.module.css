@@ -389,6 +389,7 @@
 
 /* TOURNAMENTS_PHASE4A_DETAIL_REFINEMENT */
 .detailSiteHeader{display:none}
+.rootMobileHeader{display:flex}
 .detailLocalHeader{display:flex}
 .detailLocalHeaderNoBack{justify-content:center}
 .detailLocalHeaderNoBack>span{position:absolute;right:18px}
@@ -397,6 +398,7 @@
 .scheduleMobileMatch{display:block}
 
 @media (min-width:1024px){
+  .rootMobileHeader{display:none!important}
   /* Every secondary/tertiary web page keeps the same website navigation. */
   .detailSiteHeader{display:flex!important;z-index:80;background:rgba(255,255,255,.96)}
   .detailLocalHeader{display:none!important}

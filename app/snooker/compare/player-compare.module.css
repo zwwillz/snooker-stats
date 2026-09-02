@@ -1232,8 +1232,10 @@
 
 /* PLAYER_COMPARE_WEB_FOLLOWUP_V1 */
 .compareBrand{justify-self:center;min-width:0;display:flex;align-items:center;gap:9px;color:inherit;text-decoration:none}.brandMark{display:none}.brandText{min-width:0;display:flex;flex-direction:column;gap:1px}.brandText strong{font-size:14px;white-space:nowrap}.brandText small{display:none;color:#929894;font-size:7px;letter-spacing:.1em;white-space:nowrap}.desktopNav{display:none}.shareButton{justify-self:end!important}
+.mobileHeaderSpacer{width:36px;height:36px}
 
 @media (min-width:1024px){
+  .mobileTopbar{display:none}
   .topbar{z-index:60;display:flex;min-height:64px;height:64px;padding:0 max(20px,calc((100vw - 1120px)/2));gap:18px;border-bottom-color:rgba(231,236,233,.88)}
   .topbar>button.backLink{display:none}
   .compareBrand{justify-self:auto;flex:0 0 auto}

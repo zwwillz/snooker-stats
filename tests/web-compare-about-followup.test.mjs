@@ -6,14 +6,15 @@ const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
 test("web player compare uses the shared canvas, global navigation, and readable desktop type", async () => {
-  const [client, css] = await Promise.all([
+  const [client, css, header] = await Promise.all([
     read("app/snooker/compare/player-compare-client.tsx"),
     read("app/snooker/compare/player-compare.module.css"),
+    read("app/snooker/public-site-header.tsx"),
   ]);
 
-  assert.match(client, /className=\{styles\.desktopNav\} aria-label="主要导航"/);
-  assert.match(client, /aria-current=\{item\.active \? "page" : undefined\}/);
-  assert.match(client, /label: "球员", labelEn: "PLAYERS", active: true/);
+  assert.match(client, /<PublicSiteHeader active="players" \/>/);
+  assert.match(header, /label: "球员", labelEn: "PLAYERS"/);
+  assert.doesNotMatch(client, /shareButton|navigator\.clipboard/);
   assert.match(css, /PLAYER_COMPARE_WEB_FOLLOWUP_V1/);
   assert.match(css, /\.hero,\.tabs,\.seasonToolbar,\.tabContent,\.dataFooter,\.errorBox,\.emptyState\{width:min\(1120px,calc\(100% - 40px\)\);max-width:none\}/);
   assert.match(css, /\.tabs\{top:64px\}/);
@@ -26,8 +27,7 @@ test("web about page uses the shared header and raises small desktop copy", asyn
     read("app/about/about.module.css"),
   ]);
 
-  assert.match(chrome, /className=\{styles\.desktopNav\} aria-label="主要导航"/);
-  assert.match(chrome, /label: "赛事", labelEn: "TOURNAMENTS"/);
+  assert.match(chrome, /<PublicSiteHeader \/>/);
   assert.match(css, /ABOUT_WEB_FOLLOWUP_V1/);
   assert.match(css, /\.shell\{width:min\(1120px,calc\(100% - 40px\)\);padding:38px 0 42px\}/);
   assert.match(css, /\.sourceCards small\{font-size:11px/);
