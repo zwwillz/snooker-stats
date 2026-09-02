@@ -22,7 +22,7 @@ test("secondary and tertiary tournament pages restore mobile back controls and w
     read("app/snooker/snooker-priority.module.css"),
   ]);
   assert.match(ui, /aria-label="返回上一页"/);
-  assert.match(css, /\.eventDetailShell,\.matchDetailShell\{width:min\(1280px,calc\(100% - 48px\)\)!important/);
+  assert.match(css, /\.eventDetailShell,\.matchDetailShell,\.playerDetailShell\{width:min\(1120px,calc\(100% - 40px\)\)!important/);
 });
 
 test("detail website navigation does not keep a root item selected", async () => {

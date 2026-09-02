@@ -89,3 +89,86 @@
   .bottomNav button>b{font-size:var(--snooker-type-secondary)}
   .compareAction em{font-size:var(--snooker-type-secondary)}
 }
+
+/* PLAYER_WEB_LAYOUT_V1 */
+@media (min-width:1024px){
+  /* Match the shared desktop page hierarchy used by Home, Tournaments and Data. */
+  .pageIntro{padding:25px 4px 13px}
+  .pageIntro small{font-size:10px}
+  .pageIntro h1{margin-top:7px;font-size:42px}
+  .pageIntro p{max-width:720px;font-size:14px;line-height:1.75}
+
+  /* Search and filters become one stable desktop control bar. */
+  .directoryToolbar{top:var(--snooker-header-height,64px);z-index:35;margin:0 0 2px;padding:12px 16px;display:grid;grid-template-columns:minmax(320px,1fr) auto;gap:18px;align-items:center;border:1px solid var(--line);border-radius:17px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(35,45,41,.05);backdrop-filter:blur(16px)}
+  .searchBox{height:48px;border-radius:13px;background:#f8faf9;box-shadow:none}
+  .directoryToolbar .searchBox input{font-size:13px}
+  .filters{margin:0;padding:0;justify-content:flex-end;overflow:visible}
+  .directoryToolbar .filters button{min-width:62px;min-height:38px;padding:8px 14px;font-size:11px}
+
+  /* Use the web canvas efficiently without turning the directory into a dense table. */
+  .card{padding:22px 24px;border-radius:22px}
+  .directorySummary{min-height:32px;padding:0 4px 12px;font-size:11px}
+  .directorySummary b{font-size:12px}
+  .playerDirectory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;overflow:visible}
+  .playerRow{min-height:88px;padding:12px;border-radius:14px;grid-template-columns:60px minmax(0,1fr) auto;gap:14px;transition:background .16s ease,box-shadow .16s ease,transform .16s ease}
+  .playerRow:nth-child(-n+2){border-top-color:transparent}
+  .playerRow:hover{z-index:1;background:var(--accent-faint);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 12%,var(--line));transform:translateY(-1px)}
+  .listAvatar{width:60px;height:60px;border-radius:17px}
+  .listAvatar span{font-size:13px}
+  .rowMain b{font-size:15px;line-height:1.3}
+  .rowMain small{margin-top:4px;font-size:11px;line-height:1.35}
+  .rowMain p{margin-top:6px;font-size:11px;line-height:1.4}
+  .rowMain p i{margin-left:7px;padding:3px 6px;font-size:9px}
+  .rowEnd{gap:12px}
+  .rankBlock b{font-size:17px}
+  .rankBlock small{font-size:10px}
+  .rowArrow{font-size:21px}
+  .playerDirectory>.emptyState{grid-column:1/-1;font-size:12px}
+
+  /* Player detail follows the same wide, modular rhythm as other web detail pages. */
+  .content{width:100%;margin:0 auto;padding:0 0 42px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;align-items:stretch}
+  .content>.playerHero{grid-column:1/-1;width:100%;min-height:360px;border-radius:0 0 24px 24px}
+  .content>.card{grid-column:1/-1;margin:0;padding:22px 24px}
+  .content>.card:has(.careerGrid){grid-column:1/7}
+  .content>.card:has(.tripleGrid){grid-column:7/-1}
+  .content:has(.timeline)>.card:has(.bioText){grid-column:1/7}
+  .content>.card:has(.timeline){grid-column:7/-1}
+  .heroCopy{width:52%;min-height:360px;padding:34px 0 31px 38px}
+  .heroCopy>small{font-size:10px}
+  .heroCopy h1{margin-top:10px;font-size:44px}
+  .heroCopy>p{font-size:13px}
+  .nickname{margin-top:9px!important}
+  .countryPill{margin-top:18px;padding:7px 11px;font-size:11px}
+  .heroRank{gap:18px}
+  .heroRank small{font-size:10px}
+  .heroRank strong{font-size:40px}
+  .heroRank b{font-size:14px}
+  .heroFacts{margin-top:16px;font-size:11px}
+  .heroPortrait{right:1%;width:48%;height:100%}
+  .heroGhost{right:22px;top:18px;font-size:126px}
+  .sectionHeader h2{font-size:22px}
+  .sectionHeader small{font-size:9px}
+  .sectionHeader>span{font-size:11px}
+  .careerRows div{min-height:48px;font-size:12px}
+  .careerRows b{font-size:13px}
+  .seasonTabs{gap:7px;margin-bottom:18px}
+  .seasonTabs button{padding:9px 13px;font-size:11px}
+  .bioText{font-size:13px;line-height:1.85}
+  .quote{font-size:12px;line-height:1.75}
+  .expandButton{font-size:11px}
+  .timelineItem{grid-template-columns:58px 16px minmax(0,1fr);min-height:64px}
+  .timelineItem:not(:last-child):after{left:65px}
+  .timelineYear{font-size:12px}
+  .timelineText{font-size:12px;line-height:1.7}
+  .compareAction small{font-size:9px}
+  .compareAction strong{font-size:16px}
+  .compareAction em{font-size:12px}
+}
+
+@media (min-width:1024px) and (max-width:1120px){
+  .directoryToolbar{grid-template-columns:minmax(280px,1fr) auto;gap:12px}
+  .directoryToolbar .filters button{min-width:56px;padding-inline:11px}
+  .playerDirectory{column-gap:18px}
+  .playerRow{padding-inline:9px;grid-template-columns:56px minmax(0,1fr) auto;gap:11px}
+  .listAvatar{width:56px;height:56px}
+}
