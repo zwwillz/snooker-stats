@@ -1234,7 +1234,7 @@
 .compareBrand{justify-self:center;min-width:0;display:flex;align-items:center;gap:9px;color:inherit;text-decoration:none}.brandMark{display:none}.brandText{min-width:0;display:flex;flex-direction:column;gap:1px}.brandText strong{font-size:14px;white-space:nowrap}.brandText small{display:none;color:#929894;font-size:7px;letter-spacing:.1em;white-space:nowrap}.desktopNav{display:none}.shareButton{justify-self:end!important}
 
 @media (min-width:1024px){
-  .topbar{display:flex;min-height:64px;height:64px;padding:0 max(20px,calc((100% - 1120px)/2));gap:18px;border-bottom-color:rgba(231,236,233,.88)}
+  .topbar{z-index:60;display:flex;min-height:64px;height:64px;padding:0 max(20px,calc((100vw - 1120px)/2));gap:18px;border-bottom-color:rgba(231,236,233,.88)}
   .topbar>button.backLink{display:none}
   .compareBrand{justify-self:auto;flex:0 0 auto}
   .brandMark{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;color:#fff;background:linear-gradient(145deg,var(--accent),var(--accent-dark));font-size:16px;font-weight:950;box-shadow:0 9px 22px var(--accent-shadow)}
@@ -1244,7 +1244,7 @@
   .desktopNav a span{font-size:12px;font-weight:850}.desktopNav a small{font-size:7px;font-weight:800;letter-spacing:.11em;color:#a0a6a2}
   .desktopNav a:hover{color:var(--accent-strong);background:var(--accent-faint)}
   .desktopNav a.desktopNavActive{border-bottom-color:var(--accent);color:var(--accent-strong);background:linear-gradient(180deg,transparent,var(--accent-faint))}.desktopNav a.desktopNavActive small{color:var(--accent)}
-  .shareButton{flex:0 0 auto;margin-left:auto;min-width:68px;min-height:34px;padding:7px 13px!important;border-radius:999px!important;font-size:11px!important;font-weight:800}
+  .shareButton{display:none}
 
   .hero,.tabs,.seasonToolbar,.tabContent,.dataFooter,.errorBox,.emptyState{width:min(1120px,calc(100% - 40px));max-width:none}
   .hero{padding:32px 0 24px}

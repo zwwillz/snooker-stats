@@ -129,6 +129,7 @@ export function HonoursDetailContent({
 
   return <div className={detailStyles.detailContent}>
     <aside className={detailStyles.technicalSidebar}>
+      <div className={detailStyles.technicalSidebarHeading}><small>HONOURS FILTER</small><strong>荣誉榜单</strong></div>
       <div className={detailStyles.technicalMetricNav} role="tablist" aria-label="荣誉榜指标">
         {hub.lists.map((list) => <button
           type="button"

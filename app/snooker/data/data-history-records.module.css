@@ -19,7 +19,7 @@
 .mobileHeader button span{font-size:30px;line-height:1;transform:translateY(-1px)}
 .mobileHeader strong{min-width:0;text-align:center;font-size:16px;font-weight:800;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mobileHeader>span{width:36px;color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.08em;text-align:right}
-.desktopDetailBar{display:none}
+.historyDesktopLayout{display:contents}.historySidebar{display:none}
 .detailPage{padding:12px 14px 30px}
 
 /* Full-screen mobile/tablet pages already have a centered header title. Avoid repeating a large title block. */
@@ -73,14 +73,17 @@
 }
 
 @media (min-width:1024px){
-  .overlay{top:var(--snooker-header-height,64px);padding:0;background:linear-gradient(180deg,#f7f8f7,#f3f5f4)}
-  .overlayScroll{width:min(1120px,calc(100% - 40px));height:100%;border:0;border-radius:0;background:transparent;box-shadow:none}
+  .hubCardHiddenDesktop{display:none}
+  .overlay{position:static;inset:auto;padding:0;background:transparent}
+  .overlayScroll{width:100%;height:auto;margin:0;overflow:visible;overscroll-behavior:auto;border:0;border-radius:0;background:transparent;box-shadow:none}
   .mobileHeader{display:none}
-  .desktopDetailBar{min-height:54px;position:sticky;top:0;z-index:55;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:rgba(247,248,247,.96);backdrop-filter:blur(18px)}
-  .desktopDetailBar button{min-height:36px;padding:8px 13px;border:0;border-radius:10px;background:var(--accent-soft);color:var(--accent-strong);font-size:12px;font-weight:850;cursor:pointer}
-  .desktopDetailBar button span{margin-right:3px;font-size:18px;line-height:1}
-  .desktopDetailBar>span{color:var(--muted);font-size:11px;font-weight:850;letter-spacing:.08em}
-  .detailPage{padding:24px 0 42px}
+  .historyDesktopLayout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:18px;align-items:start}
+  .historySidebar{display:flex;position:sticky;top:calc(var(--snooker-header-height,64px) + 18px);min-width:0;flex-direction:column;padding:18px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(35,45,41,.045)}
+  .historySidebarHeading{display:flex;flex-direction:column;gap:5px;padding-bottom:15px;border-bottom:1px solid var(--line)}
+  .historySidebarHeading small{color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.13em}.historySidebarHeading strong{font-size:17px}
+  .historyCategoryNav{display:flex;flex-direction:column;gap:8px;margin-top:14px}.historyNavGroup>button{width:100%;min-height:40px;padding:9px 13px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--muted);text-align:left;font-size:12px;font-weight:800;cursor:pointer}.historyNavGroup>button:hover{background:var(--accent-faint);color:var(--accent-strong)}.historyNavGroup>button.historyNavActive{border-color:color-mix(in srgb,var(--accent) 18%,var(--line));background:var(--accent-faint);color:var(--accent-strong)}
+  .historyRecordNav{display:flex;flex-direction:column;gap:3px;margin:7px 0 0 8px;padding:3px 0 2px 10px;border-left:1px solid var(--line)}.historyRecordNav button{width:100%;min-height:34px;padding:7px 9px;border:0;border-radius:9px;background:transparent;color:#78807c;text-align:left;font-size:10px;font-weight:750;cursor:pointer}.historyRecordNav button:hover,.historyRecordNav button.historyRecordActive{background:var(--accent-soft);color:var(--accent-strong)}
+  .historyDetailMain{min-width:0}.detailPage{padding:0 0 42px}
 
   .sectionCount{font-size:11px}
   .categoryCard{min-height:116px;padding:17px 48px 17px 18px}

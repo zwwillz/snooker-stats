@@ -591,6 +591,29 @@ function SectionHeader({ eyebrow, title, action, actionClassName }: { eyebrow?: 
   return <div className={styles.sectionHeader}><div>{eyebrow ? <small>{eyebrow}</small> : null}<h2>{title}</h2></div>{action ? <span className={actionClassName}>{action}</span> : null}</div>;
 }
 
+function EventTableHeader() {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [pinned, setPinned] = useState(false);
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const desktop = window.matchMedia("(min-width:1024px)");
+    let observer: IntersectionObserver | null = null;
+    const syncObserver = () => {
+      observer?.disconnect();
+      observer = null;
+      setPinned(false);
+      if (!desktop.matches) return;
+      observer = new IntersectionObserver(([entry]) => setPinned(entry.boundingClientRect.top <= 64), { root: null, rootMargin: "-64px 0px 0px 0px", threshold: 0 });
+      observer.observe(sentinel);
+    };
+    syncObserver();
+    desktop.addEventListener("change", syncObserver);
+    return () => { observer?.disconnect(); desktop.removeEventListener("change", syncObserver); };
+  }, []);
+  return <><div ref={sentinelRef} className={priority.eventTableSentinel} aria-hidden="true" /><div className={`${priority.eventTableHead} ${pinned ? priority.eventTableHeadPinned : ""}`} aria-hidden="true"><span>日期 / 状态</span><span>赛事</span><span>类型</span><span>日期 / 地点</span><span /></div></>;
+}
+
 function nearestRailItemIndex(rail: HTMLDivElement) {
   const items = Array.from(rail.children) as HTMLElement[];
   if (!items.length) return 0;
@@ -1926,6 +1949,7 @@ export default function SnookerDataCenterV2({
         <section className={styles.pageIntro}><small>TOURNAMENTS</small><h1>赛事</h1><p>查看近期赛事和完整赛季赛历，及时了解正在进行、即将开始和已经结束的比赛。</p></section>
         <div className={priority.eventCenterLayout}>
           <aside className={priority.eventSidebar} aria-label="赛事浏览与筛选">
+            <div className={priority.eventSidebarHeading}><small>TOURNAMENT FILTER</small><strong>赛事筛选</strong></div>
             <div className={priority.eventModeTabs}><button className={eventListMode === "recent" ? priority.eventModeActive : ""} onClick={() => setEventListMode("recent")}>近期赛事</button><button className={eventListMode === "calendar" ? priority.eventModeActive : ""} onClick={() => setEventListMode("calendar")}>赛季赛历</button></div>
             {eventListMode === "calendar" ? <SeasonSelector seasons={seasonOptions} value={selectedSeason} onPrefetch={(season) => { void ensureCalendarSeason(season); }} onChange={(season) => { setSelectedSeason(season); void ensureCalendarSeason(season); }} /> : null}
           </aside>
@@ -1933,7 +1957,7 @@ export default function SnookerDataCenterV2({
             {eventListMode === "recent" ? <>
               {recentFeaturedEvent ? <section className={styles.currentEventBanner} onPointerEnter={() => void ensureEventDetail(recentFeaturedEvent.slug)} onFocus={() => void ensureEventDetail(recentFeaturedEvent.slug)} onTouchStart={() => void ensureEventDetail(recentFeaturedEvent.slug)} onClick={() => openEvent(recentFeaturedEvent.slug, "overview")}><div><span className={eventStatusClass(recentFeaturedEvent.status)}><StatusPill status={recentFeaturedEvent.status} label="正在进行" /></span><small>{recentFeaturedEvent.typeZh}</small></div><h2>{recentFeaturedEvent.nameZh}</h2>{recentFeaturedEvent.nameEn ? <small className={priority.featuredEventEnglish}>{recentFeaturedEvent.nameEn}</small> : null}<p>{formatDateRange(recentFeaturedEvent.startDate, recentFeaturedEvent.endDate)}{recentFeaturedEvent.cityZh ? ` · ${recentFeaturedEvent.cityZh}` : ""}</p><span>查看详情 ›</span></section> : null}
               <section className={styles.card}><SectionHeader eyebrow="RECENT TOURNAMENTS" title="近期赛事" action="最多 5 站" /><div className={priority.recentEventGrid}>{recentCardEvents.map((item) => <RecentEventCard key={item.id} item={item} onPrefetch={() => void ensureEventDetail(item.slug)} onOpen={() => openEvent(item.slug)} />)}{recentCardEvents.length === 0 && !recentFeaturedEvent ? <div className={styles.emptyState}>本赛季暂无可显示的近期赛事。</div> : null}</div><button className={priority.recentMoreButton} onClick={() => { setSelectedSeason(initialCurrentSeason); setEventListMode("calendar"); void ensureCalendarSeason(initialCurrentSeason); window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" })); }}>查看本赛季完整赛历</button></section>
-            </> : selectedSeasonLoadError && !selectedSeasonLoaded ? <section className={styles.card}><div className={styles.emptyState}>该赛季赛历加载失败，请稍后重试。</div><button className={styles.fullButton} onClick={() => void ensureCalendarSeason(selectedSeason)}>重新加载</button></section> : <section className={`${styles.card} ${priority.calendarTableCard}`}><SectionHeader eyebrow={`${selectedSeason} SEASON`} title="赛季赛历" action={selectedSeasonLoading ? "正在加载…" : selectedSeasonLoaded ? `共 ${selectedSeasonEvents.length} 项赛事` : "按需加载"} /><div className={priority.eventTableHead} aria-hidden="true"><span>日期 / 状态</span><span>赛事</span><span>类型</span><span>日期 / 地点</span><span /></div><div className={styles.calendarList}>{selectedSeasonEvents.map((item) => <EventCard key={item.id} item={item} onPrefetch={() => void ensureEventDetail(item.slug)} onOpen={() => openEvent(item.slug)} />)}{selectedSeasonEvents.length === 0 ? <div className={styles.emptyState}>{selectedSeasonLoading ? "正在加载该赛季赛历…" : selectedSeasonLoaded ? "该赛季暂无赛事。" : "选择赛季后加载赛事。"}</div> : null}</div></section>}
+            </> : selectedSeasonLoadError && !selectedSeasonLoaded ? <section className={styles.card}><div className={styles.emptyState}>该赛季赛历加载失败，请稍后重试。</div><button className={styles.fullButton} onClick={() => void ensureCalendarSeason(selectedSeason)}>重新加载</button></section> : <section className={`${styles.card} ${priority.calendarTableCard}`}><SectionHeader eyebrow={`${selectedSeason} SEASON`} title="赛季赛历" action={selectedSeasonLoading ? "正在加载…" : selectedSeasonLoaded ? `共 ${selectedSeasonEvents.length} 项赛事` : "按需加载"} /><EventTableHeader /><div className={styles.calendarList}>{selectedSeasonEvents.map((item) => <EventCard key={item.id} item={item} onPrefetch={() => void ensureEventDetail(item.slug)} onOpen={() => openEvent(item.slug)} />)}{selectedSeasonEvents.length === 0 ? <div className={styles.emptyState}>{selectedSeasonLoading ? "正在加载该赛季赛历…" : selectedSeasonLoaded ? "该赛季暂无赛事。" : "选择赛季后加载赛事。"}</div> : null}</div></section>}
           </div>
         </div>
       </> : null}

@@ -273,7 +273,7 @@
 }
 
 /* TOURNAMENTS_PHASE4A_DESKTOP */.eventCenterLayout,.eventSidebar,.eventListPanel{display:contents}
-.eventTableHead,.featuredEventEnglish,.seasonMoreButton{display:none}
+.eventTableHead,.eventTableSentinel,.featuredEventEnglish,.seasonMoreButton,.eventSidebarHeading{display:none}
 .recentEventGrid{display:grid;grid-template-columns:1fr;gap:10px}
 .recentEventCard{width:100%;min-width:0;padding:15px;border:1px solid var(--line);border-radius:15px;background:#fbfcfb;color:inherit;text-align:left;cursor:pointer;box-shadow:0 7px 20px rgba(35,45,41,.025)}
 .recentEventCard[data-status="upcoming"]{border-color:color-mix(in srgb,#c2a64a 28%,var(--line));background:#fffdf6}
@@ -282,14 +282,17 @@
 
 @media (min-width:1024px){
   .eventCenterLayout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:18px;align-items:start}
-  .eventSidebar{display:flex;min-width:0;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 10px 28px rgba(35,45,41,.035);position:sticky;top:calc(var(--snooker-header-height,68px) + 18px)}
-  .eventModeTabs{display:grid;grid-template-columns:1fr;gap:6px;padding:0;border:0;border-radius:0;background:transparent}
-  .eventModeTabs button{height:43px;padding:0 12px;border:1px solid transparent;border-radius:11px;text-align:left;font-size:11px;font-weight:850;color:#4f5853}
+  .eventSidebar{display:flex;min-width:0;flex-direction:column;gap:0;padding:18px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(35,45,41,.045);position:sticky;top:calc(var(--snooker-header-height,64px) + 18px)}
+  .eventSidebarHeading{display:flex;flex-direction:column;gap:5px;padding-bottom:15px;border-bottom:1px solid var(--line)}
+  .eventSidebarHeading small{color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.13em}
+  .eventSidebarHeading strong{font-size:17px}
+  .eventModeTabs{display:grid;grid-template-columns:1fr;gap:8px;margin-top:14px;padding:0;border:0;border-radius:0;background:transparent}
+  .eventModeTabs button{min-height:40px;padding:9px 13px;border:1px solid var(--line);border-radius:11px;background:#fff;text-align:left;font-size:12px;font-weight:800;color:var(--muted)}
   .eventModeTabs .eventModeActive{border-color:color-mix(in srgb,var(--accent) 18%,var(--line));background:var(--accent-faint);color:var(--accent-strong);box-shadow:none}
-  .seasonSelector{display:block;margin:0 0 0 8px;padding:4px 0 0 10px;border-left:1px solid var(--line)}
+  .seasonSelector{display:block;margin:10px 0 0 8px;padding:8px 0 0 10px;border-left:1px solid var(--line)}
   .seasonArrow{display:none}
   .seasonRail{display:flex;flex-direction:column;gap:3px;overflow:visible}
-  .seasonRail button{width:100%;min-width:0;height:34px;padding:0 9px;border:0;border-radius:9px;background:transparent;color:#78807c;text-align:left;font-size:9.5px;font-weight:750;scroll-snap-align:none}
+  .seasonRail button{width:100%;min-width:0;min-height:36px;padding:7px 10px;border:0;border-radius:9px;background:transparent;color:#78807c;text-align:left;font-size:10.5px;font-weight:750;scroll-snap-align:none}
   .seasonRail button:hover{background:#f5f7f6;color:#4f5853}
   .seasonRail button.seasonActive{background:var(--accent-soft);color:var(--accent-strong);font-weight:900}
   .seasonSelector:not([data-expanded="true"]) .seasonOlder{display:none}
@@ -306,7 +309,9 @@
   .recentEventCard:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 24%,transparent);outline-offset:2px}
   .recentMoreButton{display:none}
   .calendarTableCard{overflow:visible}
-  .eventTableHead{position:sticky;top:var(--snooker-header-height,68px);z-index:8;display:grid;grid-template-columns:84px minmax(0,1.75fr) 108px minmax(170px,1fr) 18px;gap:14px;align-items:center;margin:0 -18px;padding:11px 22px 10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0;background:#fff;box-shadow:0 6px 14px rgba(35,45,41,.035);color:#919894;font-size:8px;font-weight:800;letter-spacing:.04em}
+  .eventTableSentinel{display:block;width:100%;height:1px;margin-bottom:-1px;pointer-events:none}
+  .eventTableHead{position:sticky;top:var(--snooker-header-height,64px);z-index:8;display:grid;grid-template-columns:84px minmax(0,1.75fr) 108px minmax(170px,1fr) 18px;gap:14px;align-items:center;margin:0 -18px;padding:11px 22px 10px;border:1px solid var(--line);border-radius:18px 18px 0 0;background:#fff;box-shadow:0 6px 14px rgba(35,45,41,.035);color:#919894;font-size:8px;font-weight:800;letter-spacing:.04em}
+  .eventTableHeadPinned{border-radius:0}
   .eventTableHead span:first-child{text-align:center}
   .eventListPanel :global([class*="calendarList"]){margin-top:0}
   .eventListPanel :global([class*="calendarList"])>button{min-height:76px;padding:13px 4px;border-top:1px solid var(--line);display:grid;grid-template-columns:84px minmax(0,1.75fr) 108px minmax(170px,1fr) 18px;grid-template-rows:auto auto;gap:2px 14px;align-items:center}
