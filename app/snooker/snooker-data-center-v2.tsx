@@ -1613,7 +1613,7 @@ export default function SnookerDataCenterV2({
 
   if (detail?.type === "player") {
     const summaryPlayer = [...players.values()].find((player) => player.slug === detail.slug);
-    return <main className={styles.appRoot} data-theme={theme}>{detailSiteHeader}<div className={styles.detailShell}>
+    return <main className={styles.appRoot} data-theme={theme}>{detailSiteHeader}<div className={`${styles.detailShell} ${priority.playerDetailShell}`}>
       <header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={closePlayer}>‹</button><strong>{summaryPlayer?.nameZh ?? "球员详情"}</strong><span>PLAYER</span></header>
       <PlayerDetailInline key={detail.slug} summaryPlayer={summaryPlayer} slug={detail.slug} />
     </div></main>;

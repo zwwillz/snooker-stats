@@ -494,7 +494,7 @@
 /* TOURNAMENTS_PHASE4_FOLLOWUP_V1 */
 @media (min-width:1024px){
   /* Keep secondary/tertiary pages on the shared website canvas and restore useful desktop width. */
-  .eventDetailShell,.matchDetailShell{width:min(1280px,calc(100% - 48px))!important;margin:0 auto!important;background:transparent!important;box-shadow:none!important}
+  .eventDetailShell,.matchDetailShell,.playerDetailShell{width:min(1120px,calc(100% - 40px))!important;margin:0 auto!important;background:transparent!important;box-shadow:none!important}
 
   /* Stable event detail scrolling: hero scrolls normally; only the three tabs stick below the global header. */
   .eventStickyNav{display:contents!important;position:static!important;overflow:visible!important;background:transparent!important;box-shadow:none!important}
@@ -555,7 +555,7 @@
 }
 
 @media (min-width:1024px) and (max-width:1180px){
-  .eventDetailShell,.matchDetailShell{width:calc(100% - 32px)!important}
+  .eventDetailShell,.matchDetailShell,.playerDetailShell{width:calc(100% - 40px)!important}
   .eventDetailHeroDesktop h1{font-size:38px!important}
   .schedulePlayerName strong{font-size:15px!important}
   .schedulePlayerName small{font-size:10.5px!important}

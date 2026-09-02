@@ -258,3 +258,33 @@
   .trendRowRefined b{font-size:var(--snooker-type-compact-data)}
   .trendLegendRefined{font-size:var(--snooker-type-auxiliary)}
 }
+
+/* PLAYER_WEB_LAYOUT_V1 */
+@media (min-width:1024px){
+  .heroCompact{min-height:360px!important}
+  .heroCopyCompact{min-height:360px!important;padding-top:34px!important;padding-bottom:31px!important}
+  .careerGridFour{gap:8px!important}
+  .careerGridFour article{min-height:120px;padding:13px 7px 11px}
+  .careerGridFour article small,.metricCardGrid article small,.tripleGridRefined article small{font-size:8px}
+  .careerGridFour article strong{font-size:28px}
+  .careerGridFour article span,.tripleGridRefined article>span:last-child,.metricCardGrid article span{font-size:10.5px}
+  .tripleGridRefined article{min-height:146px;padding:13px 7px 11px!important}
+  .tripleLogo{width:50px;height:45px;margin-bottom:6px}
+  .tripleGridRefined article small{font-size:7.5px}
+  .tripleGridRefined article strong{font-size:27px}
+  .metricCardGrid article{min-height:112px;padding:14px 13px 12px}
+  .metricCardGrid article strong{font-size:27px}
+  .statListTwoColumn{column-gap:24px!important}
+  .statListTwoColumn div{min-height:44px}
+  .statListTwoColumn span{font-size:11px}
+  .statListTwoColumn b{font-size:13px}
+  .trendHeader>span{font-size:11px!important}
+  .trendTabs{gap:8px;margin-bottom:18px}
+  .trendTabs button{padding:8px 13px;font-size:10px}
+  .trendChart{gap:13px}
+  .trendRowRefined{grid-template-columns:72px minmax(0,1fr) 64px;gap:12px}
+  .trendRowRefined>span{font-size:11px}
+  .trendBarRefined{height:9px}
+  .trendRowRefined b{font-size:12px}
+  .trendLegendRefined{font-size:10px}
+}
