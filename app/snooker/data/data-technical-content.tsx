@@ -201,7 +201,7 @@ export function TechnicalDetailPage({
   onOpenPlayer: (slug: string) => void;
   onClose: () => void;
 }) {
-  return <section className={detailStyles.technicalPage} data-technical-detail="true" aria-label="本赛季球员技术榜">
+  return <section className={detailStyles.technicalPage} data-data-detail="true" data-technical-detail="true" aria-label="本赛季球员技术榜">
     <header className={detailStyles.technicalMobileHeader}>
       <button type="button" onClick={onClose} aria-label="返回数据"><span aria-hidden="true">‹</span></button>
       <strong>本赛季球员技术榜</strong>
@@ -216,7 +216,7 @@ export function TechnicalDetailPage({
 }
 
 export function TechnicalDetailLoadingPage({ onClose }: { onClose: () => void }) {
-  return <section className={detailStyles.technicalPage} data-technical-detail="true" aria-label="正在加载本赛季球员技术榜">
+  return <section className={detailStyles.technicalPage} data-data-detail="true" data-technical-detail="true" aria-label="正在加载本赛季球员技术榜">
     <header className={detailStyles.technicalMobileHeader}>
       <button type="button" onClick={onClose} aria-label="返回数据"><span aria-hidden="true">‹</span></button>
       <strong>本赛季球员技术榜</strong>

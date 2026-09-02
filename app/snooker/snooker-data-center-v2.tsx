@@ -1620,7 +1620,7 @@ export default function SnookerDataCenterV2({
   }
 
   if (detail?.type === "ranking") {
-    return <main className={styles.appRoot} data-theme={theme}>{detailSiteHeader("data")}<div className={styles.detailShell}>
+    return <main className={styles.appRoot} data-theme={theme}>{detailSiteHeader("data")}<div className={`${styles.detailShell} ${priority.dataDetailShell}`}>
       <header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}> <button onClick={closeRankings}>‹</button><strong>排名</strong><span>DATA</span></header>
       <RankingDetailContent
         hub={rankingHub}

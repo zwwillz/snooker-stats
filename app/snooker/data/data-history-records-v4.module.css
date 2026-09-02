@@ -42,28 +42,28 @@
 }
 
 @media (min-width:1024px){
-  .historyUiEnglish{font-size:9px!important}
+  .historyUiEnglish{font-size:10px!important}
 
   .recordHeroWithAvatar{min-height:160px;padding-right:170px!important}
-  .heroCopy>span{font-size:10px}
+  .heroCopy>span{font-size:11px}
   .heroCopy>strong{font-size:36px}
   .heroCopy>b{font-size:16px}
-  .heroCopy>em.historyUiEnglish{font-size:11px!important}
-  .heroCopy>small{font-size:11px}
+  .heroCopy>em.historyUiEnglish{font-size:12px!important}
+  .heroCopy>small{font-size:12px}
   .heroAvatar{right:-2px;top:8%;width:166px}
 
-  .rowIdentity.historyUiEnglish{font-size:11px!important}
-  .rowNationality{font-size:11px}
+  .rowIdentity.historyUiEnglish{font-size:12px!important}
+  .rowNationality{font-size:12px}
 
   .classicCardWithAvatar{min-height:146px;padding-right:160px!important}
-  .classicCopy>small{font-size:9px}
+  .classicCopy>small{font-size:10px}
   .classicCopy h2{font-size:20px}
   .classicCopy>strong{margin-top:11px;font-size:32px}
   .classicCopy>b{font-size:14px}
-  .classicCopy>em.historyUiEnglish{font-size:11px!important}
-  .classicCopy>p{font-size:11px}
+  .classicCopy>em.historyUiEnglish{font-size:12px!important}
+  .classicCopy>p{font-size:12px}
   .classicAvatars{right:6px;top:8%;width:230px}
   .classicAvatar{width:140px;flex-basis:140px}
   .classicAvatars .classicAvatar+.classicAvatar{margin-left:-56px}
-  .classicNationality{font-size:11px}
+  .classicNationality{font-size:12px}
 }

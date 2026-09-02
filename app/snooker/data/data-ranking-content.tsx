@@ -11,7 +11,7 @@ import type {
 import { technicalMetricKey, type SnookerTechnicalHub, type SnookerTechnicalMetricKey } from "@/lib/snooker/technical-hub";
 import { honoursMetricKey, type SnookerHonoursHub, type SnookerHonoursMetricKey } from "@/lib/snooker/honours-hub";
 import { SeasonLeadersSection, TechnicalDetailLoadingPage, TechnicalDetailPage } from "./data-technical-content";
-import { HonoursDetailOverlay, HonoursLeadersSection } from "./data-honours-content";
+import { HonoursDetailLoadingPage, HonoursDetailPage, HonoursLeadersSection } from "./data-honours-content";
 import { HistoryRecordsSection } from "./data-history-records-content-v2";
 import PlayerCompareTeaser from "../compare/player-compare-teaser";
 import styles from "./data.module.css";
@@ -393,14 +393,15 @@ export function DataHubContent({
   }
 
   if (honoursKey && !honoursHub?.online) {
-    return <section className={styles.card} aria-label="加载荣誉榜">
-      <div className={styles.sectionHeader}><div><small>CAREER HONOURS</small><h2>荣誉榜</h2></div></div>
-      <div className={styles.technicalLoading}>正在加载荣誉榜数据…</div>
-    </section>;
+    return <HonoursDetailLoadingPage onClose={closeHonours} />;
   }
 
   if (technicalHub?.online && technicalKey) {
     return <TechnicalDetailPage hub={technicalHub} players={resolvedPlayers} selectedKey={technicalKey} onSelectKey={selectTechnical} onOpenPlayer={onOpenPlayer} onClose={closeTechnical} />;
+  }
+
+  if (honoursHub?.online && honoursKey) {
+    return <HonoursDetailPage hub={honoursHub} players={resolvedPlayers} selectedKey={honoursKey} onSelectKey={selectHonours} onOpenPlayer={onOpenPlayer} onClose={closeHonours} />;
   }
 
   return <>
@@ -410,9 +411,10 @@ export function DataHubContent({
       <p>世界斯诺克排名、赛季表现与历史纪录的数据入口。排名、技术与荣誉数据按统一结构逐步扩展。</p>
     </section>
 
-    <PlayerCompareTeaser players={resolvedPlayers} variant="data" initialData={initialPlayerCompare} actionClassName={styles.primaryAction} headerClassName={styles.sectionHeader} />
+    <div className={styles.dataDashboard}>
+    <div className={styles.dataCompareSlot}><PlayerCompareTeaser players={resolvedPlayers} variant="data" initialData={initialPlayerCompare} actionClassName={styles.primaryAction} headerClassName={styles.sectionHeader} /></div>
 
-    <section className={`${styles.card} ${styles.rankingCard}`}>
+    <section className={`${styles.card} ${styles.rankingCard} ${styles.dataRankingSlot}`}>
       <div className={styles.sectionHeader}>
         <div>
           <small>RANKINGS</small>
@@ -438,20 +440,20 @@ export function DataHubContent({
       </> : <div className={styles.emptyState}>排名数据正在准备中。</div>}
     </section>
 
-    <div ref={technicalSectionRef}>{technicalHub?.online ? <SeasonLeadersSection hub={technicalHub} players={resolvedPlayers} onOpenTechnical={openTechnical} /> : <section className={styles.card}>
+    <div className={styles.dataTechnicalSlot} ref={technicalSectionRef}>{technicalHub?.online ? <SeasonLeadersSection hub={technicalHub} players={resolvedPlayers} onOpenTechnical={openTechnical} /> : <section className={styles.card}>
       <div className={styles.sectionHeader}><div><small>SEASON LEADERS</small><h2>本赛季领跑者</h2></div></div>
       <div className={styles.technicalLoading}>正在加载赛季技术数据…</div>
     </section>}</div>
 
-    <div ref={honoursSectionRef}>{honoursHub?.online ? <HonoursLeadersSection hub={honoursHub} players={resolvedPlayers} onOpenHonours={openHonours} /> : <section className={styles.card}>
+    <div className={styles.dataHonoursSlot} ref={honoursSectionRef}>{honoursHub?.online ? <HonoursLeadersSection hub={honoursHub} players={resolvedPlayers} onOpenHonours={openHonours} /> : <section className={styles.card}>
       <div className={styles.sectionHeader}><div><small>CAREER HONOURS</small><h2>荣誉榜</h2></div></div>
       <div className={styles.technicalLoading}>正在加载职业生涯荣誉数据…</div>
     </section>}</div>
 
-    <HistoryRecordsSection />
+    <div className={styles.dataHistorySlot}><HistoryRecordsSection /></div>
+    </div>
 
     {infoOpen ? <RankingInfoModal hub={hub} onClose={() => setInfoOpen(false)} /> : null}
-    {honoursHub?.online && honoursKey ? <HonoursDetailOverlay hub={honoursHub} players={resolvedPlayers} selectedKey={honoursKey} onSelectKey={selectHonours} onOpenPlayer={onOpenPlayer} onClose={closeHonours} /> : null}
   </>;
 }
 
@@ -478,6 +480,10 @@ export function RankingDetailContent({
   const rows = selected?.rows ?? [];
 
   return <div className={styles.detailContent}>
+    <header className={styles.rankingDesktopIntro}>
+      <div><small>RANKING CENTER</small><h1>世界排名</h1><p>查看当前排名、资格竞争与历史排名数据。</p></div>
+      <strong>{rows.length ? `${rows.length} 位球员` : "数据中心"}</strong>
+    </header>
     <div className={styles.detailNavStack}>
       <div className={styles.sectionTabs} role="tablist" aria-label="排名栏目">
         {sectionTabs.map((item) => <button type="button" role="tab" aria-selected={section === item.id} className={section === item.id ? styles.sectionActive : ""} onClick={() => onSelectSection(item.id)} key={item.id}>{item.label}</button>)}

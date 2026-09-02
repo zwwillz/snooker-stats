@@ -19,6 +19,7 @@
 .mobileHeader button span{font-size:30px;line-height:1;transform:translateY(-1px)}
 .mobileHeader strong{min-width:0;text-align:center;font-size:16px;font-weight:800;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mobileHeader>span{width:36px;color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.08em;text-align:right}
+.desktopDetailBar{display:none}
 .detailPage{padding:12px 14px 30px}
 
 /* Full-screen mobile/tablet pages already have a centered header title. Avoid repeating a large title block. */
@@ -72,32 +73,36 @@
 }
 
 @media (min-width:1024px){
-  .overlay{padding:20px 0;background:rgba(239,242,240,.96)}
-  .overlayScroll{height:calc(100% - 40px);border:1px solid var(--line);border-radius:24px;box-shadow:0 24px 70px rgba(24,36,30,.12)}
-  .mobileHeader{border-radius:24px 24px 0 0}
-  .detailPage{padding:24px 28px 42px}
+  .overlay{top:var(--snooker-header-height,64px);padding:0;background:linear-gradient(180deg,#f7f8f7,#f3f5f4)}
+  .overlayScroll{width:min(1120px,calc(100% - 40px));height:100%;border:0;border-radius:0;background:transparent;box-shadow:none}
+  .mobileHeader{display:none}
+  .desktopDetailBar{min-height:54px;position:sticky;top:0;z-index:55;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:rgba(247,248,247,.96);backdrop-filter:blur(18px)}
+  .desktopDetailBar button{min-height:36px;padding:8px 13px;border:0;border-radius:10px;background:var(--accent-soft);color:var(--accent-strong);font-size:12px;font-weight:850;cursor:pointer}
+  .desktopDetailBar button span{margin-right:3px;font-size:18px;line-height:1}
+  .desktopDetailBar>span{color:var(--muted);font-size:11px;font-weight:850;letter-spacing:.08em}
+  .detailPage{padding:24px 0 42px}
 
-  .sectionCount{font-size:10px}
-  .categoryCard{min-height:106px;padding:15px 44px 15px 16px}
+  .sectionCount{font-size:11px}
+  .categoryCard{min-height:116px;padding:17px 48px 17px 18px}
   .classicEntry{min-height:90px}
-  .categoryText small{font-size:9px}
-  .categoryText strong{font-size:19px}
-  .categoryText p{font-size:11px}
-  .categoryAside span{font-size:10px}
+  .categoryText small{font-size:10px}
+  .categoryText strong{font-size:20px}
+  .categoryText p{font-size:13px}
+  .categoryAside span{font-size:11px}
 
   .desktopIntro{padding:6px 2px 18px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:end}
-  .desktopIntro small,.recordIntro>small{display:block;color:var(--accent);font-size:9px;font-weight:800;letter-spacing:.12em;line-height:1.2}
-  .desktopIntro h1,.recordIntro h1{display:block;margin:6px 0 7px;font-size:38px;font-weight:850;line-height:1.12;letter-spacing:-.045em}
+  .desktopIntro small,.recordIntro>small{display:block;color:var(--accent);font-size:10px;font-weight:800;letter-spacing:.12em;line-height:1.2}
+  .desktopIntro h1,.recordIntro h1{display:block;margin:6px 0 7px;font-size:42px;font-weight:850;line-height:1.12;letter-spacing:-.045em}
   .desktopIntro p,.recordIntro>p{display:block;max-width:590px;margin:0;color:var(--muted);font-size:14px;line-height:1.65}
-  .desktopIntro>strong{padding:8px 11px;border-radius:999px;background:var(--accent-soft);color:var(--accent-strong);font-size:10px;font-weight:750}
+  .desktopIntro>strong{padding:8px 11px;border-radius:999px;background:var(--accent-soft);color:var(--accent-strong);font-size:11px;font-weight:750}
   .recordIntro{padding:6px 2px 16px}
 
   .itemCard{min-height:116px;padding:15px 48px 15px 16px}
-  .itemCardText>small{font-size:10px}
-  .itemCardText>strong{font-size:19px}
-  .itemCardText>em{font-size:9px}
+  .itemCardText>small{font-size:11px}
+  .itemCardText>strong{font-size:20px}
+  .itemCardText>em{font-size:10px}
   .itemCardText>p{font-size:14px;line-height:1.55}
-  .itemCardAside span{font-size:10px}
+  .itemCardAside span{font-size:11px}
 
   .recordHero{margin-top:16px;padding:17px 18px;max-width:520px}
   .listHeader{grid-template-columns:42px minmax(0,1fr) auto;font-size:12px}

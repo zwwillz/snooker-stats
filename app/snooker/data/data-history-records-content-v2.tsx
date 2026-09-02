@@ -216,6 +216,10 @@ export function HistoryRecordsSection() {
           <strong>{overlayTitle}</strong>
           <span>DATA</span>
         </header>
+        <div className={styles.desktopDetailBar}>
+          <button type="button" onClick={selected ? backToCategory : closeRecords}><span aria-hidden="true">‹</span> {selected ? `返回${category?.titleZh ?? "分类"}` : "返回数据"}</button>
+          <span>历史与纪录</span>
+        </div>
 
         {selected ? <LeaderboardDetail item={selected} /> : group === "classic" ? <ClassicRecordsPage /> : category ? <CategoryDetail categoryKey={category.key} onOpenLeaderboard={openLeaderboard} /> : null}
       </div>
