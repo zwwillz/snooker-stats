@@ -505,6 +505,12 @@
   .eventDetailTabs{position:sticky!important;top:var(--snooker-header-height)!important;z-index:65!important;margin:0!important;padding:0 24px!important;border-radius:0!important;border-bottom:1px solid var(--line)!important;background:rgba(255,255,255,.97)!important;box-shadow:0 6px 16px rgba(35,45,41,.055)!important;backdrop-filter:blur(16px)}
   .eventDetailTabs button{height:52px!important;font-size:13px!important;font-weight:800!important}
 
+  /* Align secondary and tertiary content cards with the shared 1120px page edges. */
+  .eventDetailShell>.eventOverviewCard,.eventDetailShell>.eventPrizeCard,.eventDetailShell> :global([class*="championCard"]),.eventDetailShell> :global([class*="card"]){margin-left:0!important;margin-right:0!important}
+  .eventScheduleStack{margin-left:0!important;margin-right:0!important}
+  .matchDetailBody,.matchDetailBodyWithData{margin-left:0!important;margin-right:0!important}
+  .matchDetailShell>.matchDetailBody+ :global([class*="liveFooter"]){margin-left:0!important;margin-right:0!important}
+
   /* Typography V1: tournament list. */
   .recentEventCard>strong{font-size:15px!important}
   .recentEventEnglish{font-size:11px!important;line-height:1.35!important}

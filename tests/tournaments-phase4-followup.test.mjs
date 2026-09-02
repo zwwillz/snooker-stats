@@ -23,14 +23,20 @@ test("secondary and tertiary tournament pages restore mobile back controls and w
   ]);
   assert.match(ui, /aria-label="返回上一页"/);
   assert.match(css, /\.eventDetailShell,\.matchDetailShell,\.playerDetailShell\{width:min\(1120px,calc\(100% - 40px\)\)!important/);
+  assert.match(css, /\.eventScheduleStack\{margin-left:0!important;margin-right:0!important\}/);
+  assert.match(css, /\.matchDetailBody,\.matchDetailBodyWithData\{margin-left:0!important;margin-right:0!important\}/);
 });
 
-test("detail website navigation does not keep a root item selected", async () => {
+test("detail website navigation selects players only on player details", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
   const start = ui.indexOf("const detailSiteHeader");
   const end = ui.indexOf("if (detail?.type === \"player\")", start);
   const header = ui.slice(start, end);
   assert.ok(start >= 0 && end > start);
-  assert.doesNotMatch(header, /desktopNavActive/);
-  assert.doesNotMatch(header, /aria-current=/);
+  assert.match(header, /selectedView\?: NavId/);
+  assert.match(header, /aria-current=\{item\.id === selectedView \? "page" : undefined\}/);
+  assert.match(header, /styles\.desktopNavActive/);
+  assert.match(ui, /detailSiteHeader\("players"\)/);
+  assert.ok((ui.match(/detailSiteHeader\(\)/g) ?? []).length >= 4);
+  assert.doesNotMatch(ui, /detailSiteHeader\("matches"\)/);
 });
