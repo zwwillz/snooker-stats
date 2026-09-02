@@ -29,3 +29,37 @@
   .independent p{font-size:var(--snooker-type-secondary)}
   .footer span,.footer strong{font-size:var(--snooker-type-secondary)}
 }
+
+/* ABOUT_WEB_FOLLOWUP_V1 */
+.desktopNav{display:none}
+
+@media (min-width:1024px){
+  .topbar{height:64px;padding:0 max(20px,calc((100vw - 1120px)/2));gap:18px}
+  .brandMark{width:36px;height:36px;font-size:16px}
+  .brand strong{font-size:15px}.brand small{font-size:7px;letter-spacing:.1em}
+  .desktopNav{position:absolute;left:50%;top:0;height:64px;transform:translateX(-50%);display:flex;align-items:stretch;justify-content:center;gap:2px}
+  .desktopNav a{min-width:88px;padding:0 14px;border-bottom:2px solid transparent;color:#727a76;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;transition:color .16s ease,background .16s ease}
+  .desktopNav a span{font-size:12px;font-weight:850}.desktopNav a small{font-size:7px;font-weight:800;letter-spacing:.11em;color:#a0a6a2}
+  .desktopNav a:hover{color:var(--accent-strong);background:var(--accent-faint)}
+  .back{padding:8px 12px;font-size:11px}
+
+  .shell{width:min(1120px,calc(100% - 40px));padding:38px 0 42px}
+  .hero{padding:28px 0 48px}
+  .eyebrow,.sectionHead small,.noteCard>small,.futureNote small,.supportCopy>small{font-size:10px}
+  .hero h1{font-size:56px}
+  .heroLead{font-size:21px}.heroText{font-size:14px;line-height:1.85}
+  .heroTags span,.supportTags span{font-size:11px}
+  .heroQuote span{font-size:9px}.heroQuote strong{font-size:22px}
+  .sectionHead h2,.noteCard h2,.futureNote h2,.support h2{font-size:24px}
+  .sectionHead>p{font-size:12px;line-height:1.65}
+  .statCard>span{font-size:13px}.statCard>small{font-size:11px;line-height:1.5}
+  .sourceCopy p{font-size:13px;line-height:1.85}
+  .sourceCards article>span{font-size:9px}.sourceCards strong{font-size:13px}.sourceCards small{font-size:11px;line-height:1.5}
+  .pipeline>div>small{font-size:9px}.pipeline>div>strong{font-size:13px}.pipeline>div>span{font-size:10px}
+  .statement>span{font-size:11px}.statement>strong{font-size:20px}.statement>p{font-size:12px;line-height:1.8}
+  .noteCard p{font-size:13px;line-height:1.8}.ruleEmphasis{font-size:12px}
+  .futureNote p{font-size:12px;line-height:1.8}
+  .supportCopy p,.contactCard p{font-size:13px;line-height:1.8}
+  .independent h2{font-size:17px}.independent p{font-size:11px;line-height:1.75}
+  .footer span,.footer strong{font-size:11px}
+}

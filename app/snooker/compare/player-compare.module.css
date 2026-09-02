@@ -1229,3 +1229,38 @@
   .meetingList article div strong{font-size:var(--snooker-type-list-title)}
   .dataFooter{font-size:var(--snooker-type-secondary)}
 }
+
+/* PLAYER_COMPARE_WEB_FOLLOWUP_V1 */
+.compareBrand{justify-self:center;min-width:0;display:flex;align-items:center;gap:9px;color:inherit;text-decoration:none}.brandMark{display:none}.brandText{min-width:0;display:flex;flex-direction:column;gap:1px}.brandText strong{font-size:14px;white-space:nowrap}.brandText small{display:none;color:#929894;font-size:7px;letter-spacing:.1em;white-space:nowrap}.desktopNav{display:none}.shareButton{justify-self:end!important}
+
+@media (min-width:1024px){
+  .topbar{display:flex;min-height:64px;height:64px;padding:0 max(20px,calc((100% - 1120px)/2));gap:18px;border-bottom-color:rgba(231,236,233,.88)}
+  .topbar>button.backLink{display:none}
+  .compareBrand{justify-self:auto;flex:0 0 auto}
+  .brandMark{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;color:#fff;background:linear-gradient(145deg,var(--accent),var(--accent-dark));font-size:16px;font-weight:950;box-shadow:0 9px 22px var(--accent-shadow)}
+  .brandText strong{font-size:15px}.brandText small{display:block}
+  .desktopNav{position:absolute;left:50%;top:0;height:64px;transform:translateX(-50%);display:flex;align-items:stretch;justify-content:center;gap:2px}
+  .desktopNav a{min-width:88px;padding:0 14px;border-bottom:2px solid transparent;color:#727a76;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;transition:color .16s ease,background .16s ease,border-color .16s ease}
+  .desktopNav a span{font-size:12px;font-weight:850}.desktopNav a small{font-size:7px;font-weight:800;letter-spacing:.11em;color:#a0a6a2}
+  .desktopNav a:hover{color:var(--accent-strong);background:var(--accent-faint)}
+  .desktopNav a.desktopNavActive{border-bottom-color:var(--accent);color:var(--accent-strong);background:linear-gradient(180deg,transparent,var(--accent-faint))}.desktopNav a.desktopNavActive small{color:var(--accent)}
+  .shareButton{flex:0 0 auto;margin-left:auto;min-width:68px;min-height:34px;padding:7px 13px!important;border-radius:999px!important;font-size:11px!important;font-weight:800}
+
+  .hero,.tabs,.seasonToolbar,.tabContent,.dataFooter,.errorBox,.emptyState{width:min(1120px,calc(100% - 40px));max-width:none}
+  .hero{padding:32px 0 24px}
+  .tabs{top:64px}
+  .heroTitle small,.sectionHeader small,.summaryHead small{font-size:10px}
+  .heroTitle h1{font-size:42px}
+  .heroTitle p{font-size:14px}
+  .playerHero>div strong{font-size:22px}
+  .playerHero>div small,.playerHero>div span{font-size:12px}
+  .playerHero>em{font-size:11px}
+  .tabs button span{font-size:13px}.tabs button small{font-size:9px}
+  .summaryHead h2,.sectionHeader h2{font-size:22px}
+  .metricRow>strong{font-size:20px}.metricRow>span b{font-size:13px}.metricRow>span small{font-size:10px}
+  .summaryText,.h2hNote,.coverageNote{font-size:12px}
+  .seasonToolbar label,.seasonToolbar select{font-size:12px}.seasonToolbar small{font-size:10px}
+  .meetingList time,.meetingList article div small{font-size:12px}.meetingList article div strong{font-size:15px}
+  .careerCoverage>div span,.careerCoverage>i,.honourTile>span,.dataFooter{font-size:12px}
+  .selectorList>button>span strong{font-size:14px}.selectorList>button>span small,.selectorList>button>em{font-size:11px}
+}
