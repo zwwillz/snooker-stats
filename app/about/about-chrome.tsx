@@ -5,6 +5,12 @@ import { useEffect, type MouseEvent, type ReactNode } from "react";
 import styles from "./about.module.css";
 
 const RETURN_MARKER = "snooker-about-return";
+const websiteNav = [
+  { href: "/", label: "首页", labelEn: "HOME" },
+  { href: "/?view=matches", label: "赛事", labelEn: "TOURNAMENTS" },
+  { href: "/?view=players", label: "球员", labelEn: "PLAYERS" },
+  { href: "/?view=data", label: "数据", labelEn: "DATA" },
+];
 
 function cameFromHomepage() {
   try {
@@ -47,6 +53,9 @@ export default function AboutChrome() {
           <small>中文斯诺克数据平台 · CN SNOOKER STATS</small>
         </span>
       </HomeAnchor>
+      <nav className={styles.desktopNav} aria-label="主要导航">
+        {websiteNav.map((item) => <Link href={item.href} key={item.href}><span>{item.label}</span><small>{item.labelEn}</small></Link>)}
+      </nav>
       <HomeAnchor className={styles.back}>返回首页 <span aria-hidden="true">→</span></HomeAnchor>
     </header>
   );

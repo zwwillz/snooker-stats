@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type {
@@ -15,6 +16,13 @@ type CompareTab = "season" | "career" | "h2h" | "honours";
 type SelectorSide = "left" | "right" | null;
 type PlayerFilter = "all" | "top16" | "china";
 type Trend = "higher" | "lower" | "neutral";
+
+const websiteNav = [
+  { href: "/", label: "首页", labelEn: "HOME" },
+  { href: "/?view=matches", label: "赛事", labelEn: "TOURNAMENTS" },
+  { href: "/?view=players", label: "球员", labelEn: "PLAYERS", active: true },
+  { href: "/?view=data", label: "数据", labelEn: "DATA" },
+];
 
 type MetricRowProps = {
   label: string;
@@ -429,8 +437,14 @@ export default function PlayerCompareClient({
   return <main className={styles.page}>
     <header className={styles.topbar}>
       <button type="button" className={styles.backLink} onClick={goBack} aria-label="返回上一页">‹</button>
-      <div><strong>147数据局</strong><small>PLAYER COMPARE</small></div>
-      <button type="button" onClick={share}>{copied ? "已复制" : "分享"}</button>
+      <Link className={styles.compareBrand} href="/" aria-label="返回147数据局首页">
+        <span className={styles.brandMark}>S</span>
+        <span className={styles.brandText}><strong>147数据局</strong><small>中文斯诺克数据平台 · CN SNOOKER STATS</small></span>
+      </Link>
+      <nav className={styles.desktopNav} aria-label="主要导航">
+        {websiteNav.map((item) => <Link aria-current={item.active ? "page" : undefined} className={item.active ? styles.desktopNavActive : ""} href={item.href} key={item.href}><span>{item.label}</span><small>{item.labelEn}</small></Link>)}
+      </nav>
+      <button type="button" className={styles.shareButton} onClick={share}>{copied ? "已复制" : "分享"}</button>
     </header>
 
     <section className={styles.hero}>
