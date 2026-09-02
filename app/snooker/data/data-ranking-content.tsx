@@ -233,6 +233,7 @@ export function DataHubContent({
   const playerByUuid = useMemo(() => playerByUuidMap(resolvedPlayers), [resolvedPlayers]);
   const selected = listFor(hub, selectedKey);
   const top = selected?.rows.slice(0, 3) ?? [];
+  const activeLeaderboardPage = technicalKey ? "technical" : honoursKey ? "honours" : null;
 
   useEffect(() => {
     if (!technicalKey) return;
@@ -305,6 +306,13 @@ export function DataHubContent({
       window.removeEventListener("snooker:root-navigation", syncTechnicalFromUrl);
     };
   }, []);
+
+  useEffect(() => {
+    if (!activeLeaderboardPage) return;
+    window.scrollTo({ top: 0, behavior: "auto" });
+    const frame = window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeLeaderboardPage]);
 
   useLayoutEffect(() => {
     const syncHistoryFromUrl = () => {
@@ -587,11 +595,11 @@ export function RankingDetailContent({
 
   return <div className={styles.detailContent}>
     <header className={styles.rankingDesktopIntro}>
-      <div><small>RANKING CENTER</small><h1>世界排名</h1><p>查看当前排名、资格竞争与历史排名数据。</p></div>
+      <div><small>RANKING CENTER</small><h1>排名中心</h1><p>汇集当前世界排名、资格竞争与历史排名数据。</p></div>
       <strong>{rows.length ? `${rows.length} 位球员` : "数据中心"}</strong>
     </header>
     <div className={styles.detailNavStack}>
-      <div className={styles.dataSidebarHeading}><small>RANKING FILTER</small><strong>排名筛选</strong></div>
+      <div className={styles.dataSidebarHeading}><small>RANKING LISTS</small><strong>排名榜单</strong></div>
       <div className={styles.sectionTabs} role="tablist" aria-label="排名栏目">
         {sectionTabs.map((item) => <button type="button" role="tab" aria-selected={section === item.id} className={section === item.id ? styles.sectionActive : ""} onClick={() => onSelectSection(item.id)} key={item.id}>{item.label}</button>)}
       </div>

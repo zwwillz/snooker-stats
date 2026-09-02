@@ -112,7 +112,7 @@ export function HistoryRecordsDetailPage({ group, recordKey, onSelectGroup, onSe
         <header className={styles.mobileHeader}>
           <button type="button" onClick={onBack} aria-label="返回"><span aria-hidden="true">‹</span></button>
           <strong>{overlayTitle}</strong>
-          <span>DATA</span>
+          <span>STATS</span>
         </header>
         <div className={styles.historyDesktopLayout}>
           <aside className={styles.historySidebar} aria-label="历史与纪录分类">

@@ -190,11 +190,11 @@ export function PlayerDirectoryContent({
         <div className={styles.directoryMain}>
           <div className={styles.searchSentinel} ref={searchSentinelRef} aria-hidden="true" />
           <label className={`${styles.searchBox} ${searchStuck ? styles.searchBoxStuck : ""}`}>
-            <span>⌕</span>
+            <span aria-hidden="true">⌕</span>
             <input
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="搜索中文名 / 英文名"
+              placeholder="搜索球员（中文名 / 英文名）"
               aria-label="搜索球员"
             />
           </label>

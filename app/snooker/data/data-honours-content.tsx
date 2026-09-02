@@ -190,7 +190,7 @@ export function HonoursDetailPage({
     <header className={detailStyles.technicalMobileHeader}>
       <button type="button" onClick={onClose} aria-label="返回数据"><span aria-hidden="true">‹</span></button>
       <strong>球员荣誉榜</strong>
-      <span>DATA</span>
+      <span>STATS</span>
     </header>
     <header className={detailStyles.technicalDesktopIntro}>
       <div><small>CAREER HONOURS</small><h1>球员荣誉榜</h1><p>职业生涯冠军、决赛与单杆 147 等历史荣誉数据。</p></div>
@@ -205,7 +205,7 @@ export function HonoursDetailLoadingPage({ onClose }: { onClose: () => void }) {
     <header className={detailStyles.technicalMobileHeader}>
       <button type="button" onClick={onClose} aria-label="返回数据"><span aria-hidden="true">‹</span></button>
       <strong>球员荣誉榜</strong>
-      <span>DATA</span>
+      <span>STATS</span>
     </header>
     <header className={detailStyles.technicalDesktopIntro}>
       <div><small>CAREER HONOURS</small><h1>球员荣誉榜</h1><p>职业生涯冠军、决赛与单杆 147 等历史荣誉数据。</p></div>

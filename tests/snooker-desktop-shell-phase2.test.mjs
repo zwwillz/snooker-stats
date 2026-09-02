@@ -60,7 +60,8 @@ test("technical leaderboard keeps one page scroll with split sticky offsets and 
   assert.match(css, /\.technicalTableBody\{[\s\S]*overflow:hidden;[\s\S]*border-top:0;[\s\S]*background:#fff/);
   assert.doesNotMatch(technical, /technicalStickyGap|tableScrollRef|technicalTableScroll/);
   assert.doesNotMatch(css, /technicalStickyGap|\.technicalTableScroll|\.technicalPage::before/);
-  assert.doesNotMatch(css, /overflow-y:auto|scrollbar-gutter:stable/);
+  assert.match(css, /\.technicalSidebar\{[\s\S]*overflow-y:auto;[\s\S]*scrollbar-width:none/);
+  assert.doesNotMatch(css, /technicalTableBody\{[^}]*overflow-y:auto|scrollbar-gutter:stable/);
   assert.match(css, /\.technicalTablePanel\{[\s\S]*overflow:visible;[\s\S]*background:transparent/);
   assert.doesNotMatch(technical, /technicalStickyGutter|technicalTableStickyHead/);
   assert.doesNotMatch(css, /technicalStickyGutter|technicalTableStickyHead/);
@@ -69,7 +70,7 @@ test("technical leaderboard keeps one page scroll with split sticky offsets and 
   assert.match(css, /\.technicalRankingList button:nth-child\(-n\+3\)>strong/);
   assert.match(technical, /className=\{detailStyles\.technicalMobileHeader\}/);
   assert.match(technical, /aria-label="返回数据"/);
-  assert.match(technical, /<strong>本赛季球员技术榜<\/strong>\s*<span>DATA<\/span>/);
+  assert.match(technical, /<strong>本赛季球员技术榜<\/strong>\s*<span>STATS<\/span>/);
   assert.match(technical, /className=\{detailStyles\.technicalDesktopIntro\}/);
   assert.match(technical, /<h1>本赛季球员技术榜<\/h1>/);
   assert.match(technical, /className=\{detailStyles\.technicalDesktopBack\}/);

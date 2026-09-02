@@ -244,16 +244,20 @@
     top:calc(var(--snooker-header-height,64px) + var(--technical-workspace-gap));
     z-index:3;
     min-width:0;
+    max-height:calc(100dvh - var(--snooker-header-height,64px) - (var(--technical-workspace-gap) * 2));
     align-self:start;
     display:flex;
     flex-direction:column;
     gap:0;
     padding:18px;
+    overflow-y:auto;
+    scrollbar-width:none;
     border:1px solid var(--line);
     border-radius:18px;
     background:rgba(255,255,255,.96);
     box-shadow:0 10px 28px rgba(35,45,41,.045);
   }
+  .technicalSidebar::-webkit-scrollbar{display:none}
   .technicalSidebarHeading{display:flex;flex-direction:column;gap:5px;padding:0 0 15px;border-bottom:1px solid var(--line)}
   .technicalSidebarHeading small{color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.13em}
   .technicalSidebarHeading strong{font-size:17px}

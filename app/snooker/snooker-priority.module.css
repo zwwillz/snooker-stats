@@ -310,7 +310,7 @@
   .recentMoreButton{display:none}
   .calendarTableCard{overflow:visible}
   .eventTableSentinel{display:block;width:100%;height:1px;margin-bottom:-1px;pointer-events:none}
-  .eventTableHead{position:sticky;top:var(--snooker-header-height,64px);z-index:8;display:grid;grid-template-columns:84px minmax(0,1.75fr) 108px minmax(170px,1fr) 18px;gap:14px;align-items:center;margin:0 -18px;padding:11px 22px 10px;border:1px solid var(--line);border-radius:18px 18px 0 0;background:#fff;box-shadow:0 6px 14px rgba(35,45,41,.035);color:#919894;font-size:8px;font-weight:800;letter-spacing:.04em}
+  .eventTableHead{position:sticky;top:var(--snooker-header-height,64px);z-index:8;display:grid;grid-template-columns:84px minmax(0,1.75fr) 108px minmax(170px,1fr) 18px;gap:14px;align-items:center;margin:0 -18px;padding:11px 22px 10px;border:1px solid var(--line);border-radius:0;background:#fff;box-shadow:0 6px 14px rgba(35,45,41,.035);color:#919894;font-size:8px;font-weight:800;letter-spacing:.04em}
   .eventTableHeadPinned{border-radius:0}
   .eventTableHead span:first-child{text-align:center}
   .eventListPanel :global([class*="calendarList"]){margin-top:0}
