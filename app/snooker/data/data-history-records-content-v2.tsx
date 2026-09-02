@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CLASSIC_RECORD_ENTRY,
   CLASSIC_RECORDS,
@@ -17,7 +17,7 @@ import dataStyles from "./data.module.css";
 import styles from "./data-history-records.module.css";
 import v4Styles from "./data-history-records-v4.module.css";
 
-type HistoryRecordsViewKey = HistoryRecordCategoryKey | "classic";
+export type HistoryRecordsViewKey = HistoryRecordCategoryKey | "classic";
 type AvatarSize = 256 | 512;
 
 function itemTypeLabel(item: HistoryRecordItem) {
@@ -28,11 +28,6 @@ function itemSizeLabel(item: HistoryRecordItem) {
   if (item.kind === "timeline") return `${item.rows.length}届`;
   if (item.rows.length >= 10) return `Top ${item.rows.length}`;
   return `${item.rows.length}条`;
-}
-
-function cleanRecordsParams(url: URL) {
-  url.searchParams.delete("group");
-  url.searchParams.delete("record");
 }
 
 function HistorySilhouette() {
@@ -71,118 +66,8 @@ function identityLine(nameEn?: string | null) {
   </small>;
 }
 
-export function HistoryRecordsSection() {
-  const [group, setGroup] = useState<HistoryRecordsViewKey | null>(null);
-  const [recordKey, setRecordKey] = useState<string | null>(null);
-
-  useLayoutEffect(() => {
-    const syncFromUrl = () => {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("view") !== "data" || params.get("section") !== "records") {
-        setGroup(null);
-        setRecordKey(null);
-        return;
-      }
-
-      const groupParam = params.get("group");
-      if (groupParam === "classic") {
-        setGroup("classic");
-        setRecordKey(null);
-        return;
-      }
-
-      const category = historyRecordCategory(groupParam);
-      const recordParam = params.get("record");
-      const leaderboard = historyLeaderboardItem(recordParam);
-      const legacyClassic = CLASSIC_RECORDS.find((item) => item.key === recordParam);
-
-      if (legacyClassic) {
-        setGroup("classic");
-        setRecordKey(null);
-        return;
-      }
-
-      setGroup(category?.key ?? null);
-      setRecordKey(leaderboard && category && leaderboard.category === category.key ? leaderboard.key : null);
-    };
-
-    syncFromUrl();
-    window.addEventListener("popstate", syncFromUrl);
-    window.addEventListener("snooker:root-navigation", syncFromUrl);
-    return () => {
-      window.removeEventListener("popstate", syncFromUrl);
-      window.removeEventListener("snooker:root-navigation", syncFromUrl);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!group) return;
-    if (window.matchMedia("(min-width:1024px)").matches) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previous; };
-  }, [group]);
-
-  const category = group && group !== "classic" ? historyRecordCategory(group) : null;
-  const selected = recordKey ? historyLeaderboardItem(recordKey) : null;
-
-  const openGroup = (key: HistoryRecordsViewKey) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("view", "data");
-    url.searchParams.delete("player");
-    url.searchParams.set("section", "records");
-    url.searchParams.set("group", key);
-    url.searchParams.delete("record");
-    url.searchParams.delete("metric");
-    url.searchParams.delete("honour");
-    url.searchParams.delete("list");
-    window.history.pushState({ ...(window.history.state ?? {}), snookerHistoryRecords: "group" }, "", url.pathname + url.search + url.hash);
-    setGroup(key);
-    setRecordKey(null);
-  };
-
-  const openLeaderboard = (item: HistoryRecordItem) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("view", "data");
-    url.searchParams.set("section", "records");
-    url.searchParams.set("group", item.category);
-    url.searchParams.set("record", item.key);
-    window.history.pushState({ ...(window.history.state ?? {}), snookerHistoryRecords: "record" }, "", url.pathname + url.search + url.hash);
-    setGroup(item.category);
-    setRecordKey(item.key);
-  };
-
-  const closeRecords = () => {
-    const state = window.history.state as { snookerHistoryRecords?: string } | null;
-    if (state?.snookerHistoryRecords && window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    const url = new URL(window.location.href);
-    url.searchParams.set("view", "data");
-    url.searchParams.delete("section");
-    cleanRecordsParams(url);
-    window.history.replaceState({ ...(window.history.state ?? {}), snookerView: "data" }, "", url.pathname + url.search + url.hash);
-    setGroup(null);
-    setRecordKey(null);
-  };
-
-  const backToCategory = () => {
-    const state = window.history.state as { snookerHistoryRecords?: string } | null;
-    if (state?.snookerHistoryRecords === "record" && window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    const url = new URL(window.location.href);
-    url.searchParams.delete("record");
-    window.history.replaceState({ ...(window.history.state ?? {}), snookerHistoryRecords: "group" }, "", url.pathname + url.search + url.hash);
-    setRecordKey(null);
-  };
-
-  const overlayTitle = selected?.titleZh ?? (group === "classic" ? CLASSIC_RECORD_ENTRY.titleZh : category?.titleZh ?? "历史与纪录");
-
-  return <>
-    <section className={`${dataStyles.card} ${styles.hubCard} ${group ? styles.hubCardHiddenDesktop : ""}`}>
+export function HistoryRecordsSection({ onOpenGroup }: { onOpenGroup: (key: HistoryRecordsViewKey) => void }) {
+  return <section className={`${dataStyles.card} ${styles.hubCard}`}>
       <div className={dataStyles.sectionHeader}>
         <div><small>HISTORY &amp; RECORDS</small><h2>历史与纪录</h2></div>
         <span className={styles.sectionCount}>5 个入口</span>
@@ -190,7 +75,7 @@ export function HistoryRecordsSection() {
       <div className={styles.categoryGrid}>
         {HISTORY_RECORD_CATEGORIES.map((item) => {
           const count = historyLeaderboardItemsForCategory(item.key).length;
-          return <button type="button" className={styles.categoryCard} onClick={() => openGroup(item.key)} key={item.key}>
+          return <button type="button" className={styles.categoryCard} onClick={() => onOpenGroup(item.key)} key={item.key}>
             <div className={styles.categoryText}>
               <small className={v4Styles.historyUiEnglish}>{item.titleEn}</small>
               <strong>{item.titleZh}</strong>
@@ -199,7 +84,7 @@ export function HistoryRecordsSection() {
             <div className={styles.categoryAside}><span>{count}项</span><i>›</i></div>
           </button>;
         })}
-        <button type="button" className={`${styles.categoryCard} ${styles.classicEntry}`} onClick={() => openGroup("classic")}>
+        <button type="button" className={`${styles.categoryCard} ${styles.classicEntry}`} onClick={() => onOpenGroup("classic")}>
           <div className={styles.categoryText}>
             <small className={v4Styles.historyUiEnglish}>{CLASSIC_RECORD_ENTRY.titleEn}</small>
             <strong>{CLASSIC_RECORD_ENTRY.titleZh}</strong>
@@ -208,12 +93,24 @@ export function HistoryRecordsSection() {
           <div className={styles.categoryAside}><span>{CLASSIC_RECORDS.length}项</span><i>›</i></div>
         </button>
       </div>
-    </section>
+    </section>;
+}
 
-    {group ? <div className={styles.overlay} data-history-records-overlay="true">
+export function HistoryRecordsDetailPage({ group, recordKey, onSelectGroup, onSelectRecord, onBack }: {
+  group: HistoryRecordsViewKey;
+  recordKey: string | null;
+  onSelectGroup: (key: HistoryRecordsViewKey) => void;
+  onSelectRecord: (item: HistoryRecordItem) => void;
+  onBack: () => void;
+}) {
+  const category = group !== "classic" ? historyRecordCategory(group) : null;
+  const selected = recordKey ? historyLeaderboardItem(recordKey) : null;
+  const overlayTitle = selected?.titleZh ?? (group === "classic" ? CLASSIC_RECORD_ENTRY.titleZh : category?.titleZh ?? "历史与纪录");
+
+  return <div className={styles.overlay} data-history-records-page="true" data-data-detail="true">
       <div className={styles.overlayScroll}>
         <header className={styles.mobileHeader}>
-          <button type="button" onClick={selected ? backToCategory : closeRecords} aria-label="返回"><span aria-hidden="true">‹</span></button>
+          <button type="button" onClick={onBack} aria-label="返回"><span aria-hidden="true">‹</span></button>
           <strong>{overlayTitle}</strong>
           <span>DATA</span>
         </header>
@@ -222,21 +119,20 @@ export function HistoryRecordsSection() {
             <div className={styles.historySidebarHeading}><small>HISTORY &amp; RECORDS</small><strong>历史与纪录</strong></div>
             <div className={styles.historyCategoryNav}>
               {HISTORY_RECORD_CATEGORIES.map((item) => <div className={styles.historyNavGroup} key={item.key}>
-                <button type="button" className={group === item.key ? styles.historyNavActive : ""} onClick={() => openGroup(item.key)}>{item.titleZh}</button>
+                <button type="button" className={group === item.key ? styles.historyNavActive : ""} onClick={() => onSelectGroup(item.key)}>{item.titleZh}</button>
                 {group === item.key ? <div className={styles.historyRecordNav}>
-                  {historyLeaderboardItemsForCategory(item.key).map((record) => <button type="button" className={recordKey === record.key ? styles.historyRecordActive : ""} onClick={() => openLeaderboard(record)} key={record.key}>{record.titleZh}</button>)}
+                  {historyLeaderboardItemsForCategory(item.key).map((record) => <button type="button" className={recordKey === record.key ? styles.historyRecordActive : ""} onClick={() => onSelectRecord(record)} key={record.key}>{record.titleZh}</button>)}
                 </div> : null}
               </div>)}
-              <div className={styles.historyNavGroup}><button type="button" className={group === "classic" ? styles.historyNavActive : ""} onClick={() => openGroup("classic")}>{CLASSIC_RECORD_ENTRY.titleZh}</button></div>
+              <div className={styles.historyNavGroup}><button type="button" className={group === "classic" ? styles.historyNavActive : ""} onClick={() => onSelectGroup("classic")}>{CLASSIC_RECORD_ENTRY.titleZh}</button></div>
             </div>
           </aside>
           <div className={styles.historyDetailMain}>
-            {selected ? <LeaderboardDetail item={selected} /> : group === "classic" ? <ClassicRecordsPage /> : category ? <CategoryDetail categoryKey={category.key} onOpenLeaderboard={openLeaderboard} /> : null}
+            {selected ? <LeaderboardDetail item={selected} /> : group === "classic" ? <ClassicRecordsPage /> : category ? <CategoryDetail categoryKey={category.key} onOpenLeaderboard={onSelectRecord} /> : null}
           </div>
         </div>
       </div>
-    </div> : null}
-  </>;
+    </div>;
 }
 
 function CategoryDetail({
@@ -269,8 +165,18 @@ function CategoryDetail({
 }
 
 function LeaderboardDetail({ item }: { item: HistoryRecordItem }) {
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [pinned, setPinned] = useState(false);
   const lead = item.rows[0] ?? null;
   const leadNationality = historyPlayerNationality(lead?.nameEn);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top <= 64), { rootMargin: "-64px 0px 0px", threshold: 0 });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [item.key]);
 
   return <main className={styles.detailPage}>
     <section className={styles.recordIntro}>
@@ -290,10 +196,13 @@ function LeaderboardDetail({ item }: { item: HistoryRecordItem }) {
     </section>
 
     <section className={`${dataStyles.card} ${styles.listCard}`}>
-      <div className={styles.listHeader}>
-        <span>{item.kind === "timeline" ? "#" : "排名"}</span>
-        <span>球员 / 纪录</span>
-        <span>{item.kind === "timeline" ? "年份" : "数据"}</span>
+      <div ref={sentinelRef} className={styles.listHeaderSentinel} aria-hidden="true" />
+      <div className={`${styles.listHeaderSticky} ${pinned ? styles.listHeaderPinned : ""}`}>
+        <div className={styles.listHeader}>
+          <span>{item.kind === "timeline" ? "#" : "排名"}</span>
+          <span>球员 / 纪录</span>
+          <span>{item.kind === "timeline" ? "年份" : "数据"}</span>
+        </div>
       </div>
       <div className={styles.recordList}>
         {item.rows.map((row, index) => <article key={`${item.key}-${index}-${row.nameEn ?? row.nameZh}`}>

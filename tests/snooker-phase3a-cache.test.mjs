@@ -48,7 +48,7 @@ test("phase 3a keeps live polling bounded and cache-aware", async () => {
     assert.match(route, /Cache-Control[\s\S]*?no-store/);
   }
   assert.match(ui, /formatUpdatedAt\(sourceHealth\?\.fetchedAt\)/);
-  assert.match(ui, /className=\{styles\.dataStatus\}/);
+  assert.doesNotMatch(ui, /className=\{styles\.dataStatus\}/);
   assert.doesNotMatch(ui, /sourceHealth\?\.sourceLabel/);
-  assert.match(ui, /<span>更新 \{formatUpdatedAt\(sourceHealth\?\.fetchedAt\)\}<\/span>/);
+  assert.doesNotMatch(ui, /<span>更新 \{formatUpdatedAt\(sourceHealth\?\.fetchedAt\)\}<\/span>/);
 });

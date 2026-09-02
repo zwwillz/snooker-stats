@@ -24,6 +24,7 @@ import PlayerCompareTeaser from "./compare/player-compare-teaser";
 import type { PlayerFilter } from "./players/player-directory";
 import HomeSeasonLeaders from "./home-season-leaders";
 import HomeAboutCard from "./home-about-card";
+import PublicSiteHeader from "./public-site-header";
 
 const loadDataContentModule = () => import("./data/data-ranking-content");
 const loadPlayerDirectoryModule = () => import("./players/player-directory");
@@ -128,7 +129,7 @@ const navItems: Array<{ id: NavId; label: string; labelEn: string; icon: string 
   { id: "data", label: "数据", labelEn: "DATA", icon: "▥" },
 ];
 
-const rootDetailParams = ["player", "section", "list", "group", "metric", "honour"] as const;
+const rootDetailParams = ["player", "section", "list", "group", "record", "metric", "honour"] as const;
 
 function RootViewLoading({ view, failed = false, onRetry }: { view: "players" | "data"; failed?: boolean; onRetry?: () => void }) {
   const isPlayers = view === "players";
@@ -1628,11 +1629,7 @@ export default function SnookerDataCenterV2({
     window.scrollTo({ top: 0, behavior: "auto" });
   };
 
-  const detailSiteHeader = (selectedView?: NavId) => <header className={`${styles.header} ${priority.detailSiteHeader}`}>
-    <button className={styles.brand} onClick={() => changeView("home")}><span>S</span><div><strong>147数据局</strong><small>中文斯诺克数据平台 · CN SNOOKER STATS</small></div></button>
-    <nav className={styles.desktopNav} aria-label="主要导航">{navItems.map((item) => <a aria-current={item.id === selectedView ? "page" : undefined} className={item.id === selectedView ? styles.desktopNavActive : ""} key={item.id} href={item.id === "home" ? "/" : `/?view=${item.id}`} onPointerEnter={() => warmRootView(item.id)} onFocus={() => warmRootView(item.id)} onTouchStart={() => warmRootView(item.id)} onClick={(event) => { event.preventDefault(); changeView(item.id); }}><span>{item.label}</span><small>{item.labelEn}</small></a>)}</nav>
-    <div className={styles.headerRight}><div className={styles.themeSwitch} role="group" aria-label="主题颜色"><button className={theme === "green" ? styles.themeActive : ""} onClick={() => setTheme("green")} aria-pressed={theme === "green"}>绿</button><button className={theme === "red" ? styles.themeActive : ""} onClick={() => setTheme("red")} aria-pressed={theme === "red"}>红</button></div></div>
-  </header>;
+  const detailSiteHeader = (selectedView?: NavId) => <PublicSiteHeader active={selectedView ?? null} theme={theme} onThemeChange={setTheme} onNavigate={changeView} onWarm={warmRootView} />;
 
   if (detail?.type === "player") {
     const summaryPlayer = [...players.values()].find((player) => player.slug === detail.slug);
@@ -1896,10 +1893,9 @@ export default function SnookerDataCenterV2({
             ? styles.chinaTopGridOne
             : styles.chinaTopGridFive;
 
-  return <main className={styles.appRoot} data-theme={theme}><div className={styles.shell}>
-    <header className={styles.header}>
+  return <main className={styles.appRoot} data-theme={theme}><PublicSiteHeader active={activeView} theme={theme} onThemeChange={setTheme} onNavigate={changeView} onWarm={warmRootView} /><div className={styles.shell}>
+    <header className={`${styles.header} ${priority.rootMobileHeader}`}>
       <button className={styles.brand} onClick={() => changeView("home")}><span>S</span><div><strong>147数据局</strong><small>中文斯诺克数据平台 · CN SNOOKER STATS</small></div></button>
-      <nav className={styles.desktopNav} aria-label="主要导航">{navItems.map((item) => <a key={item.id} href={item.id === "home" ? "/" : `/?view=${item.id}`} aria-current={item.id === activeView ? "page" : undefined} className={item.id === activeView ? styles.desktopNavActive : ""} onPointerEnter={() => warmRootView(item.id)} onFocus={() => warmRootView(item.id)} onTouchStart={() => warmRootView(item.id)} onClick={(event) => { event.preventDefault(); changeView(item.id); }}><span>{item.label}</span><small>{item.labelEn}</small></a>)}</nav>
       <div className={styles.headerRight}><div className={styles.themeSwitch} role="group" aria-label="主题颜色"><button className={theme === "green" ? styles.themeActive : ""} onClick={() => setTheme("green")} aria-pressed={theme === "green"}>绿</button><button className={theme === "red" ? styles.themeActive : ""} onClick={() => setTheme("red")} aria-pressed={theme === "red"}>红</button></div></div>
     </header>
     <div className={`${styles.content} ${activeView === "home" ? styles.contentHome : activeView === "matches" ? styles.contentMatches : activeView === "players" ? styles.contentPlayers : styles.contentData}`}>
@@ -1969,10 +1965,6 @@ export default function SnookerDataCenterV2({
       {activeView === "data" ? dataModuleLoaded && (rankingHubLoaded || requestedTechnicalMetric)
         ? <DataHubContent hub={rankingHub} players={dataPlayers} selectedKey={selectedRankingKey} onSelectKey={setSelectedRankingKey} onOpenRankings={openRankings} onOpenPlayer={openPlayerBySlug} initialPlayerCompare={initialPlayerCompare} initialTechnicalMetric={requestedTechnicalMetric} />
         : <RootViewLoading view="data" failed={rankingHubLoadError} onRetry={warmDataView} /> : null}
-      {activeView !== "home" ? <div className={styles.dataStatus} role="status">
-        <i className={styles.liveOk} />
-        <span>更新 {formatUpdatedAt(sourceHealth?.fetchedAt)}</span>
-      </div> : null}
     </div>
     <nav className={`${styles.bottomNav} ${polish.fastNav}`}>{navItems.map((item) => <a key={item.id} href={item.id === "home" ? "/" : `/?view=${item.id}`} className={`${polish.fastNavLink} ${item.id === activeView ? styles.activeNav : ""}`} onPointerEnter={() => warmRootView(item.id)} onFocus={() => warmRootView(item.id)} onTouchStart={() => warmRootView(item.id)} onClick={(event) => { event.preventDefault(); changeView(item.id); }}><span>{item.icon}</span><b>{item.label}</b></a>)}</nav>
     <span className={styles.buildMark}>{buildMark}</span>

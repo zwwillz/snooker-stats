@@ -29,13 +29,14 @@ test("secondary and tertiary tournament pages restore mobile back controls and w
 
 test("detail website navigation selects players only on player details", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
+  const shared = await read("app/snooker/public-site-header.tsx");
   const start = ui.indexOf("const detailSiteHeader");
   const end = ui.indexOf("if (detail?.type === \"player\")", start);
   const header = ui.slice(start, end);
   assert.ok(start >= 0 && end > start);
   assert.match(header, /selectedView\?: NavId/);
-  assert.match(header, /aria-current=\{item\.id === selectedView \? "page" : undefined\}/);
-  assert.match(header, /styles\.desktopNavActive/);
+  assert.match(header, /<PublicSiteHeader active=\{selectedView \?\? null\}/);
+  assert.match(shared, /aria-current=\{active === item\.id \? "page" : undefined\}/);
   assert.match(ui, /detailSiteHeader\("players"\)/);
   assert.ok((ui.match(/detailSiteHeader\(\)/g) ?? []).length >= 4);
   assert.doesNotMatch(ui, /detailSiteHeader\("matches"\)/);

@@ -45,7 +45,8 @@ test("history secondary and tertiary pages use browser scroll and a nested left 
   assert.doesNotMatch(content, /desktopDetailBar/);
   assert.match(content, /className=\{styles\.historySidebar\}/);
   assert.match(content, /className=\{styles\.historyRecordNav\}/);
-  assert.match(content, /window\.matchMedia\("\(min-width:1024px\)"\)\.matches/);
+  assert.match(content, /data-history-records-page="true"/);
+  assert.match(content, /listHeaderPinned/);
   assert.match(css, /\.overlay\{position:static;inset:auto/);
   assert.match(css, /\.overlayScroll\{width:100%;height:auto;margin:0;overflow:visible/);
   assert.match(css, /\.mobileHeader\{display:none\}/);

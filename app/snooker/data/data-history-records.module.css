@@ -41,6 +41,7 @@
 
 .recordHero{margin-top:0;padding:15px 16px;border:1px solid color-mix(in srgb,var(--accent) 18%,var(--line));border-radius:20px;background:linear-gradient(145deg,var(--accent-faint),#fff);display:flex;flex-direction:column;align-items:flex-start}
 .listCard{padding-top:13px}
+.listHeaderSentinel,.listHeaderSticky{display:contents}
 .listHeader{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:9px;padding:0 4px 8px;color:#949b97;font-size:10px;font-weight:500;line-height:1.35}
 .listHeader span:last-child{text-align:right}
 .recordList article{min-height:68px;padding:10px 3px;border-top:1px solid var(--line);display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:9px;align-items:center}
@@ -107,8 +108,14 @@
   .itemCardText>p{font-size:14px;line-height:1.55}
   .itemCardAside span{font-size:11px}
 
-  .recordHero{margin-top:16px;padding:17px 18px;max-width:520px}
+  .recordHero{width:100%;max-width:none;margin-top:16px;padding:17px 18px}
+  .listCard{padding:0;border:0;background:transparent;box-shadow:none;overflow:visible}
+  .listHeaderSentinel{display:block;width:100%;height:1px;margin-bottom:-1px;pointer-events:none}
+  .listHeaderSticky{position:sticky;top:var(--snooker-header-height,64px);z-index:4;display:block;padding:16px 20px 10px;border:1px solid var(--line);border-radius:20px 20px 0 0;background:#fff}
+  .listHeaderPinned{border-radius:0}
   .listHeader{grid-template-columns:42px minmax(0,1fr) auto;font-size:12px}
+  .recordList{padding:0 20px;border:1px solid var(--line);border-top:0;background:#fff}
+  .sourceBlock{margin-top:0;padding:16px 23px 18px;border:1px solid var(--line);border-top:0;border-radius:0 0 20px 20px;background:#fff}
   .recordList article{min-height:74px;padding:11px 4px;grid-template-columns:42px minmax(0,1fr) auto}
   .rowRank{font-size:14px}
   .rowMain>b{font-size:14px}

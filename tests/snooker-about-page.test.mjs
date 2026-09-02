@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const aboutPage = readFileSync(new URL("../app/about/page.tsx", import.meta.url), "utf8");
 const aboutChrome = readFileSync(new URL("../app/about/about-chrome.tsx", import.meta.url), "utf8");
+const publicHeader = readFileSync(new URL("../app/snooker/public-site-header.tsx", import.meta.url), "utf8");
 const aboutCss = readFileSync(new URL("../app/about/about.module.css", import.meta.url), "utf8");
 const aboutStats = readFileSync(new URL("../lib/snooker/public-site-stats.ts", import.meta.url), "utf8");
 const homeUi = readFileSync(new URL("../app/snooker/snooker-data-center-v2.tsx", import.meta.url), "utf8");
@@ -24,8 +25,9 @@ test("about page keeps the approved project positioning and private contact pres
 });
 
 test("about page follows the main site theme and fast homepage return pattern", () => {
-  assert.match(aboutChrome, /snooker-theme/);
-  assert.match(aboutChrome, /dataset\.snookerTheme/);
+  assert.match(aboutChrome, /<PublicSiteHeader \/>/);
+  assert.match(publicHeader, /snooker-theme/);
+  assert.match(publicHeader, /dataset\.snookerTheme/);
   assert.match(aboutChrome, /window\.history\.back\(\)/);
   assert.match(aboutChrome, /brandMark}>S</);
   assert.match(aboutChrome, /147数据局/);

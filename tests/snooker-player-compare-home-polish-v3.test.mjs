@@ -44,7 +44,7 @@ test('homepage exposes up to four priority live matches and keeps only user-faci
   assert.equal(home.includes('headlineCarousel'), true);
   assert.equal(home.includes('左右滑动'), true);
   assert.equal(home.includes('className={priority.scoreUpdated}'), true);
-  assert.equal(home.includes('<span>更新 {formatUpdatedAt(sourceHealth?.fetchedAt)}</span>'), true);
+  assert.equal(home.includes('className={styles.dataStatus}'), false);
   assert.equal(home.includes('30秒同步 ·'), false);
 });
 

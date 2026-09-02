@@ -28,9 +28,6 @@
 .futureGrid,.statGrid,.profileFacts{display:grid;grid-template-columns:1fr 1fr;gap:8px}.futureGrid article,.statGrid article,.profileFacts article{min-height:104px;padding:14px;border:1px solid var(--line);border-radius:15px;background:#fbfcfb;display:flex;flex-direction:column}.futureGrid small,.statGrid small,.profileFacts span{color:var(--accent);font-size:7px;font-weight:800}.futureGrid strong,.statGrid strong{margin-top:auto;font-size:22px}.futureGrid span,.statGrid span{margin-top:3px;color:var(--muted);font-size:8px}
 .finalFourGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.finalFourGrid>button{min-width:0;min-height:142px;padding:14px;border:1px solid var(--line);border-radius:15px;background:#fbfcfb;display:flex;flex-direction:column;align-items:flex-start;text-align:left;cursor:pointer}.finalFourGrid .finalFourChampion{border-color:color-mix(in srgb,var(--accent) 30%,var(--line));background:linear-gradient(145deg,var(--accent-faint),#fff)}.finalFourGrid .finalFourRunnerUp{background:linear-gradient(145deg,#f4f6f5,#fff)}.finalFourAvatar{position:relative}.finalFourAvatar>span{position:absolute;right:-4px;bottom:-2px;width:19px;height:19px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;font-size:7px;font-weight:900;box-shadow:0 0 0 2px #fff}.finalFourGrid small{margin-top:10px;color:var(--accent);font-size:7px;font-weight:850;letter-spacing:.08em}.finalFourGrid strong{max-width:100%;margin-top:4px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.finalFourGrid em{margin-top:3px;color:var(--muted);font-size:8px;font-style:normal}.eventHighlights article{min-height:98px}.eventHighlights span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bottomNav{position:fixed;z-index:70;left:50%;bottom:0;width:min(100%,720px);height:72px;transform:translateX(-50%);display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(224,229,226,.9);background:rgba(255,255,255,.96);backdrop-filter:blur(20px);padding-bottom:max(0px,env(safe-area-inset-bottom))}.bottomNav button{border:0;background:transparent;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;color:#969c99;cursor:pointer}.bottomNav button>span{height:22px;font-size:20px;line-height:22px}.bottomNav button>b{font-size:9px}.bottomNav .activeNav{color:var(--accent)}.buildMark{position:fixed;right:8px;bottom:76px;z-index:10;color:#c4c8c6;font-size:6px;pointer-events:none}
-.dataStatus{display:flex;align-items:center;gap:7px;margin:18px 4px 4px;padding:10px 12px;border:1px solid rgba(15,107,79,.08);border-radius:12px;background:rgba(237,247,243,.56);color:#577068;font-size:10px}.dataStatus i{flex:0 0 auto}.dataStatus span{font-weight:700}.dataStatus small{margin-left:auto;color:#89968f;font-size:9px;text-align:right}
-.contentData:has([data-technical-detail])>.dataStatus{display:none}
-.contentData:has([data-data-detail])>.dataStatus{display:none}
 @media (max-width:1023px){
   .shell:has([data-technical-detail]){width:100%;min-height:100dvh;padding-bottom:0;background:#f7f8f7;box-shadow:none}
   .shell:has([data-technical-detail])>.header,.shell:has([data-technical-detail])>.bottomNav,.shell:has([data-technical-detail])>.buildMark{display:none}
@@ -79,7 +76,6 @@
 @media (max-width:420px){.content{padding:12px}.card{padding:15px}.header{padding:0 12px}.brand strong{font-size:13px}.versionBadge{display:none}.versusGrid{grid-template-columns:1fr 76px 1fr}.avatar_xl{width:72px;height:72px}.bigScore strong{font-size:27px}.matchHero{padding-left:12px;padding-right:12px}.playerHero{grid-template-columns:72px minmax(0,1fr) auto}.playerHero .avatar_xl{width:72px;height:72px}}
 
 /* USER_FACING_UPDATE_ONLY_V3 */
-.dataStatus{grid-template-columns:8px minmax(0,1fr)}.dataStatus>span{color:#8d9691;font-size:7px;font-weight:700}
 
 .chinaTopGrid strong{font-size:var(--snooker-type-secondary)}
 
@@ -127,7 +123,6 @@
   .finalFourGrid strong{font-size:var(--snooker-type-list-title)}
   .finalFourGrid em{font-size:var(--snooker-type-secondary)}
   .bottomNav button>b{font-size:var(--snooker-type-secondary)}
-  .dataStatus,.dataStatus>span,.dataStatus small{font-size:var(--snooker-type-auxiliary)}
   .eventDetailTop>span{font-size:var(--snooker-type-auxiliary)}
   .eventDetailHero>p,.eventDetailMeta{font-size:var(--snooker-type-secondary)}
   .eventTabs button{font-size:var(--snooker-type-body-small)}

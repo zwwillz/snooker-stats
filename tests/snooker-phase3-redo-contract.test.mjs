@@ -4,6 +4,7 @@ import test from "node:test";
 
 const read = (path) => fs.readFileSync(path, "utf8");
 const ui = read("app/snooker/snooker-data-center-v2.tsx");
+const publicHeader = read("app/snooker/public-site-header.tsx");
 const page = read("app/page.tsx");
 const urlSync = read("app/snooker/snooker-view-url-sync.tsx");
 const bootstrap = read("lib/snooker/home-bootstrap.ts");
@@ -31,7 +32,7 @@ test("brand identity is real React source rather than a homepage-only DOM or CSS
 
 test("home-only cards live inside the real home React branch and homepage update status is absent", () => {
   assert.match(ui, /activeView === "home" \? <>[\s\S]*?<HomeSeasonLeaders initialPayload=\{initialHomeLeaders\} onOpenMetric=\{openTechnicalFromHome\} \/>[\s\S]*?<HomeAboutCard \/>[\s\S]*?<\/> : null/);
-  assert.match(ui, /activeView !== "home" \? <div className=\{styles\.dataStatus\} role="status">/);
+  assert.doesNotMatch(ui, /styles\.dataStatus/);
   assert.doesNotMatch(page, /HomeExtras|<HomeSeasonLeaders|<HomeAboutCard/);
 });
 
@@ -59,7 +60,8 @@ test("one React controller owns root URL/history after hydration", () => {
   assert.doesNotMatch(urlSync, /document\.addEventListener|querySelector|closest\(|replaceState|pushState/);
   assert.match(ui, /function rootUrl\(view: MainView\)/);
   assert.match(ui, /const changeView = \(view: NavId\) => \{[\s\S]*?window\.history\.pushState\(\{ snookerView: view \}/);
-  assert.match(ui, /onClick=\{\(event\) => \{ event\.preventDefault\(\); changeView\(item\.id\); \}\}/);
+  assert.match(ui, /<PublicSiteHeader active=\{activeView\}/);
+  assert.match(publicHeader, /onClick=\{\(event\) => navigate\(event, item\.id\)\}/);
   assert.doesNotMatch(ui, /window\.history\.replaceState\(window\.history\.state/);
 });
 
