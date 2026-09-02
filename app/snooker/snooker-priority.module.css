@@ -281,7 +281,7 @@
 .recentMoreButton{width:100%;margin-top:12px;padding:12px;border:0;border-radius:12px;background:var(--accent-soft);color:var(--accent-strong);font-size:10px;font-weight:850;cursor:pointer}
 
 @media (min-width:1024px){
-  .eventCenterLayout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:18px;align-items:start}
+  .eventCenterLayout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:20px;align-items:start}
   .eventSidebar{display:flex;min-width:0;flex-direction:column;gap:0;padding:18px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(35,45,41,.045);position:sticky;top:calc(var(--snooker-header-height,64px) + 18px)}
   .eventSidebarHeading{display:flex;flex-direction:column;gap:5px;padding-bottom:15px;border-bottom:1px solid var(--line)}
   .eventSidebarHeading small{color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.13em}
@@ -325,8 +325,8 @@
   .eventListPanel :global([class*="calendarDate"]) b{font-size:13px}.eventListPanel :global([class*="calendarDate"]) small{margin-top:5px;font-size:8px}
 }
 
-@media (min-width:1280px){.eventCenterLayout{grid-template-columns:200px minmax(0,1fr);gap:20px}}
-@media (min-width:1024px) and (max-width:1180px){.eventCenterLayout{grid-template-columns:184px minmax(0,1fr);gap:16px}.eventTableHead,.eventListPanel :global([class*="calendarList"])>button{grid-template-columns:76px minmax(0,1.55fr) 96px minmax(150px,1fr) 16px;gap:2px 10px}}
+@media (min-width:1024px) and (max-width:1120px){.eventCenterLayout{grid-template-columns:172px minmax(0,1fr);gap:16px}.eventSidebar{padding:16px}}
+@media (min-width:1024px) and (max-width:1180px){.eventTableHead,.eventListPanel :global([class*="calendarList"])>button{grid-template-columns:76px minmax(0,1.55fr) 96px minmax(150px,1fr) 16px;gap:2px 10px}}
 
 
 /* TOURNAMENTS_PHASE4A_DETAIL_CORE */
