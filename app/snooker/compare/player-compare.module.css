@@ -6,6 +6,7 @@
   --muted: #6e7b75;
   --line: #dfe6e2;
   --surface: #ffffff;
+  --snooker-header-height:64px;
   min-height: 100vh;
   padding-bottom: 56px;
   color: var(--ink);
@@ -1235,7 +1236,7 @@
 .mobileHeaderSpacer{width:36px;height:36px}
 
 @media (min-width:1024px){
-  .mobileTopbar{display:none}
+  .mobileTopbar{display:none!important}
   .topbar{z-index:60;display:flex;min-height:64px;height:64px;padding:0 max(20px,calc((100vw - 1120px)/2));gap:18px;border-bottom-color:rgba(231,236,233,.88)}
   .topbar>button.backLink{display:none}
   .compareBrand{justify-self:auto;flex:0 0 auto}

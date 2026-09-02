@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState, type MouseEvent } from "react";
-import styles from "./public-site-header.module.css";
+import styles from "./snooker-data-center.module.css";
+import priority from "./snooker-priority.module.css";
 
 export type PublicNavId = "home" | "matches" | "players" | "data";
 export type PublicTheme = "green" | "red";
@@ -58,15 +59,15 @@ export default function PublicSiteHeader({
     onNavigate(id);
   };
 
-  return <header className={styles.header} data-public-site-header="true">
+  return <header className={`${styles.header} ${priority.detailSiteHeader}`} data-public-site-header="true">
     <Link className={styles.brand} href="/" onClick={(event) => navigate(event, "home")} aria-label="返回147数据局首页">
-      <span className={styles.brandMark}>S</span>
-      <span className={styles.brandText}><strong>147数据局</strong><small>中文斯诺克数据平台 · CN SNOOKER STATS</small></span>
+      <span>S</span>
+      <div><strong>147数据局</strong><small>中文斯诺克数据平台 · CN SNOOKER STATS</small></div>
     </Link>
-    <nav className={styles.nav} aria-label="主要导航">
+    <nav className={styles.desktopNav} aria-label="主要导航">
       {items.map((item) => <Link
         aria-current={active === item.id ? "page" : undefined}
-        className={active === item.id ? styles.active : ""}
+        className={active === item.id ? styles.desktopNavActive : ""}
         href={item.href}
         key={item.id}
         onPointerEnter={() => onWarm?.(item.id)}
@@ -75,9 +76,9 @@ export default function PublicSiteHeader({
         onClick={(event) => navigate(event, item.id)}
       ><span>{item.label}</span><small>{item.labelEn}</small></Link>)}
     </nav>
-    <div className={styles.themeSwitch} role="group" aria-label="主题颜色">
+    <div className={styles.headerRight}><div className={styles.themeSwitch} role="group" aria-label="主题颜色">
       <button className={theme === "green" ? styles.themeActive : ""} type="button" onClick={() => selectTheme("green")} aria-pressed={theme === "green"}>绿</button>
       <button className={theme === "red" ? styles.themeActive : ""} type="button" onClick={() => selectTheme("red")} aria-pressed={theme === "red"}>红</button>
-    </div>
+    </div></div>
   </header>;
 }
