@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type { SnookerHonoursHub, SnookerHonoursList, SnookerHonoursMetricKey } from "@/lib/snooker/honours-hub";
-import shellStyles from "../snooker-data-center.module.css";
 import styles from "./data.module.css";
+import detailStyles from "./technical-detail.module.css";
 
 const leaderKeys: SnookerHonoursMetricKey[] = ["ranking_titles", "triple_crown_titles", "world_championship_titles", "career_147s"];
 
@@ -89,32 +89,66 @@ export function HonoursDetailContent({
   selectedKey,
   onSelectKey,
   onOpenPlayer,
+  onClose,
 }: {
   hub: SnookerHonoursHub;
   players: SnookerPlayerListItem[];
   selectedKey: SnookerHonoursMetricKey;
   onSelectKey: (key: SnookerHonoursMetricKey) => void;
   onOpenPlayer: (slug: string) => void;
+  onClose: () => void;
 }) {
   const bySlug = useMemo(() => playerMap(players), [players]);
   const selected = metricFor(hub, selectedKey) ?? hub.lists[0] ?? null;
   const updated = capturedLabel(hub.capturedAt);
+  const tableTopSentinelRef = useRef<HTMLDivElement>(null);
+  const [tablePinned, setTablePinned] = useState(false);
 
-  return <div className={styles.detailContent}>
-    <div className={styles.technicalMetricNav} role="tablist" aria-label="荣誉榜指标">
-      {hub.lists.map((list) => <button
-        type="button"
-        role="tab"
-        aria-selected={selected?.key === list.key}
-        className={selected?.key === list.key ? styles.technicalMetricActive : ""}
-        onClick={() => onSelectKey(list.key)}
-        key={list.key}
-      >{list.shortLabelZh}</button>)}
-    </div>
+  useEffect(() => {
+    const sentinel = tableTopSentinelRef.current;
+    if (!sentinel) return;
+    const desktop = window.matchMedia("(min-width:1024px)");
+    let observer: IntersectionObserver | null = null;
+    const syncObserver = () => {
+      observer?.disconnect();
+      observer = null;
+      setTablePinned(false);
+      if (!desktop.matches) return;
+      observer = new IntersectionObserver(([entry]) => {
+        setTablePinned(entry.boundingClientRect.top <= 64);
+      }, { root: null, rootMargin: "-64px 0px 0px 0px", threshold: 0 });
+      observer.observe(sentinel);
+    };
+    syncObserver();
+    desktop.addEventListener("change", syncObserver);
+    return () => {
+      observer?.disconnect();
+      desktop.removeEventListener("change", syncObserver);
+    };
+  }, []);
 
-    {selected ? <section className={`${styles.card} ${styles.technicalTableCard}`}>
-      <div className={styles.technicalTableHeader}><span>排名</span><span>球员</span><span>{selected.shortLabelZh}</span></div>
-      <div className={styles.technicalRankingList}>
+  return <div className={detailStyles.detailContent}>
+    <aside className={detailStyles.technicalSidebar}>
+      <div className={detailStyles.technicalMetricNav} role="tablist" aria-label="荣誉榜指标">
+        {hub.lists.map((list) => <button
+          type="button"
+          role="tab"
+          aria-selected={selected?.key === list.key}
+          className={selected?.key === list.key ? detailStyles.technicalMetricActive : ""}
+          onClick={() => onSelectKey(list.key)}
+          key={list.key}
+        ><span>{list.shortLabelZh}</span><small>{list.labelEn}</small></button>)}
+      </div>
+      <button className={detailStyles.technicalDesktopBack} type="button" onClick={onClose}><span aria-hidden="true">‹</span> 返回</button>
+    </aside>
+
+    {selected ? <section className={`${styles.card} ${detailStyles.technicalTablePanel} ${detailStyles.honoursTablePanel}`}>
+      <div ref={tableTopSentinelRef} className={detailStyles.technicalTableSentinel} aria-hidden="true" />
+      <div className={`${detailStyles.technicalTableSticky} ${tablePinned ? detailStyles.technicalTableStickyPinned : ""}`}>
+        <div className={`${detailStyles.technicalTableHeader} ${detailStyles.honoursTableHeader}`}><span>排名</span><span>球员</span><span>{selected.shortLabelZh}</span><span className={detailStyles.technicalArrowHeader} aria-hidden="true" /></div>
+      </div>
+      <div className={detailStyles.technicalTableBody}>
+      <div className={`${detailStyles.technicalRankingList} ${detailStyles.honoursRankingList}`}>
         {selected.rows.map((row) => {
           const player = bySlug.get(row.playerSlug);
           return <button type="button" onClick={() => onOpenPlayer(row.playerSlug)} key={`${selected.key}-${row.playerId}`}>
@@ -127,15 +161,16 @@ export function HonoursDetailContent({
         })}
         {!selected.rows.length ? <div className={styles.emptyState}>当前数据库暂无该项荣誉数据。</div> : null}
       </div>
-      <div className={styles.rankingFooterMeta}>
+      <div className={detailStyles.rankingFooterMeta}>
         <span>来源：{hub.sourceName}{updated ? ` · 更新 ${updated}` : ""}</span>
         <span>口径：本站已入库职业生涯统计</span>
+      </div>
       </div>
     </section> : <section className={styles.card}><div className={styles.emptyState}>荣誉榜数据正在准备中。</div></section>}
   </div>;
 }
 
-export function HonoursDetailOverlay({
+export function HonoursDetailPage({
   hub,
   players,
   selectedKey,
@@ -150,16 +185,33 @@ export function HonoursDetailOverlay({
   onOpenPlayer: (slug: string) => void;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previous; };
-  }, []);
-
-  return <div className={styles.technicalOverlay}>
-    <div className={styles.technicalOverlayScroll}>
-      <header className={shellStyles.detailHeader}><button onClick={onClose}>‹</button><strong>荣誉榜</strong><span>DATA</span></header>
-      <HonoursDetailContent hub={hub} players={players} selectedKey={selectedKey} onSelectKey={onSelectKey} onOpenPlayer={onOpenPlayer} />
-    </div>
-  </div>;
+  return <section className={detailStyles.technicalPage} data-data-detail="true" aria-label="球员职业生涯荣誉榜">
+    <header className={detailStyles.technicalMobileHeader}>
+      <button type="button" onClick={onClose} aria-label="返回数据"><span aria-hidden="true">‹</span></button>
+      <strong>球员荣誉榜</strong>
+      <span>DATA</span>
+    </header>
+    <header className={detailStyles.technicalDesktopIntro}>
+      <div><small>CAREER HONOURS</small><h1>球员荣誉榜</h1><p>职业生涯冠军、决赛与单杆 147 等历史荣誉数据。</p></div>
+      <strong>职业生涯</strong>
+    </header>
+    <HonoursDetailContent hub={hub} players={players} selectedKey={selectedKey} onSelectKey={onSelectKey} onOpenPlayer={onOpenPlayer} onClose={onClose} />
+  </section>;
 }
+
+export function HonoursDetailLoadingPage({ onClose }: { onClose: () => void }) {
+  return <section className={detailStyles.technicalPage} data-data-detail="true" aria-label="正在加载球员荣誉榜">
+    <header className={detailStyles.technicalMobileHeader}>
+      <button type="button" onClick={onClose} aria-label="返回数据"><span aria-hidden="true">‹</span></button>
+      <strong>球员荣誉榜</strong>
+      <span>DATA</span>
+    </header>
+    <header className={detailStyles.technicalDesktopIntro}>
+      <div><small>CAREER HONOURS</small><h1>球员荣誉榜</h1><p>职业生涯冠军、决赛与单杆 147 等历史荣誉数据。</p></div>
+    </header>
+    <section className={`${styles.card} ${detailStyles.technicalLoadingCard}`}><div className={styles.technicalLoading}>正在加载荣誉榜数据…</div></section>
+  </section>;
+}
+
+// Kept as a named compatibility export for callers that still preload the former overlay module.
+export const HonoursDetailOverlay = HonoursDetailPage;

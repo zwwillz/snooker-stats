@@ -44,6 +44,88 @@
 .rankingTabs:not(.rankingTabsCompact) button span{font-size:var(--snooker-type-compact-data)}
 .rankingTabs:not(.rankingTabsCompact) button small{font-size:var(--snooker-type-decorative)}
 
+.dataDashboard{min-width:0;display:flex;flex-direction:column;gap:12px}
+.dataCompareSlot,.dataTechnicalSlot,.dataHonoursSlot,.dataHistorySlot{min-width:0}
+.rankingDesktopIntro{display:none}
+
+/* DATA_WEB_HIERARCHY_V1 */
+@media (min-width:1024px){
+  .pageIntro{padding:25px 4px 13px}
+  .pageIntro small,.sectionHeader small,.reservedCard>small,.infoModalHeader small{font-size:10px}
+  .pageIntro h1{margin:7px 0 6px;font-size:42px}
+  .pageIntro p{max-width:720px;font-size:14px;line-height:1.75}
+  .card{padding:24px;border-radius:22px}
+  .sectionHeader{margin-bottom:18px}
+  .sectionHeader h2{font-size:22px}
+  .sectionHeader>span{font-size:11px}
+  .infoButton{width:22px;height:22px;font-size:12px}
+
+  .dataDashboard{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;align-items:stretch}
+  .dataCompareSlot{grid-column:1/6}
+  .dataRankingSlot{grid-column:6/13}
+  .dataTechnicalSlot{grid-column:1/7}
+  .dataHonoursSlot{grid-column:7/13}
+  .dataHistorySlot{grid-column:1/-1}
+  .dataDashboard>*,.dataDashboard>*>section{min-width:0}
+  .dataCompareSlot>*,.dataTechnicalSlot>*,.dataHonoursSlot>*{height:100%}
+
+  .rankingTabs{gap:8px;margin-bottom:14px}
+  .rankingTabs button{min-height:58px;padding:9px 7px;border-radius:14px}
+  .rankingTabs button span{font-size:12px}
+  .rankingTabs button small{font-size:9px}
+  .topRankingList button{min-height:68px;grid-template-columns:36px 46px minmax(0,1fr) auto;gap:12px}
+  .topRankingList button>strong{font-size:15px}
+  .topRankingList .medalRank{width:28px;height:28px;font-size:11px}
+  .topRankingList button>span b{font-size:14px}
+  .topRankingList button>span small{font-size:10px}
+  .topRankingList button>em{font-size:12px}
+  .avatar{width:46px;height:46px;border-radius:13px}
+  .primaryAction{min-height:44px;margin-top:14px;font-size:12px}
+
+  .seasonLeaderGrid{gap:10px}
+  .seasonLeaderCard{min-height:160px;padding:16px;border-radius:17px}
+  .seasonLeaderLabel span{font-size:13px}
+  .seasonLeaderLabel small{font-size:9px}
+  .seasonLeaderMain{gap:10px;margin-top:16px}
+  .seasonLeaderMain strong{font-size:14px}
+  .seasonLeaderMain small{font-size:10px}
+  .seasonLeaderValue b{font-size:26px}
+  .seasonLeaderValue span{font-size:10px}
+  .technicalAvatarCompact{width:42px;height:42px;border-radius:12px}
+  .technicalLoading,.emptyState{font-size:12px}
+
+  .detailContent{padding:24px 0 42px;display:grid;grid-template-columns:230px minmax(0,1fr);column-gap:18px;row-gap:20px;align-items:start}
+  .rankingDesktopIntro{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:0 2px}
+  .rankingDesktopIntro small{display:block;color:var(--accent);font-size:10px;font-weight:900;letter-spacing:.14em}
+  .rankingDesktopIntro h1{margin:5px 0 3px;font-size:42px;letter-spacing:-.05em}
+  .rankingDesktopIntro p{margin:0;color:var(--muted);font-size:14px}
+  .rankingDesktopIntro>strong{padding:8px 11px;border-radius:999px;background:var(--accent-soft);color:var(--accent-strong);font-size:11px}
+  .detailNavStack{grid-column:1;position:sticky;top:82px;z-index:3;margin:0;padding:10px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 12px 34px rgba(35,45,41,.035)}
+  .sectionTabs{display:flex;flex-direction:column;gap:6px;padding:0;border:0;border-radius:0;background:transparent}
+  .sectionTabs button{min-height:46px;padding:10px 12px;border-radius:12px;text-align:left;font-size:13px}
+  .rankingTabsCompact{display:flex;flex-direction:column;gap:6px;margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line)}
+  .rankingTabsCompact button{min-height:42px;padding:8px 12px;border-radius:12px;align-items:flex-start}
+  .rankingTabsCompact button span{font-size:12px}
+  .detailContent>.rankingTableCard,.detailContent>.reservedCard{grid-column:2;min-width:0}
+  .rankingTableCard{padding:0;border:0;background:transparent;box-shadow:none;overflow:visible}
+  .rankingTableHeader{position:sticky;top:64px;z-index:4;grid-template-columns:54px minmax(0,1fr) 150px;gap:12px;padding:18px 24px 11px;border:1px solid var(--line);border-radius:20px 20px 0 0;background:#fff;font-size:11px;font-weight:800}
+  .fullRankingList{padding:0 20px;border:1px solid var(--line);border-top:0;background:#fff}
+  .fullRankingList button{min-height:66px;grid-template-columns:42px 44px minmax(0,1fr) 150px 14px;gap:11px}
+  .fullRankingList button:hover{border-radius:11px;background:var(--accent-faint)}
+  .fullRankingList button>strong{font-size:13px}
+  .fullRankingList button:nth-child(-n+3)>strong{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(145deg,var(--accent),var(--accent-dark))}
+  .fullRankingList button>span b{font-size:14px}
+  .fullRankingList button>span small{font-size:10px}
+  .fullRankingList button>em{font-size:13px;text-align:right}
+  .rankingFooterMeta{margin:0;padding:14px 24px;border:1px solid var(--line);border-top:0;border-radius:0 0 20px 20px;background:#fff;font-size:11px}
+  .reservedCard{min-height:300px;padding:34px}
+  .reservedCard h2{font-size:30px}
+  .reservedCard p{font-size:14px}
+  .reservedCard>span{font-size:11px}
+  .infoList strong{font-size:14px}
+  .infoList p{font-size:12px}
+}
+
 /* RESPONSIVE_READABILITY_PHASE1 */
 @media (max-width:767px){
   .technicalMobileHeader strong{font-size:16px}
