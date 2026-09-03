@@ -94,9 +94,9 @@ function rankingMoney(value: number) {
 }
 
 function capturedLabel(value: string | null) {
-  if (!value) return "更新时间待同步";
+  if (!value) return null;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "更新时间待同步";
+  if (Number.isNaN(date.getTime())) return null;
   return new Intl.DateTimeFormat("zh-CN", {
     timeZone: "Asia/Shanghai",
     year: "numeric",
@@ -188,7 +188,7 @@ function RankingInfoModal({ hub, onClose }: { hub: SnookerRankingHub; onClose: (
           const list = listFor(hub, key);
           return <article key={key}>
             <strong>{shortLabels[key]}</strong>
-            <p>{list?.descriptionZh ?? "说明待同步。"}</p>
+            <p>{list?.descriptionZh ?? "暂无说明。"}</p>
           </article>;
         })}
       </div>
@@ -498,9 +498,9 @@ export function DataHubContent({
 
   return <>
     <section className={styles.pageIntro}>
-      <small>DATA CENTER</small>
+      <small>STATS</small>
       <h1>数据</h1>
-      <p>世界斯诺克排名、赛季表现与历史纪录的数据入口。排名、技术与荣誉数据按统一结构逐步扩展。</p>
+      <p>查看世界排名、赛季表现、技术榜、球员荣誉与历史纪录。</p>
     </section>
 
     <div className={styles.dataDashboard}>
@@ -529,7 +529,7 @@ export function DataHubContent({
           })}
         </div>
         <button className={styles.primaryAction} type="button" onClick={() => onOpenRankings(selected.key)}>查看完整排名 <span>›</span></button>
-      </> : <div className={styles.emptyState}>排名数据正在准备中。</div>}
+      </> : <div className={styles.emptyState}>暂无排名数据。</div>}
     </section>
 
     <div className={styles.dataTechnicalSlot} ref={technicalSectionRef}>{technicalHub?.online ? <SeasonLeadersSection hub={technicalHub} players={resolvedPlayers} onOpenTechnical={openTechnical} /> : <section className={styles.card}>
@@ -593,10 +593,12 @@ export function RankingDetailContent({
     return () => { observer?.disconnect(); desktop.removeEventListener("change", syncObserver); };
   }, []);
 
+  const updated = selected ? capturedLabel(selected.capturedAt) : null;
+
   return <div className={styles.detailContent}>
     <header className={styles.rankingDesktopIntro}>
-      <div><small>RANKING CENTER</small><h1>排名中心</h1><p>汇集当前世界排名、资格竞争与历史排名数据。</p></div>
-      <strong>{rows.length ? `${rows.length} 位球员` : "数据中心"}</strong>
+      <div><small>RANKING CENTER</small><h1>排名中心</h1><p>查看当前世界排名、资格竞争与历史排名。</p></div>
+      <strong>{rows.length ? `${rows.length} 位球员` : "排名中心"}</strong>
     </header>
     <div className={styles.detailNavStack}>
       <div className={styles.dataSidebarHeading}><small>RANKING LISTS</small><strong>排名榜单</strong></div>
@@ -608,7 +610,7 @@ export function RankingDetailContent({
 
     {section === "current" ? selected ? <section className={`${styles.card} ${styles.rankingTableCard}`}>
       <div ref={rankingTableSentinelRef} className={styles.rankingTableSentinel} aria-hidden="true" />
-      <div className={`${styles.rankingTableHeader} ${rankingTablePinned ? styles.rankingTableHeaderPinned : ""}`}><span>排名</span><span>球员</span><span>排名金额</span></div>
+      <div className={`${styles.rankingTableHeader} ${rankingTablePinned ? styles.rankingTableHeaderPinned : ""}`}><span>排名</span><span>球员</span><span>排名奖金</span></div>
       <div className={styles.fullRankingList}>
         {rows.map((row) => {
           const player = rankingPlayer(row, playerByUuid, playerBySlug);
@@ -624,13 +626,12 @@ export function RankingDetailContent({
       </div>
       <div className={styles.rankingFooterMeta}>
         <span>来源：{selected.sourceName || "WPBSA"}</span>
-        <span>更新：{capturedLabel(selected.capturedAt)}</span>
+        {updated ? <span>更新：{updated}</span> : null}
       </div>
     </section> : <section className={styles.card}><div className={styles.emptyState}>当前排名数据暂不可用。</div></section> : <section className={`${styles.card} ${styles.reservedCard}`}>
       <small>{section === "qualification" ? "QUALIFICATION RACES" : "HISTORICAL RANKINGS"}</small>
       <h2>{section === "qualification" ? "资格竞争" : "历史排名"}</h2>
-      <p>{section === "qualification" ? "这里已为大师赛、世锦赛、球员锦标赛和巡回锦标赛资格排名预留统一入口。下一阶段接入资格线、距离差和 Cut-off 信息。" : "这里已为赛季末排名、历史排名节点和球员排名走势预留入口。历史数据补齐后直接沿用当前排名的列表框架。"}</p>
-      <span>Phase 1A · 框架已就绪</span>
+      <p>{section === "qualification" ? "资格排名数据正在整理中。" : "历史排名数据正在整理中。"}</p>
     </section>}
   </div>;
 }
