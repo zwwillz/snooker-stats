@@ -66,6 +66,29 @@ test("player comparison preserves emphasized names and readable metric labels", 
   assert.match(compare, /\.tabs button small \{\s*display:\s*none;/);
 });
 
+test("mobile detail pages keep desktop-only labels hidden and use the approved readable type", async () => {
+  const rankingCss = await read("app/snooker/data/data.module.css");
+  const technicalCss = await read("app/snooker/data/technical-detail.module.css");
+  const compare = await read("app/snooker/compare/player-compare-client.tsx");
+  const compareCss = await read("app/snooker/compare/player-compare.module.css");
+  const priority = await read("app/snooker/snooker-priority.module.css");
+  const rootUi = await read("app/snooker/snooker-data-center-v2.tsx");
+
+  assert.match(rankingCss, /\.dataSidebarHeading\{display:none\}/);
+  assert.match(rankingCss, /@media \(min-width:1024px\)[\s\S]*\.dataSidebarHeading\{display:flex/);
+  assert.match(technicalCss, /@media \(max-width:767px\)[\s\S]*\.technicalRankingList button>span b\{font-size:var\(--snooker-type-list-title\)\}/);
+  assert.match(technicalCss, /@media \(max-width:767px\)[\s\S]*\.technicalRankingList button>span small\{font-size:var\(--snooker-type-secondary\)\}/);
+  assert.match(technicalCss, /@media \(max-width:767px\)[\s\S]*\.technicalRankingList button>em\{font-size:var\(--snooker-type-compact-data\)\}/);
+  assert.match(compare, /className=\{styles\.mobileHeaderTitle\}>球员对比<\/strong>/);
+  assert.match(compare, /className=\{styles\.mobileHeaderEyebrow\}>PLAYER<\/span>/);
+  assert.doesNotMatch(compare, /className=\{styles\.compareBrand\}/);
+  assert.match(compareCss, /\.mobileHeaderTitle\{[^}]*font-size:16px/);
+  assert.match(priority, /\.eventNameHeader strong\{[\s\S]*?font-size:16px/);
+  assert.match(priority, /\.eventNameHeader strong\.eventNameHeaderMedium\{font-size:14px\}/);
+  assert.match(priority, /\.eventNameHeader strong\.eventNameHeaderLong\{font-size:12px/);
+  assert.match(rootUi, /calendarEvent\.nameZh\.length > 20[\s\S]*priority\.eventNameHeaderLong[\s\S]*calendarEvent\.nameZh\.length > 14[\s\S]*priority\.eventNameHeaderMedium/);
+});
+
 test("phase one visual follow-up keeps compact labels and theme accents consistent", async () => {
   const ranking = await read("app/snooker/data/data-ranking-content.tsx");
   const rankingCss = await read("app/snooker/data/data.module.css");

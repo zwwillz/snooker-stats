@@ -190,6 +190,15 @@
 }
 .technicalLoadingCard{margin:14px}
 
+@media (max-width:767px){
+  .technicalRankingList button{min-height:64px;padding:7px 0}
+  .technicalRankingList button>strong{font-size:var(--snooker-type-list-title)}
+  .technicalRankingList button>span b{font-size:var(--snooker-type-list-title)}
+  .technicalRankingList button>span small{font-size:var(--snooker-type-secondary)}
+  .technicalRankingList button>em{font-size:var(--snooker-type-compact-data)}
+  .rankingFooterMeta{font-size:var(--snooker-type-auxiliary)}
+}
+
 @media (min-width:1024px){
   .technicalPage{
     --technical-workspace-gap:18px;

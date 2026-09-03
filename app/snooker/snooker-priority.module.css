@@ -5,7 +5,7 @@
   text-overflow:ellipsis;
   white-space:nowrap;
   text-align:center;
-  font-size:13px;
+  font-size:16px;
   letter-spacing:-.02em;
 }
 
@@ -222,7 +222,7 @@
 }
 
 @media (max-width:420px){
-  .eventNameHeader strong{max-width:68%;font-size:12px}
+  .eventNameHeader strong{max-width:68%}
   .matchVersusRow{gap:7px}
   .matchVersusRow>span{font-size:10px}
   .matchVersusRow>b{min-width:48px;font-size:17px}
@@ -258,7 +258,9 @@
 
 /* RESPONSIVE_READABILITY_PHASE1 */
 @media (max-width:767px){
-  .eventNameHeader strong{font-size:var(--snooker-type-list-title)}
+  .eventNameHeader strong{font-size:16px}
+  .eventNameHeader strong.eventNameHeaderMedium{font-size:14px}
+  .eventNameHeader strong.eventNameHeaderLong{font-size:12px;letter-spacing:-.04em}
   .matchVersusRow>span{font-size:var(--snooker-type-list-title)}
   .eventModeTabs button{height:44px;font-size:var(--snooker-type-body-small)}
   .seasonRail button{height:44px;font-size:var(--snooker-type-compact-data)}
