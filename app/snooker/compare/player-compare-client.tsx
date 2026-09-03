@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { SnookerPlayerListItem } from "@/lib/snooker/player-data";
 import type {
@@ -412,11 +411,8 @@ export default function PlayerCompareClient({
     <PublicSiteHeader active="players" />
     <header className={`${styles.topbar} ${styles.mobileTopbar}`}>
       <button type="button" className={styles.backLink} onClick={goBack} aria-label="返回上一页">‹</button>
-      <Link className={styles.compareBrand} href="/" aria-label="返回147数据局首页">
-        <span className={styles.brandMark}>S</span>
-        <span className={styles.brandText}><strong>147数据局</strong><small>中文斯诺克数据平台 · CN SNOOKER STATS</small></span>
-      </Link>
-      <span className={styles.mobileHeaderSpacer} aria-hidden="true" />
+      <strong className={styles.mobileHeaderTitle}>球员对比</strong>
+      <span className={styles.mobileHeaderEyebrow}>PLAYER</span>
     </header>
 
     <section className={styles.hero}>

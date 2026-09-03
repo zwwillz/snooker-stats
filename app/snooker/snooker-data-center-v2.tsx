@@ -1845,9 +1845,14 @@ export default function SnookerDataCenterV2({
     const overviewCountry = calendarEvent.countryZh;
     const overviewCity = calendarEvent.cityZh;
     const overviewVenue = calendarEvent.venueZh;
+    const eventHeaderTitleClass = calendarEvent.nameZh.length > 20
+      ? priority.eventNameHeaderLong
+      : calendarEvent.nameZh.length > 14
+        ? priority.eventNameHeaderMedium
+        : "";
 
     return <main className={styles.appRoot} data-theme={theme}>{detailSiteHeader()}<div className={`${styles.detailShell} ${priority.eventDetailShell}`} data-event-detail>
-      <header className={`${styles.detailHeader} ${priority.eventNameHeader} ${priority.detailLocalHeader}`}><button onClick={() => window.history.back()} aria-label="返回上一页">‹</button><strong>{calendarEvent.nameZh}</strong><span>{calendarEvent.season}</span></header>
+      <header className={`${styles.detailHeader} ${priority.eventNameHeader} ${priority.detailLocalHeader}`}><button onClick={() => window.history.back()} aria-label="返回上一页">‹</button><strong className={eventHeaderTitleClass}>{calendarEvent.nameZh}</strong><span>{calendarEvent.season}</span></header>
       <section className={`${styles.eventDetailHero} ${priority.eventDetailHeroDesktop}`}><div className={styles.eventDetailTop}><StatusPill status={calendarEvent.status} label={calendarEvent.statusLabelZh} /><span>{eventDetailTypeLabel(calendarEvent)}</span></div><h1>{calendarEvent.nameZh}</h1><p>{calendarEvent.nameEn}</p><div className={styles.eventDetailMeta}>{isHistoricalEvent ? <span className={priority.eventHeroHistory}>{calendarEvent.season}赛季 · 历史赛事</span> : null}<span>{formatDateRange(overviewStart, overviewEnd)}</span><span>{overviewCountry} · {overviewCity}</span></div></section>
       <div className={`${styles.eventTabs} ${priority.eventDetailTabs}`}><button className={detail.tab === "overview" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "overview" })}>赛事介绍</button><button className={detail.tab === "schedule" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "schedule" })}>赛程</button><button className={detail.tab === "data" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "data" })}>赛事数据</button></div>
 

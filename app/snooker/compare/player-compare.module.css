@@ -1234,6 +1234,8 @@
 /* PLAYER_COMPARE_WEB_FOLLOWUP_V1 */
 .compareBrand{justify-self:center;min-width:0;display:flex;align-items:center;gap:9px;color:inherit;text-decoration:none}.brandMark{display:none}.brandText{min-width:0;display:flex;flex-direction:column;gap:1px}.brandText strong{font-size:14px;white-space:nowrap}.brandText small{display:none;color:#929894;font-size:7px;letter-spacing:.1em;white-space:nowrap}.desktopNav{display:none}.shareButton{justify-self:end!important}
 .mobileHeaderSpacer{width:36px;height:36px}
+.mobileHeaderTitle{justify-self:center;min-width:0;overflow:hidden;font-size:16px;text-align:center;text-overflow:ellipsis;white-space:nowrap}
+.mobileHeaderEyebrow{justify-self:end;color:var(--muted);font-size:var(--snooker-type-auxiliary);font-weight:850;letter-spacing:.1em}
 
 @media (min-width:1024px){
   .mobileTopbar{display:none!important}
