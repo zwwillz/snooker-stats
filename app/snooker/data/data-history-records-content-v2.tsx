@@ -30,6 +30,22 @@ function itemSizeLabel(item: HistoryRecordItem) {
   return `${item.rows.length}条`;
 }
 
+function publicMethodology(item: HistoryRecordItem) {
+  if (item.key === "all-time-career-prize-money") {
+    return "WST/WPBSA目前没有持续维护的统一全时期生涯累计奖金总表。本榜保留2024公开汇总作为历史快照，只统计比赛奖金；为保持口径一致，不与其他年份或不同口径的估算值混合。";
+  }
+  if (item.key === "season-prize-money-record-progression") {
+    return "仅收录WST/WPBSA公开资料明确确认的单赛季奖金纪录节点，按最新纪录优先展示。";
+  }
+  return item.methodologyZh;
+}
+
+function publicSourceNote(item: HistoryRecordItem) {
+  if (!item.source.note) return null;
+  if (item.key === "season-prize-money-record-progression") return "纪录节点同时参考WST相关历史报道交叉核对。";
+  return item.source.note;
+}
+
 function HistorySilhouette() {
   return <svg viewBox="0 0 120 160" aria-hidden="true">
     <circle cx="60" cy="43" r="28" fill="currentColor" />
@@ -70,7 +86,7 @@ export function HistoryRecordsSection({ onOpenGroup }: { onOpenGroup: (key: Hist
   return <section className={`${dataStyles.card} ${styles.hubCard}`}>
       <div className={dataStyles.sectionHeader}>
         <div><small>HISTORY &amp; RECORDS</small><h2>历史与纪录</h2></div>
-        <span className={styles.sectionCount}>5 个入口</span>
+        <span className={styles.sectionCount}>5 个分类</span>
       </div>
       <div className={styles.categoryGrid}>
         {HISTORY_RECORD_CATEGORIES.map((item) => {
@@ -169,6 +185,7 @@ function LeaderboardDetail({ item }: { item: HistoryRecordItem }) {
   const [pinned, setPinned] = useState(false);
   const lead = item.rows[0] ?? null;
   const leadNationality = historyPlayerNationality(lead?.nameEn);
+  const sourceNote = publicSourceNote(item);
 
   useEffect(() => {
     const node = sentinelRef.current;
@@ -217,8 +234,8 @@ function LeaderboardDetail({ item }: { item: HistoryRecordItem }) {
         </article>)}
       </div>
       <div className={styles.sourceBlock}>
-        <div><small>统计口径</small><p>{item.methodologyZh}</p></div>
-        <div><small>数据来源</small><p>{item.source.name}{item.source.updatedAt ? ` · 更新 ${item.source.updatedAt}` : ""}</p>{item.source.note ? <span>{item.source.note}</span> : null}</div>
+        <div><small>统计口径</small><p>{publicMethodology(item)}</p></div>
+        <div><small>数据来源</small><p>{item.source.name}{item.source.updatedAt ? ` · 更新 ${item.source.updatedAt}` : ""}</p>{sourceNote ? <span>{sourceNote}</span> : null}</div>
       </div>
     </section>
   </main>;
@@ -229,7 +246,7 @@ function ClassicRecordsPage() {
 
   return <main className={styles.detailPage}>
     <section className={styles.desktopIntro}>
-      <div><small className={v4Styles.historyUiEnglish}>{CLASSIC_RECORD_ENTRY.titleEn}</small><h1>{CLASSIC_RECORD_ENTRY.titleZh}</h1><p>{CLASSIC_RECORD_ENTRY.descriptionZh}</p></div>
+      <div><small className={v4Styles.historyUiEnglish}>{CLASSIC_RECORD_ENTRY.titleEn}</small><h1>{CLASSIC_RECORD_ENTRY.titleZh}</h1><p>收录单杆、连胜、冠军年龄等经典纪录与历史里程碑。</p></div>
       <strong>{CLASSIC_RECORDS.length} 项</strong>
     </section>
     <section className={`${styles.classicGrid} ${v4Styles.classicGridSingle}`}>
@@ -255,7 +272,7 @@ function ClassicRecordsPage() {
       })}
     </section>
     <section className={styles.classicMeta}>
-      <div><small>数据说明</small><p>本页为固定静态历史快照，不会在用户访问时请求外部网站或数据库。有现成透明头像时显示真实头像，没有头像时统一显示人物剪影。</p></div>
+      <div><small>数据说明</small><p>本页纪录依据公开资料整理，并保留相应数据来源与统计口径。</p></div>
       <div><small>数据来源</small><p>{sourceNames}</p></div>
     </section>
   </main>;
