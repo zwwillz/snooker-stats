@@ -60,9 +60,9 @@ test("partial schedule is database backed and public copy is user-facing", async
     read("app/snooker/snooker-data-center-v2.tsx"),
     read("lib/snooker/database-public-v2.ts"),
   ]);
-  assert.match(ui, /赛程陆续公布中/);
-  assert.match(ui, /目前已公布/);
-  assert.match(ui, /更多赛程公布后将在这里更新/);
+  assert.match(ui, /赛程持续更新/);
+  assert.match(ui, /当前已收录/);
+  assert.match(ui, /更多赛程信息将在补充后更新/);
   assert.doesNotMatch(ui, /后续签表将随官方发布自动补齐/);
   assert.doesNotMatch(ui, /详细赛程尚未入库/);
   assert.match(loader, /publishedMatchCount/);

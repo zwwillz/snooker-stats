@@ -155,3 +155,26 @@
   .playerMatches span,.playerMatches b{font-size:var(--snooker-type-list-title)}
   .avatarCredit{font-size:var(--snooker-type-decorative)}
 }
+
+/* WEB_HOME_TYPOGRAPHY_V1
+   Desktop cards must never fall below the corresponding mobile reading sizes. */
+@media (min-width:1024px){
+  .sectionHeader small{font-size:10px}
+  .sectionHeader h2{font-size:22px}
+  .sectionHeader>span,.statusPill{font-size:10px}
+  .heroTop{font-size:11px}
+  .homeLeadGrid>.hero .heroEventEnglish{font-size:11px;line-height:1.4}
+  .homeLeadGrid>.hero .heroMeta{font-size:13px}
+  .heroActions button{font-size:13px}
+  .liveHeader small{font-size:11px}
+  .liveHeader h2{font-size:18px}
+  .homeScore>div small{font-size:10px}
+  .fullButton{font-size:13px}
+  .nextEvent strong{font-size:15px}
+  .nextEvent small{font-size:11px}
+  .nextEvent p{font-size:12px;line-height:1.5}
+  .chinaTopGrid span{font-size:10px}
+  .chinaTopGrid strong{font-size:14px}
+  .chinaTopGrid small{font-size:10px}
+  .emptyState{font-size:12px}
+}

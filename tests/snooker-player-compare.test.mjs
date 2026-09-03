@@ -15,13 +15,13 @@ test("player compare service uses the analytics warehouse instead of duplicating
   assert.doesNotMatch(source, /snooker_sync_wst_/);
 });
 
-test("player compare keeps missing values distinct from zero and exposes coverage", async () => {
+test("player compare keeps missing values distinct from zero and explains partial coverage", async () => {
   const source = await read("lib/snooker/player-compare.ts");
   const client = await read("app/snooker/compare/player-compare-client.tsx");
   assert.match(source, /frameCoveragePct/);
   assert.match(source, /isCareerComplete/);
-  assert.match(client, /缺失数据统一显示“—”，不会当作 0/);
-  assert.match(client, /逐局数据覆盖/);
+  assert.match(client, /暂无数据的项目以“—”显示/);
+  assert.match(client, /相关效率指标仅基于本站已收录的逐局记录计算/);
 });
 
 test("player compare v1 exposes season career h2h honours and current-tour selector", async () => {
@@ -30,10 +30,10 @@ test("player compare v1 exposes season career h2h honours and current-tour selec
   assert.match(page, /职业生涯/);
   assert.match(page, /交手记录/);
   assert.match(page, /荣誉对比/);
-  assert.match(page, /TOP 16/);
+  assert.match(page, /前16/);
   assert.match(page, /中国球员/);
   assert.match(page, /player\.isCurrentTour/);
-  assert.match(page, /退赛可计入比赛结果/);
+  assert.match(page, /退赛计入比赛结果/);
 });
 
 test("player compare honours document the final-champion aggregation rule", async () => {

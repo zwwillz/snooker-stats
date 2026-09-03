@@ -211,3 +211,9 @@
   .metrics span { font-size: var(--snooker-type-body-small); }
   .action { font-size: var(--snooker-type-body-small); }
 }
+
+@media (min-width:1024px) {
+  .header p { font-size: 12px; }
+  .metrics span { font-size: 12px; }
+  .action { font-size: 13px; }
+}

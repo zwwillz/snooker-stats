@@ -11,3 +11,9 @@
   .copy p{font-size:var(--snooker-type-compact-data)}
   .action{font-size:var(--snooker-type-list-title)}
 }
+
+@media (min-width:1024px){
+  .copy small{font-size:9px}
+  .copy p{font-size:12px}
+  .action{font-size:13px}
+}

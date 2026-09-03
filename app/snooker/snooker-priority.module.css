@@ -312,7 +312,7 @@
   .recentMoreButton{display:none}
   .calendarTableCard{overflow:visible}
   .eventTableSentinel{display:block;width:100%;height:1px;margin-bottom:-1px;pointer-events:none}
-  .eventTableHead{position:sticky;top:var(--snooker-header-height,64px);z-index:8;display:grid;grid-template-columns:84px minmax(0,1.75fr) 108px minmax(170px,1fr) 18px;gap:14px;align-items:center;margin:0 -18px;padding:11px 22px 10px;border:1px solid var(--line);border-radius:0;background:#fff;box-shadow:0 6px 14px rgba(35,45,41,.035);color:#919894;font-size:8px;font-weight:800;letter-spacing:.04em}
+  .eventTableHead{position:sticky;top:var(--snooker-header-height,64px);z-index:8;display:grid;grid-template-columns:84px minmax(0,1.75fr) 108px minmax(170px,1fr) 18px;gap:14px;align-items:center;margin:0 -18px;padding:11px 22px 10px;border:1px solid var(--line);border-radius:0;background:#fff;box-shadow:0 6px 14px rgba(35,45,41,.035);color:#919894;font-size:10px;font-weight:800;letter-spacing:.04em}
   .eventTableHeadPinned{border-radius:0}
   .eventTableHead span:first-child{text-align:center}
   .eventListPanel :global([class*="calendarList"]){margin-top:0}
@@ -321,10 +321,10 @@
   .eventListPanel :global([class*="calendarList"])>button:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 24%,transparent);outline-offset:2px;border-radius:10px}
   .eventListPanel :global([class*="calendarList"])>button[class*="calendarCurrent"]{margin:0;padding:13px 4px;border:0;border-left:3px solid var(--accent);border-radius:10px;background:var(--accent-faint)}
   .eventListPanel :global([class*="calendarList"])>button>div:first-child{grid-column:1;grid-row:1 / span 2}.eventListPanel :global([class*="calendarList"])>button>div:nth-child(2){display:contents}
-  .eventListPanel :global([class*="calendarList"])>button>div:nth-child(2)>strong{grid-column:2;grid-row:1;min-width:0;font-size:14px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .eventListPanel :global([class*="calendarList"])>button>div:nth-child(2)>small{grid-column:2;grid-row:2;min-width:0;margin-top:1px;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .eventListPanel :global([class*="calendarList"])>button>div:nth-child(2)>span{grid-column:3;grid-row:1 / span 2;margin:0;align-self:center}.eventListPanel :global([class*="calendarList"])>button>div:nth-child(2)>p{grid-column:4;grid-row:1 / span 2;margin:0;align-self:center;font-size:9px;line-height:1.45;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.eventListPanel :global([class*="calendarList"])>button>em{grid-column:5;grid-row:1 / span 2;align-self:center}
-  .eventListPanel :global([class*="calendarDate"]) b{font-size:13px}.eventListPanel :global([class*="calendarDate"]) small{margin-top:5px;font-size:8px}
+  .eventListPanel :global([class*="calendarList"])>button>div:nth-child(2)>strong{grid-column:2;grid-row:1;min-width:0;font-size:16px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .eventListPanel :global([class*="calendarList"])>button>div:nth-child(2)>small{grid-column:2;grid-row:2;min-width:0;margin-top:2px;font-size:11px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .eventListPanel :global([class*="calendarList"])>button>div:nth-child(2)>span{grid-column:3;grid-row:1 / span 2;margin:0;align-self:center}.eventListPanel :global([class*="calendarList"])>button>div:nth-child(2)>p{grid-column:4;grid-row:1 / span 2;margin:0;align-self:center;font-size:12px;line-height:1.5;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.eventListPanel :global([class*="calendarList"])>button>em{grid-column:5;grid-row:1 / span 2;align-self:center}
+  .eventListPanel :global([class*="calendarDate"]) b{font-size:14px}.eventListPanel :global([class*="calendarDate"]) small{margin-top:5px;font-size:10px}
 }
 
 @media (min-width:1024px) and (max-width:1180px){.eventTableHead,.eventListPanel :global([class*="calendarList"])>button{grid-template-columns:76px minmax(0,1.55fr) 96px minmax(150px,1fr) 16px;gap:2px 10px}}

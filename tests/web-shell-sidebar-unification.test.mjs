@@ -34,10 +34,11 @@ test("player tournament and data sidebars share titled card hierarchy", async ()
     read("app/snooker/data/data-history-records-content-v2.tsx"),
   ]);
   assert.match(player, /<strong>球员筛选<\/strong>/);
-  assert.match(eventUi, /<small>TOURNAMENT FILTER<\/small><strong>赛事筛选<\/strong>/);
+  assert.match(eventUi, /<small>TOURNAMENTS<\/small><strong>赛事筛选<\/strong>/);
   assert.match(eventCss, /\.eventSidebarHeading\{display:flex;flex-direction:column/);
   assert.match(ranking, /<small>RANKING LISTS<\/small><strong>排名榜单<\/strong>/);
-  assert.match(technical, /<small>TECHNICAL FILTER<\/small><strong>技术榜单<\/strong>/);
+  assert.match(technical, /<small>TECHNICAL<\/small><strong>技术榜单<\/strong>/);
+  assert.match(await read("app/snooker/data/data-honours-content.tsx"), /<small>HONOURS<\/small><strong>荣誉榜单<\/strong>/);
   assert.match(history, /className=\{styles\.historyRecordNav\}/);
 });
 
@@ -55,8 +56,8 @@ test("tournament and player primary menus share the same selected-button hierarc
   assert.match(eventCss, /\.seasonRail button\.seasonActive\{border-color:var\(--accent\);background:var\(--accent-soft\)/);
   assert.match(eventCss, /\.seasonSelector>\.seasonMoreButton\{[^}]*font-size:10px!important;[^}]*white-space:nowrap/);
   assert.ok(player.indexOf('{ id: "current", label: "本赛季职业球员" }') < player.indexOf('{ id: "china", label: "中国球员" }'));
-  assert.ok(player.indexOf('{ id: "china", label: "中国球员" }') < player.indexOf('{ id: "top32", label: "世界排名TOP32" }'));
-  assert.ok(player.indexOf('{ id: "top32", label: "世界排名TOP32" }') < player.indexOf('{ id: "all", label: "全部球员" }'));
+  assert.ok(player.indexOf('{ id: "china", label: "中国球员" }') < player.indexOf('{ id: "top32", label: "世界排名前32" }'));
+  assert.ok(player.indexOf('{ id: "top32", label: "世界排名前32" }') < player.indexOf('{ id: "all", label: "全部球员" }'));
   assert.match(player, /filter === "top32" && \(player\.currentRank === null \|\| player\.currentRank > 32\)/);
   assert.match(rootUi, /useState<PlayerFilter>\("current"\)/);
   assert.match(eventCss, /\.recentEventCardTop>small\{grid-column:2;grid-row:1;justify-self:end;align-self:start\}/);

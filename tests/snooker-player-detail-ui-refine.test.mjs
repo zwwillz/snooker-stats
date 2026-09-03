@@ -8,7 +8,7 @@ test("player detail career and Triple Crown cards use compact bilingual mobile l
 
   assert.match(source, /RANKING TITLES/);
   assert.match(source, /CAREER 147s/);
-  assert.match(source, /count\(career\?\.rankingTitles\)/);
+  assert.match(source, /count\(career\?\.rankingTitles, hasCareerData\)/);
   assert.match(css, /grid-template-columns:repeat\(4,minmax\(0,1fr\)\)!important/);
 
   assert.match(source, /world-championship\.webp/);

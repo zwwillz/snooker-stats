@@ -36,7 +36,7 @@ test("former players use stable keyset pagination and load only near the directo
   assert.match(root, /data\.nextCursor === requestedCursor/);
   assert.match(root, /onLoadMore=\{loadMorePlayerDirectory\}/);
   assert.match(directory, /loadMoreError \|\| !onLoadMore/);
-  assert.match(directory, /加载未完成，点击重试/);
+  assert.match(directory, /加载失败，点击重试/);
   assert.match(playerRoute, /scope === "archive" \? "private, no-store"/);
 });
 
