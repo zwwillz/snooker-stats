@@ -5,6 +5,7 @@ export type { SnookerPlayerStatus } from "./domain";
 
 const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = getSnookerSupabasePublicConfig();
 const REST_URL = `${SUPABASE_URL}/rest/v1`;
+const CHINA_REGION_COUNTRY_CODES = ["CN", "CHN", "HK", "HKG", "MO", "MAC", "TW", "TWN", "TPE"];
 
 export type SnookerPlayerListItem = {
   id: string;
@@ -383,7 +384,7 @@ export async function searchSnookerPlayerDirectory({
   if (safeQuery) {
     params.set("or", `(name_en.ilike.*${safeQuery}*,name_zh.ilike.*${safeQuery}*,short_name_zh.ilike.*${safeQuery}*,nationality_zh.ilike.*${safeQuery}*)`);
   }
-  if (chinaOnly) params.set("country_code", "in.(CN,CHN)");
+  if (chinaOnly) params.set("country_code", `in.(${CHINA_REGION_COUNTRY_CODES.join(",")})`);
   const rows = await rest<PlayerRow[]>("snooker_players", params, 300);
   return mapPlayersWithOfficialRanking(rows, 300);
 }

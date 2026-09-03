@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     });
     return NextResponse.json(
       { ok: true, scope, ...page },
-      { headers: { "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=1800" } },
+      { headers: { "Cache-Control": scope === "archive" ? "private, no-store" : "public, max-age=60, s-maxage=300, stale-while-revalidate=1800" } },
     );
   } catch (error) {
     console.error("[player-directory] failed", error);
