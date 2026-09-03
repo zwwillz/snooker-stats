@@ -129,20 +129,22 @@ const navItems: Array<{ id: NavId; label: string; labelEn: string; icon: string 
   { id: "data", label: "数据", labelEn: "STATS", icon: "▥" },
 ];
 
+const CHINA_REGION_CODES = new Set(["CN", "CHN", "HK", "HKG", "MO", "MAC", "TW", "TWN", "TPE"]);
+const CHINA_REGION_NAMES = new Set(["中国", "中国香港", "香港", "中国澳门", "澳门", "中国台湾", "台湾"]);
 const rootDetailParams = ["player", "section", "list", "group", "record", "metric", "honour"] as const;
 
 function RootViewLoading({ view, failed = false, onRetry }: { view: "players" | "data"; failed?: boolean; onRetry?: () => void }) {
   const isPlayers = view === "players";
   return <>
     <section className={styles.pageIntro}>
-      <small>{isPlayers ? "PLAYER DATABASE" : "DATA CENTER"}</small>
+      <small>{isPlayers ? "PLAYERS" : "STATS"}</small>
       <h1>{isPlayers ? "球员" : "数据"}</h1>
-      <p>{isPlayers ? "职业球员资料与排名信息。" : "世界斯诺克排名、赛季表现与历史纪录的数据入口。"}</p>
+      <p>{isPlayers ? "查看世界斯诺克球员资料、当前排名与职业生涯数据。" : "查看世界排名、赛季表现、技术榜、球员荣誉与历史纪录。"}</p>
     </section>
     {isPlayers ? <>
       <div className={shell.playerToolbar} aria-hidden="true"><i /><span /><span /><span /><span /></div>
       <section className={`${styles.card} ${shell.shellCard}`} aria-busy={!failed}>
-        <div className={shell.shellSummary}><span>按官方世界排名排列</span><b>{failed ? "加载失败" : "正在准备首屏球员"}</b></div>
+        <div className={shell.shellSummary}><span>按官方世界排名排列</span><b>{failed ? "加载失败" : "正在加载球员…"}</b></div>
         <div className={shell.rows}>{Array.from({ length: 7 }, (_, index) => <div className={shell.row} key={index}><i /><span><b /><small /></span><em /></div>)}</div>
         {failed && onRetry ? <button className={styles.fullButton} onClick={onRetry}>重新加载</button> : null}
       </section>
@@ -189,7 +191,8 @@ function mergeDirectoryPlayers(...groups: Array<SnookerPlayerListItem[] | null |
 }
 
 function isChina(player?: SnookerPlayer) {
-  return player?.countryCode === "CN" || player?.countryCode === "CHN";
+  if (!player) return false;
+  return CHINA_REGION_CODES.has((player.countryCode ?? "").trim().toUpperCase()) || CHINA_REGION_NAMES.has((player.nationalityZh ?? "").trim());
 }
 
 function formatDateRange(start: string, end: string) {
@@ -204,9 +207,9 @@ function formatMonthDay(value: string) {
 }
 
 function formatMatchDateZh(value?: string) {
-  if (!value) return "日期待定";
+  if (!value) return "—";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "日期待定";
+  if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "numeric", day: "numeric" }).format(date);
 }
 
@@ -218,9 +221,9 @@ function formatMatchTimeZh(value?: string) {
 }
 
 function formatUpdatedAt(value?: string) {
-  if (!value) return "更新时间待确认";
+  if (!value) return null;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "更新时间待确认";
+  if (Number.isNaN(date.getTime())) return null;
   return new Intl.DateTimeFormat("zh-CN", {
     timeZone: "Asia/Shanghai",
     month: "numeric",
@@ -232,7 +235,7 @@ function formatUpdatedAt(value?: string) {
 }
 
 function bestOfLabel(bestOf: number) {
-  return bestOf > 0 ? `${bestOf}局${Math.floor(bestOf / 2) + 1}胜` : "赛制待定";
+  return bestOf > 0 ? `${bestOf}局${Math.floor(bestOf / 2) + 1}胜` : "—";
 }
 
 function chinaToday() {
@@ -396,8 +399,8 @@ function fallbackPlayer(id: string): SnookerPlayer {
     slug: "",
     nameEn: "Player",
     nameZh: "球员信息加载中",
-    shortNameZh: "待加载",
-    nationalityZh: "未知",
+    shortNameZh: "球员",
+    nationalityZh: "—",
     countryCode: "",
     currentRank: null,
     rankingPoints: null,
@@ -612,7 +615,7 @@ function EventTableHeader() {
     desktop.addEventListener("change", syncObserver);
     return () => { observer?.disconnect(); desktop.removeEventListener("change", syncObserver); };
   }, []);
-  return <><div ref={sentinelRef} className={priority.eventTableSentinel} aria-hidden="true" /><div className={`${priority.eventTableHead} ${pinned ? priority.eventTableHeadPinned : ""}`} aria-hidden="true"><span>日期 / 状态</span><span>赛事</span><span>类型</span><span>日期 / 地点</span><span /></div></>;
+  return <><div ref={sentinelRef} className={priority.eventTableSentinel} aria-hidden="true" /><div className={`${priority.eventTableHead} ${pinned ? priority.eventTableHeadPinned : ""}`} aria-hidden="true"><span>开始 / 状态</span><span>赛事</span><span>类型</span><span>赛期 / 地点</span><span /></div></>;
 }
 
 function nearestRailItemIndex(rail: HTMLDivElement) {
@@ -664,7 +667,7 @@ function MatchListRow({ match, players, onOpen }: { match: SnookerMatch; players
   const p1 = players.get(match.player1Id) ?? fallbackPlayer(match.player1Id);
   const p2 = players.get(match.player2Id) ?? fallbackPlayer(match.player2Id);
   const score = match.status === "walkover" ? "W : O" : `${match.score1 ?? "-"} : ${match.score2 ?? "-"}`;
-  const timeLabel = formatMatchTimeZh(match.scheduledAt) ?? match.timeLabelZh ?? "时间待定";
+  const timeLabel = formatMatchTimeZh(match.scheduledAt) ?? match.timeLabelZh ?? "—";
   return (
     <button className={`${styles.matchRow} ${priority.horizontalMatchRow} ${priority.scheduleMatchCard}`} data-schedule-match-id={match.id} onClick={onOpen}>
       <div className={priority.scheduleMobileMatch}>
@@ -718,7 +721,7 @@ function MatchListRow({ match, players, onOpen }: { match: SnookerMatch; players
 }
 
 function EventCard({ item, onOpen, onPrefetch, interactive = true }: { item: SnookerCalendarEvent; onOpen?: () => void; onPrefetch?: () => void; interactive?: boolean }) {
-  const nameZh = item.nameZh?.trim() || item.nameEn?.trim() || "赛事名称待确认";
+  const nameZh = item.nameZh?.trim() || item.nameEn?.trim() || "赛事";
   const nameEn = item.nameEn?.trim();
   const typeZh = item.typeZh?.trim() || "赛事";
   const place = [item.countryZh, item.cityZh].map((value) => value?.trim()).filter(Boolean).join(" ");
@@ -732,7 +735,7 @@ function EventCard({ item, onOpen, onPrefetch, interactive = true }: { item: Sno
 }
 
 function RecentEventCard({ item, onOpen, onPrefetch }: { item: SnookerCalendarEvent; onOpen: () => void; onPrefetch?: () => void }) {
-  const nameZh = item.nameZh?.trim() || item.nameEn?.trim() || "赛事名称待确认";
+  const nameZh = item.nameZh?.trim() || item.nameEn?.trim() || "赛事";
   const nameEn = item.nameEn?.trim();
   const typeZh = item.typeZh?.trim() || "赛事";
   const place = [item.countryZh, item.cityZh].map((value) => value?.trim()).filter(Boolean).join(" ");
@@ -1704,6 +1707,7 @@ export default function SnookerDataCenterV2({
       second: "2-digit",
       timeZone: "Asia/Shanghai",
     });
+    const liveUpdated = formatUpdatedAt(sourceHealth?.fetchedAt);
     const localized = (name?: string) => [...players.values()].find((player) => player.nameEn.toLowerCase() === String(name ?? "").toLowerCase())?.nameZh ?? name ?? "";
     const statRows: Array<[string, keyof SnookerMatchPlayerStatistics, string]> = [
       ["总得分", "totalPoints", ""],
@@ -1733,7 +1737,7 @@ export default function SnookerDataCenterV2({
     return <main className={styles.appRoot} data-theme={theme}>{detailSiteHeader()}<div className={`${styles.detailShell} ${priority.matchDetailShell}`} data-match-detail>
       <header className={`${styles.detailHeader} ${priority.detailLocalHeader}`}><button onClick={() => window.history.back()} aria-label="返回上一页">‹</button><strong>比赛详情</strong><span>MATCH</span></header>
       <section className={`${styles.matchHero} ${priority.matchHeroDesktop}`}>
-        <div className={styles.matchHeroMeta}><span>{!isCurrentSeasonMatch ? `${selectedEvent.season}赛季 · 历史赛事 · ` : ""}{match.roundLabelZh} · {match.timeLabelZh ?? "比赛时间待定"}</span><b>{bestOfLabel(match.bestOf)}</b></div>
+        <div className={styles.matchHeroMeta}><span>{!isCurrentSeasonMatch ? `${selectedEvent.season}赛季 · 历史赛事 · ` : ""}{match.roundLabelZh} · {match.timeLabelZh ?? "—"}</span><b>{bestOfLabel(match.bestOf)}</b></div>
         <h1>{selectedEvent.nameZh}</h1>
         <div className={styles.versusGrid}>
           <div className={styles.versusPlayer}><div className={styles.avatarWrap}><PlayerAvatar player={p1} size="xl" />{match.winnerId === p1.id ? <em>胜</em> : null}{match.status === "walkover" && match.winnerId && match.winnerId !== p1.id ? <span className={polish.withdrawnAvatarBadge}>退赛</span> : null}</div><strong>{p1.nameZh}</strong><small>{p1.nameEn}</small></div>
@@ -1796,7 +1800,7 @@ export default function SnookerDataCenterV2({
 
       </div>
 
-      {realtime ? <div className={styles.liveFooter}><i className={sourceHealth?.accepted ? styles.liveOk : styles.liveWait} /><span>比赛数据实时更新</span><small>更新于 {formatUpdatedAt(sourceHealth?.fetchedAt)}</small></div> : null}
+      {realtime ? <div className={styles.liveFooter}><i className={sourceHealth?.accepted ? styles.liveOk : styles.liveWait} /><span>{sourceHealth?.accepted ? "比赛数据实时更新" : "实时数据暂有延迟"}</span>{liveUpdated ? <small>更新于 {liveUpdated}</small> : null}</div> : null}
     </div></main>;
   }
 
@@ -1861,26 +1865,26 @@ export default function SnookerDataCenterV2({
       <div className={`${styles.eventTabs} ${priority.eventDetailTabs}`}><button className={detail.tab === "overview" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "overview" })}>赛事介绍</button><button className={detail.tab === "schedule" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "schedule" })}>赛程</button><button className={detail.tab === "data" ? styles.tabActive : ""} onClick={() => setDetail({ ...detail, tab: "data" })}>赛事数据</button></div>
 
       {detail.tab === "overview" ? <>
-        {!qualificationEvent && calendarEvent.status === "completed" && !full && loadingEventSlugs.includes(detail.slug) ? <section className={`${polish.championCard} ${polish.championCardLoading}`} aria-label="正在加载本届冠军"><div className={polish.championLoadingMark}>冠</div><div className={polish.championText}><small>CHAMPION · 本届冠军</small><strong>正在读取冠军信息…</strong><span>决赛结果与赛程同步加载中</span></div></section> : null}
+        {!qualificationEvent && calendarEvent.status === "completed" && !full && loadingEventSlugs.includes(detail.slug) ? <section className={`${polish.championCard} ${polish.championCardLoading}`} aria-label="正在加载本届冠军"><div className={polish.championLoadingMark}>冠</div><div className={polish.championText}><small>CHAMPION · 本届冠军</small><strong>正在加载冠军信息…</strong><span>正在加载决赛结果与赛程</span></div></section> : null}
         {finalEvent?.status === "completed" && champion ? <section className={polish.championCard}><div className={polish.championAvatar}><PlayerAvatar player={champion} size="md" /><span>冠</span></div><div className={polish.championText}><small>CHAMPION · 本届冠军</small><strong>{champion.nameZh}</strong><span>{champion.nameEn}</span></div>{final ? <div className={polish.championScore}><small>FINAL</small><b>{final.score1}:{final.score2}</b></div> : null}</section> : null}
         <section className={`${styles.card} ${priority.eventOverviewCard}`}><SectionHeader eyebrow="TOURNAMENT OVERVIEW" title="赛事概览" /><div className={insight.eventOverviewGrid}><article><span>赛季</span><b>{calendarEvent.season}</b></article><article><span>赛事类型</span><b>{eventDetailTypeLabel(calendarEvent)}</b></article><article><span>比赛日期</span><b>{formatDateRange(overviewStart, overviewEnd)}</b></article><article><span>举办地</span><b>{overviewCountry} · {overviewCity}</b></article>{!qualificationEvent && prizeEvent?.previousChampionZh ? <article><span>上届冠军{prizeEvent.previousChampionYear ? ` · ${prizeEvent.previousChampionYear}` : ""}</span><b>{prizeEvent.previousChampionZh}</b></article> : null}{overviewVenue ? <article><span>场馆</span><b>{overviewVenue}</b></article> : null}</div></section>
         {!qualificationEvent && prizeEvent?.prizes?.length ? <section className={`${styles.card} ${priority.eventPrizeCard}`}><SectionHeader eyebrow="PRIZE MONEY" title="奖金分配" action={totalPrize ? `总奖金 ${money(totalPrize.amount)}` : undefined} /><div className={polish.prizeTable}>{[...prizeEvent.prizes].sort((a, b) => a.sortOrder - b.sortOrder).map((row) => <div className={`${polish.prizeRow} ${row.isTotal ? polish.prizeTotal : ""}`} key={row.key}><span>{row.labelZh}</span><b>{money(row.amount)}</b></div>)}</div></section> : null}
       </> : null}
 
       {detail.tab === "schedule" ? full ? <div className={`${styles.roundStack} ${priority.eventScheduleStack}`}>
-        {full.schedulePartial ? <div className={insight.partialNotice}><b>赛程陆续公布中</b><span className={polish.partialText}>目前已公布 {full.publishedMatchCount ?? allMatches(full).length} 场比赛，更多赛程公布后将在这里更新。</span></div> : null}
+        {full.schedulePartial ? <div className={insight.partialNotice}><b>赛程持续更新</b><span className={polish.partialText}>当前已收录 {full.publishedMatchCount ?? allMatches(full).length} 场比赛，更多赛程信息将在补充后更新。</span></div> : null}
         {orderedScheduleRounds(full).map((round) => <section className={styles.card} key={round.key}><SectionHeader eyebrow="ROUND" title={round.labelZh} /><div className={styles.matchList}>{round.matches.map((match) => <MatchListRow key={match.id} match={match} players={players} onOpen={() => openMatch(match.id, full.slug)} />)}</div></section>)}
-      </div> : <section className={styles.card}><div className={styles.emptyState}>{loadingEventSlugs.includes(detail.slug) ? "正在加载赛程…" : eventLoadErrorSlugs.includes(detail.slug) ? "赛程加载失败，请稍后重试。" : "详细赛程暂未公布。"}</div>{eventLoadErrorSlugs.includes(detail.slug) ? <button className={styles.fullButton} onClick={() => void ensureEventDetail(detail.slug)}>重新加载</button> : null}</section> : null}
+      </div> : <section className={styles.card}><div className={styles.emptyState}>{loadingEventSlugs.includes(detail.slug) ? "正在加载赛程…" : eventLoadErrorSlugs.includes(detail.slug) ? "赛程加载失败，请稍后重试。" : "暂无详细赛程。"}</div>{eventLoadErrorSlugs.includes(detail.slug) ? <button className={styles.fullButton} onClick={() => void ensureEventDetail(detail.slug)}>重新加载</button> : null}</section> : null}
 
       {detail.tab === "data" ? eventStats ? <>
         {finalFour ? <section className={styles.card}><SectionHeader eyebrow="FINAL FOUR" title="本届四强" /><div className={styles.finalFourGrid}>{finalFour.map((item, index) => {
           const player = players.get(item.playerId) ?? fallbackPlayer(item.playerId);
           return <button className={index === 0 ? styles.finalFourChampion : index === 1 ? styles.finalFourRunnerUp : ""} key={item.playerId} onClick={() => openPlayer(item.playerId)}><div className={styles.finalFourAvatar}><PlayerAvatar player={player} size="md" /><span>{item.role.slice(0, 1)}</span></div><small>{item.roleEn}</small><strong>{player.nameZh}</strong><em>{item.role} · {item.score}</em></button>;
         })}</div></section> : null}
-        <section className={styles.card}><SectionHeader eyebrow="TOURNAMENT DATA" title="赛事统计" /><div className={styles.statGrid}><article><small>已公布比赛</small><strong>{eventStats.matches}</strong><span>{eventStats.partial ? "赛程公布中" : "赛程已完整"}</span></article><article><small>参赛球员</small><strong>{eventStats.players}</strong><span>本届赛事</span></article><article><small>中国球员</small><strong>{eventStats.china}</strong><span>本届赛事</span></article><article><small>已完赛</small><strong>{eventStats.completed}</strong><span>{calendarEvent.status === "completed" ? "全部完成" : "截至目前"}</span></article></div></section>
-        <section className={styles.card}><SectionHeader eyebrow="TOURNAMENT HIGHLIGHTS" title="赛事亮点" /><div className={`${styles.statGrid} ${styles.eventHighlights}`}><article><small>最高单杆</small><strong>{highestBreakStats?.highestBreak ?? "—"}</strong><span>{highestBreakPlayer?.nameZh ?? "暂无收录"}</span></article><article><small>胜率最高</small><strong>{topWinRate === null ? "—" : `${topWinRate}%`}</strong><span>{topWinRatePlayer ? `${topWinRatePlayer.nameZh} · ${topWinRateStats?.matchesWon}胜` : "暂无完赛数据"}</span></article><article><small>147次数</small><strong>{maximums ?? "—"}</strong><span>{maximums === null ? "暂无收录" : "本届赛事"}</span></article><article><small>破百总数</small><strong>{centuries ?? "—"}</strong><span>{centuries === null ? "暂无收录" : "本届赛事"}</span></article></div></section>
+        <section className={styles.card}><SectionHeader eyebrow="TOURNAMENT DATA" title="赛事统计" /><div className={styles.statGrid}><article><small>比赛场次</small><strong>{eventStats.matches}</strong><span>{eventStats.partial ? "当前已收录" : "本届赛事"}</span></article><article><small>参赛球员</small><strong>{eventStats.players}</strong><span>本届赛事</span></article><article><small>中国球员</small><strong>{eventStats.china}</strong><span>本届赛事</span></article><article><small>已完赛</small><strong>{eventStats.completed}</strong><span>{calendarEvent.status === "completed" ? "全部完成" : "截至目前"}</span></article></div></section>
+        <section className={styles.card}><SectionHeader eyebrow="TOURNAMENT HIGHLIGHTS" title="赛事亮点" /><div className={`${styles.statGrid} ${styles.eventHighlights}`}><article><small>最高单杆</small><strong>{highestBreakStats?.highestBreak ?? "—"}</strong><span>{highestBreakPlayer?.nameZh ?? "暂无数据"}</span></article><article><small>胜率最高</small><strong>{topWinRate === null ? "—" : `${topWinRate}%`}</strong><span>{topWinRatePlayer ? `${topWinRatePlayer.nameZh} · ${topWinRateStats?.matchesWon}胜` : "暂无完赛数据"}</span></article><article><small>147次数</small><strong>{maximums ?? "—"}</strong><span>{maximums === null ? "暂无数据" : "本届赛事"}</span></article><article><small>破百总数</small><strong>{centuries ?? "—"}</strong><span>{centuries === null ? "暂无数据" : "本届赛事"}</span></article></div></section>
         {!qualificationEvent ? <section className={styles.card}><SectionHeader eyebrow="CHINA WATCH" title="中国球员战绩" />{chinaStats.length ? <div className={styles.chinaResultList}>{chinaStats.map(({ player, stats }) => <button key={player.id} onClick={() => openPlayer(player.id)}><PlayerAvatar player={player} size="sm" /><span><b>{player.nameZh}</b><small>世界第 {player.currentRank ?? "—"}</small></span><strong>{eventResultLabel(full!, stats)}</strong><em>{stats.matchesWon}胜{stats.matchesLost}负</em></button>)}</div> : <div className={styles.emptyState}>本届赛事暂无中国球员参赛记录。</div>}</section> : null}
-      </> : <section className={styles.card}><div className={styles.emptyState}>{eventLoadErrorSlugs.includes(detail.slug) ? "赛事数据加载失败，请稍后重试。" : "赛事数据将在赛程和比赛结果公布后显示。"}</div>{eventLoadErrorSlugs.includes(detail.slug) ? <button className={styles.fullButton} onClick={() => void ensureEventDetail(detail.slug)}>重新加载</button> : null}</section> : null}
+      </> : <section className={styles.card}><div className={styles.emptyState}>{eventLoadErrorSlugs.includes(detail.slug) ? "赛事数据加载失败，请稍后重试。" : calendarEvent.status === "upcoming" ? "比赛开始后将逐步显示赛事数据。" : "暂无赛事数据。"}</div>{eventLoadErrorSlugs.includes(detail.slug) ? <button className={styles.fullButton} onClick={() => void ensureEventDetail(detail.slug)}>重新加载</button> : null}</section> : null}
     </div></main>;
   }
 
@@ -1901,6 +1905,7 @@ export default function SnookerDataCenterV2({
           : chinaTop16.length === 1
             ? styles.chinaTopGridOne
             : styles.chinaTopGridFive;
+  const homeUpdated = formatUpdatedAt(sourceHealth?.fetchedAt);
 
   return <main className={styles.appRoot} data-theme={theme}><PublicSiteHeader active={activeView} theme={theme} onThemeChange={setTheme} onNavigate={changeView} onWarm={warmRootView} /><div className={styles.shell}>
     <header className={`${styles.header} ${priority.rootMobileHeader}`}>
@@ -1923,7 +1928,7 @@ export default function SnookerDataCenterV2({
               <div className={styles.liveHeader}><div><small>{headlineMatch.roundLabelZh} · {headlineMatch.timeLabelZh ?? ""}{headlineMatch.matchNo ? ` · #${headlineMatch.matchNo}` : ""}</small><h2 title={headlineTitle}>{headlineTitle}</h2></div><StatusPill status={headlineMatch.status} label={matchDisplayStatus(headlineMatch)} /></div>
               <div className={styles.homeScore}>
                 <button onClick={() => openPlayer(headlineMatch.player1Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={player1} size="lg" />{headlineMatch.winnerId === headlineMatch.player1Id ? <em className={polish.winBadge}>胜</em> : null}{headlineMatch.status === "walkover" && headlineMatch.winnerId && headlineMatch.winnerId !== headlineMatch.player1Id ? <span className={polish.withdrawnAvatarBadge}>退赛</span> : null}</div><span className={polish.homePlayerName}>{player1.shortNameZh}</span></button>
-                <div><strong>{headlineMatch.score1 ?? "-"} <i className={headlineMatch.status === "live" ? priority.liveSeparator : ""}>:</i> {headlineMatch.score2 ?? "-"}</strong><small>{bestOfLabel(headlineMatch.bestOf)}</small><span className={priority.scoreUpdated}><i />更新 {formatUpdatedAt(sourceHealth?.fetchedAt)}</span></div>
+                <div><strong>{headlineMatch.score1 ?? "-"} <i className={headlineMatch.status === "live" ? priority.liveSeparator : ""}>:</i> {headlineMatch.score2 ?? "-"}</strong><small>{bestOfLabel(headlineMatch.bestOf)}</small>{homeUpdated ? <span className={priority.scoreUpdated}><i />更新 {homeUpdated}</span> : null}</div>
                 <button onClick={() => openPlayer(headlineMatch.player2Id)}><div className={polish.homeAvatarWrap}><PlayerAvatar player={player2} size="lg" />{headlineMatch.winnerId === headlineMatch.player2Id ? <em className={polish.winBadge}>胜</em> : null}{headlineMatch.status === "walkover" && headlineMatch.winnerId && headlineMatch.winnerId !== headlineMatch.player2Id ? <span className={polish.withdrawnAvatarBadge}>退赛</span> : null}</div><span className={polish.homePlayerName}>{player2.shortNameZh}</span></button>
               </div>
               <button className={styles.fullButton} onClick={() => openMatch(headlineMatch.id, headlineEvent.slug)}>查看比赛详情</button>
@@ -1945,7 +1950,7 @@ export default function SnookerDataCenterV2({
 
         {nextEventCard ? <div className={`${styles.homeSlot} ${styles.homeNextSlot}`}><section className={styles.card}><SectionHeader eyebrow="NEXT EVENT" title="下一站" action={eventStatusLabel(nextEventCard)} actionClassName={`${polish.eventStatusText} ${eventStatusClass(nextEventCard.status)}`} /><button className={styles.nextEvent} onPointerEnter={() => void ensureEventDetail(nextEventCard.slug)} onFocus={() => void ensureEventDetail(nextEventCard.slug)} onTouchStart={() => void ensureEventDetail(nextEventCard.slug)} onClick={() => openEvent(nextEventCard.slug)}><span>{nextEventCard.cityZh?.slice(0, 1) || "赛"}</span><div><strong>{nextEventCard.nameZh}</strong><small>{nextEventCard.nameEn}</small><p>{formatDateRange(nextEventCard.startDate, nextEventCard.endDate)} · {nextEventCard.cityZh}</p></div><em>›</em></button></section></div> : null}
         <div className={`${styles.homeSlot} ${styles.homeRankingSlot}`}><section className={styles.card}><SectionHeader eyebrow="OFFICIAL WORLD RANKING" title="世界排名" action={<><span className={styles.mobileOnly}>TOP 3</span><span className={styles.desktopOnly}>TOP 5</span></>} /><div className={styles.rankingList}>{rankingRows.slice(0, 5).map((row, index) => <div className={`${polish.rankingStaticRow} ${index >= 3 ? styles.rankingDesktopRow : ""}`} key={row.rank}><strong>{row.rank}</strong><button className={polish.rankingAvatarButton} onClick={() => openPlayer(row.player.id)} aria-label={`查看${row.player.nameZh}球员详情`}><PlayerAvatar player={row.player} size="sm" /></button><span><b>{row.player.nameZh}</b><small>{row.player.nameEn}</small></span><em>{rankingMoney(row.points)}</em></div>)}</div><button className={styles.fullButton} onClick={() => openRankings("world_official")}>查看完整世界排名</button></section></div>
-        <div className={`${styles.homeSlot} ${styles.homeChinaSlot}`}><section className={styles.card}><SectionHeader eyebrow="CHINA PLAYERS" title="中国球员" action={`${chinaTop16.length} 人进入 TOP16`} />{chinaTop16.length ? <><div className={`${styles.chinaTopGrid} ${chinaGridClass}`} ref={chinaPlayersRail} onScroll={(event) => setChinaRailIndex(nearestRailItemIndex(event.currentTarget))}>{chinaTop16.map((row) => <button key={row.player.id} onClick={() => openPlayer(row.player.id)}><span>{row.rank}</span><strong>{row.player.nameZh}</strong><small>世界第 {row.rank}</small></button>)}</div>{chinaTop16.length > 5 ? <div className={styles.chinaRailFooter}><span>左右滑动 · {activeChinaRailIndex + 1}–{Math.min(activeChinaRailIndex + chinaVisibleCount, chinaTop16.length)} / {chinaTop16.length}</span><div className={priority.desktopRailControls} aria-label="中国球员切换"><button type="button" disabled={activeChinaRailIndex === 0} onClick={() => scrollRailItem(chinaPlayersRail.current, activeChinaRailIndex - 1)} aria-label="查看前面的中国球员">‹</button><span aria-live="polite">{activeChinaRailIndex + 1}–{Math.min(activeChinaRailIndex + chinaVisibleCount, chinaTop16.length)} / {chinaTop16.length}</span><button type="button" disabled={activeChinaRailIndex === chinaMaxRailIndex} onClick={() => scrollRailItem(chinaPlayersRail.current, activeChinaRailIndex + 1)} aria-label="查看更多中国球员">›</button></div></div> : null}</> : <div className={styles.emptyState}>当前世界前16暂无中国球员。</div>}</section></div>
+        <div className={`${styles.homeSlot} ${styles.homeChinaSlot}`}><section className={styles.card}><SectionHeader eyebrow="CHINA PLAYERS" title="中国球员" action={`${chinaTop16.length} 人进入世界前16`} />{chinaTop16.length ? <><div className={`${styles.chinaTopGrid} ${chinaGridClass}`} ref={chinaPlayersRail} onScroll={(event) => setChinaRailIndex(nearestRailItemIndex(event.currentTarget))}>{chinaTop16.map((row) => <button key={row.player.id} onClick={() => openPlayer(row.player.id)}><span>{row.rank}</span><strong>{row.player.nameZh}</strong><small>世界第 {row.rank}</small></button>)}</div>{chinaTop16.length > 5 ? <div className={styles.chinaRailFooter}><span>左右滑动 · {activeChinaRailIndex + 1}–{Math.min(activeChinaRailIndex + chinaVisibleCount, chinaTop16.length)} / {chinaTop16.length}</span><div className={priority.desktopRailControls} aria-label="中国球员切换"><button type="button" disabled={activeChinaRailIndex === 0} onClick={() => scrollRailItem(chinaPlayersRail.current, activeChinaRailIndex - 1)} aria-label="查看前面的中国球员">‹</button><span aria-live="polite">{activeChinaRailIndex + 1}–{Math.min(activeChinaRailIndex + chinaVisibleCount, chinaTop16.length)} / {chinaTop16.length}</span><button type="button" disabled={activeChinaRailIndex === chinaMaxRailIndex} onClick={() => scrollRailItem(chinaPlayersRail.current, activeChinaRailIndex + 1)} aria-label="查看更多中国球员">›</button></div></div> : null}</> : <div className={styles.emptyState}>当前世界前16暂无中国球员。</div>}</section></div>
         <div className={`${styles.homeSlot} ${styles.homeLeadersSlot}`}><HomeSeasonLeaders initialPayload={initialHomeLeaders} onOpenMetric={openTechnicalFromHome} /></div>
         <div className={`${styles.homeSlot} ${styles.homeAboutSlot}`}><HomeAboutCard /></div>
       </> : null}
@@ -1954,15 +1959,15 @@ export default function SnookerDataCenterV2({
         <section className={styles.pageIntro}><small>TOURNAMENTS</small><h1>赛事</h1><p>查看近期赛事和完整赛季赛历，及时了解正在进行、即将开始和已经结束的比赛。</p></section>
         <div className={priority.eventCenterLayout}>
           <aside className={priority.eventSidebar} aria-label="赛事浏览与筛选">
-            <div className={priority.eventSidebarHeading}><small>TOURNAMENT FILTER</small><strong>赛事筛选</strong></div>
+            <div className={priority.eventSidebarHeading}><small>TOURNAMENTS</small><strong>赛事筛选</strong></div>
             <div className={priority.eventModeTabs}><button className={eventListMode === "recent" ? priority.eventModeActive : ""} onClick={() => setEventListMode("recent")}>近期赛事</button><button className={eventListMode === "calendar" ? priority.eventModeActive : ""} onClick={() => setEventListMode("calendar")}>赛季赛历</button></div>
             {eventListMode === "calendar" ? <SeasonSelector seasons={seasonOptions} value={selectedSeason} onPrefetch={(season) => { void ensureCalendarSeason(season); }} onChange={(season) => { setSelectedSeason(season); void ensureCalendarSeason(season); }} /> : null}
           </aside>
           <div className={priority.eventListPanel}>
             {eventListMode === "recent" ? <>
               {recentFeaturedEvent ? <section className={styles.currentEventBanner} onPointerEnter={() => void ensureEventDetail(recentFeaturedEvent.slug)} onFocus={() => void ensureEventDetail(recentFeaturedEvent.slug)} onTouchStart={() => void ensureEventDetail(recentFeaturedEvent.slug)} onClick={() => openEvent(recentFeaturedEvent.slug, "overview")}><div><span className={eventStatusClass(recentFeaturedEvent.status)}><StatusPill status={recentFeaturedEvent.status} label="正在进行" /></span><small>{recentFeaturedEvent.typeZh}</small></div><h2>{recentFeaturedEvent.nameZh}</h2>{recentFeaturedEvent.nameEn ? <small className={priority.featuredEventEnglish}>{recentFeaturedEvent.nameEn}</small> : null}<p>{formatDateRange(recentFeaturedEvent.startDate, recentFeaturedEvent.endDate)}{recentFeaturedEvent.cityZh ? ` · ${recentFeaturedEvent.cityZh}` : ""}</p><span>查看详情 ›</span></section> : null}
-              <section className={styles.card}><SectionHeader eyebrow="RECENT TOURNAMENTS" title="近期赛事" action="最多 5 站" /><div className={priority.recentEventGrid}>{recentCardEvents.map((item) => <RecentEventCard key={item.id} item={item} onPrefetch={() => void ensureEventDetail(item.slug)} onOpen={() => openEvent(item.slug)} />)}{recentCardEvents.length === 0 && !recentFeaturedEvent ? <div className={styles.emptyState}>本赛季暂无可显示的近期赛事。</div> : null}</div><button className={priority.recentMoreButton} onClick={() => { setSelectedSeason(initialCurrentSeason); setEventListMode("calendar"); void ensureCalendarSeason(initialCurrentSeason); window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" })); }}>查看本赛季完整赛历</button></section>
-            </> : selectedSeasonLoadError && !selectedSeasonLoaded ? <section className={styles.card}><div className={styles.emptyState}>该赛季赛历加载失败，请稍后重试。</div><button className={styles.fullButton} onClick={() => void ensureCalendarSeason(selectedSeason)}>重新加载</button></section> : <section className={`${styles.card} ${priority.calendarTableCard}`}><SectionHeader eyebrow={`${selectedSeason} SEASON`} title="赛季赛历" action={selectedSeasonLoading ? "正在加载…" : selectedSeasonLoaded ? `共 ${selectedSeasonEvents.length} 项赛事` : "按需加载"} /><EventTableHeader /><div className={styles.calendarList}>{selectedSeasonEvents.map((item) => <EventCard key={item.id} item={item} onPrefetch={() => void ensureEventDetail(item.slug)} onOpen={() => openEvent(item.slug)} />)}{selectedSeasonEvents.length === 0 ? <div className={styles.emptyState}>{selectedSeasonLoading ? "正在加载该赛季赛历…" : selectedSeasonLoaded ? "该赛季暂无赛事。" : "选择赛季后加载赛事。"}</div> : null}</div></section>}
+              <section className={styles.card}><SectionHeader eyebrow="RECENT TOURNAMENTS" title="近期赛事" /><div className={priority.recentEventGrid}>{recentCardEvents.map((item) => <RecentEventCard key={item.id} item={item} onPrefetch={() => void ensureEventDetail(item.slug)} onOpen={() => openEvent(item.slug)} />)}{recentCardEvents.length === 0 && !recentFeaturedEvent ? <div className={styles.emptyState}>暂无近期赛事。</div> : null}</div><button className={priority.recentMoreButton} onClick={() => { setSelectedSeason(initialCurrentSeason); setEventListMode("calendar"); void ensureCalendarSeason(initialCurrentSeason); window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" })); }}>查看本赛季完整赛历</button></section>
+            </> : selectedSeasonLoadError && !selectedSeasonLoaded ? <section className={styles.card}><div className={styles.emptyState}>该赛季赛历加载失败，请稍后重试。</div><button className={styles.fullButton} onClick={() => void ensureCalendarSeason(selectedSeason)}>重新加载</button></section> : <section className={`${styles.card} ${priority.calendarTableCard}`}><SectionHeader eyebrow={`${selectedSeason} SEASON`} title="赛季赛历" action={selectedSeasonLoading ? "正在加载…" : selectedSeasonLoaded ? `共 ${selectedSeasonEvents.length} 项赛事` : undefined} /><EventTableHeader /><div className={styles.calendarList}>{selectedSeasonEvents.map((item) => <EventCard key={item.id} item={item} onPrefetch={() => void ensureEventDetail(item.slug)} onOpen={() => openEvent(item.slug)} />)}{selectedSeasonEvents.length === 0 ? <div className={styles.emptyState}>{selectedSeasonLoading ? "正在加载该赛季赛历…" : selectedSeasonLoaded ? "该赛季暂无赛事。" : "请选择赛季查看赛历。"}</div> : null}</div></section>}
           </div>
         </div>
       </> : null}
