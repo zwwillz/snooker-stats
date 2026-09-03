@@ -7,6 +7,9 @@ import styles from "./player.module.css";
 
 export type PlayerFilter = "all" | "china" | "top32" | "current";
 
+const CHINA_REGION_CODES = new Set(["CN", "CHN", "HK", "HKG", "MO", "MAC", "TW", "TWN", "TPE"]);
+const CHINA_REGION_NAMES = new Set(["中国", "中国香港", "香港", "中国澳门", "澳门", "中国台湾", "台湾"]);
+
 const filters: Array<{ id: PlayerFilter; label: string }> = [
   { id: "current", label: "本赛季职业球员" },
   { id: "china", label: "中国球员" },
@@ -51,6 +54,12 @@ function playerStatusLabel(status: SnookerPlayerStatus) {
   return null;
 }
 
+function isChinaRegionPlayer(player: SnookerPlayerListItem) {
+  const countryCode = player.countryCode?.trim().toUpperCase() ?? "";
+  const nationality = player.nationalityZh?.trim() ?? "";
+  return CHINA_REGION_CODES.has(countryCode) || CHINA_REGION_NAMES.has(nationality);
+}
+
 export function PlayerDirectoryContent({
   players,
   query,
@@ -61,6 +70,7 @@ export function PlayerDirectoryContent({
   onPrefetchPlayer,
   hasMore = false,
   loadingMore = false,
+  loadMoreError = false,
   onLoadMore,
 }: {
   players: SnookerPlayerListItem[];
@@ -72,6 +82,7 @@ export function PlayerDirectoryContent({
   onPrefetchPlayer?: (player: SnookerPlayerListItem) => void;
   hasMore?: boolean;
   loadingMore?: boolean;
+  loadMoreError?: boolean;
   onLoadMore?: () => void;
 }) {
   const directoryRef = useRef<HTMLDivElement | null>(null);
@@ -82,7 +93,7 @@ export function PlayerDirectoryContent({
     const needle = query.trim().toLocaleLowerCase("zh-CN");
     return players.filter(isConcretePlayer).filter((player) => {
       const status = resolvedPlayerStatus(player);
-      if (filter === "china" && player.countryCode !== "CHN" && player.countryCode !== "CN") return false;
+      if (filter === "china" && !isChinaRegionPlayer(player)) return false;
       if (filter === "top32" && (player.currentRank === null || player.currentRank > 32)) return false;
       if (filter === "current" && status !== "tour") return false;
       if (!needle) return true;
@@ -121,14 +132,14 @@ export function PlayerDirectoryContent({
 
   useEffect(() => {
     const target = loadMoreRef.current;
-    if (!target || !hasMore || loadingMore || !onLoadMore) return;
+    if (!target || !hasMore || loadingMore || loadMoreError || !onLoadMore) return;
     if (typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) onLoadMore();
     }, { rootMargin: "720px 0px", threshold: 0.01 });
     observer.observe(target);
     return () => observer.disconnect();
-  }, [hasMore, loadingMore, onLoadMore]);
+  }, [hasMore, loadingMore, loadMoreError, onLoadMore]);
 
   useEffect(() => {
     const sentinel = searchSentinelRef.current;
@@ -240,8 +251,8 @@ export function PlayerDirectoryContent({
                   </button>
                 );
               }) : <div className={styles.emptyState}>没有找到匹配的球员。<br />可以尝试中文名、英文名或切换筛选条件。</div>}
-              {hasMore ? <div className={styles.emptyState} ref={loadMoreRef}>
-                {loadingMore ? "正在加载更多球员…" : <button type="button" onClick={onLoadMore}>继续加载历史球员</button>}
+              {hasMore ? <div className={styles.emptyState} ref={loadMoreError ? null : loadMoreRef}>
+                {loadingMore ? "正在加载更多球员…" : <button type="button" onClick={onLoadMore}>{loadMoreError ? "加载未完成，点击重试" : "继续加载历史球员"}</button>}
               </div> : null}
             </div>
           </section>
