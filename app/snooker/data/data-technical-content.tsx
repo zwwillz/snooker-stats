@@ -82,7 +82,7 @@ export function SeasonLeadersSection({
               <span><strong>{player?.nameZh ?? leader.playerSlug}</strong><small>{player?.nameEn ?? leader.playerSlug}</small></span>
             </div>
             <div className={styles.seasonLeaderValue}><b>{formatMetricValue(list, leader.value)}</b><span>{tieCount > 1 ? `${tieCount} 人并列` : eligibilityLabel(list) ?? "当前领先"}</span></div>
-          </> : <div className={styles.seasonLeaderEmpty}>数据准备中</div>}
+          </> : <div className={styles.seasonLeaderEmpty}>暂无数据</div>}
         </button>;
       })}
     </div>
@@ -144,7 +144,7 @@ export function TechnicalDetailContent({
 
   return <div className={detailStyles.detailContent}>
     <aside className={detailStyles.technicalSidebar}>
-      <div className={detailStyles.technicalSidebarHeading}><small>TECHNICAL FILTER</small><strong>技术榜单</strong></div>
+      <div className={detailStyles.technicalSidebarHeading}><small>TECHNICAL</small><strong>技术榜单</strong></div>
       <div className={detailStyles.technicalMetricNav} role="tablist" aria-label="技术榜指标">
         {hub.lists.map((list) => <button
           type="button"
@@ -183,7 +183,7 @@ export function TechnicalDetailContent({
           {selected.minMatches > 0 ? <span>口径：至少完成 {selected.minMatches} 场比赛</span> : <span>仅统计当前职业巡回赛球员</span>}
         </div>
       </div>
-    </section> : <section className={styles.card}><div className={styles.emptyState}>技术榜数据正在准备中。</div></section>}
+    </section> : <section className={styles.card}><div className={styles.emptyState}>暂无技术榜数据。</div></section>}
   </div>;
 }
 
