@@ -26,6 +26,8 @@ type MetricRowProps = {
   hint?: string;
 };
 
+const CHINA_REGION_CODES = new Set(["CN", "CHN", "HK", "HKG", "MO", "MAC", "TW", "TWN", "TPE"]);
+
 const fmtInt = (value: number | null | undefined) => value === null || value === undefined ? "—" : Math.round(value).toLocaleString("zh-CN");
 const fmtOne = (value: number | null | undefined) => value === null || value === undefined ? "—" : value.toFixed(1);
 const fmtPercent = (value: number | null | undefined) => value === null || value === undefined ? "—" : `${value.toFixed(1)}%`;
@@ -51,7 +53,7 @@ function displayDate(value: string | null | undefined) {
 
 function displayUpdated(value: string) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "更新时间待确认";
+  if (Number.isNaN(date.getTime())) return null;
   return new Intl.DateTimeFormat("zh-CN", {
     timeZone: "Asia/Shanghai",
     month: "numeric",
@@ -140,7 +142,7 @@ function SeasonSummary({ data }: { data: PlayerCompareSnapshot }) {
         ? leads.left === leads.right
           ? `两人在当前核心指标中整体接近；可继续查看比赛、进攻效率和直接交手数据。`
           : `${leads.left > leads.right ? leftPlayer.nameZh : rightPlayer.nameZh}在当前核心赛季指标中领先更多项目；这只是逐项比较，不生成主观综合评分。`
-        : "该赛季部分球员统计尚未完整入库，缺失项以“—”显示，不按 0 处理。"}
+        : "该赛季部分统计暂无完整记录，缺失项以“—”显示。"}
     </p>
   </section>;
 }
@@ -180,12 +182,6 @@ function SeasonTab({ data }: { data: PlayerCompareSnapshot }) {
         <MetricRow label="排名赛决赛" left={left?.rankingFinals} right={right?.rankingFinals} />
         <MetricRow label="三大赛冠军" left={left?.tripleCrownTitles} right={right?.tripleCrownTitles} />
       </Section>
-      <Section eyebrow="DATA COVERAGE" title="数据完整度">
-        <MetricRow label="逐局数据覆盖" left={left?.frameCoveragePct} right={right?.frameCoveragePct} format={fmtPercent} trend="neutral" />
-        <MetricRow label="退赛获胜" left={left?.walkoversWon} right={right?.walkoversWon} trend="neutral" />
-        <MetricRow label="退赛失利" left={left?.walkoversLost} right={right?.walkoversLost} trend="neutral" />
-        <div className={styles.coverageNote}>“—”代表该项数据尚无可靠覆盖，不等同于 0。逐局效率只在已入库的局数据基础上计算。</div>
-      </Section>
     </div>
     <div className={styles.inlineNames}><span>{leftPlayer.nameZh}</span><i>VS</i><span>{rightPlayer.nameZh}</span></div>
   </div>;
@@ -208,7 +204,6 @@ function CareerTab({ data }: { data: PlayerCompareSnapshot }) {
         <MetricRow label="破百" left={left?.breaks100Plus} right={right?.breaks100Plus} />
         <MetricRow label="147" left={left?.maximums} right={right?.maximums} />
         <MetricRow label="单杆最高" left={left?.highestBreak} right={right?.highestBreak} />
-        <MetricRow label="逐局覆盖" left={left?.frameCoveragePct} right={right?.frameCoveragePct} format={fmtPercent} trend="neutral" />
       </Section>
       <Section eyebrow="CAREER RESULTS" title="生涯成绩">
         <MetricRow label="赛事冠军" left={left?.titlesTotal} right={right?.titlesTotal} />
@@ -218,11 +213,11 @@ function CareerTab({ data }: { data: PlayerCompareSnapshot }) {
         <MetricRow label="三大赛冠军" left={left?.tripleCrownTitles} right={right?.tripleCrownTitles} />
       </Section>
       <section className={styles.sectionCard}>
-        <header className={styles.sectionHeader}><small>COVERAGE</small><h2>职业数据范围</h2></header>
+        <header className={styles.sectionHeader}><small>STAT RANGE</small><h2>统计范围</h2></header>
         <div className={styles.careerCoverage}>
-          <div><strong>{left?.warehouseStartSeason ?? left?.firstSeason ?? "—"}</strong><span>至</span><strong>{left?.warehouseEndSeason ?? left?.lastSeason ?? "—"}</strong><small>{left?.isCareerComplete ? "完整职业生涯覆盖" : "当前数据库覆盖范围"}</small></div>
+          <div><strong>{left?.warehouseStartSeason ?? left?.firstSeason ?? "—"}</strong><span>至</span><strong>{left?.warehouseEndSeason ?? left?.lastSeason ?? "—"}</strong><small>{left?.isCareerComplete ? "完整职业生涯" : "当前收录范围"}</small></div>
           <i>VS</i>
-          <div><strong>{right?.warehouseStartSeason ?? right?.firstSeason ?? "—"}</strong><span>至</span><strong>{right?.warehouseEndSeason ?? right?.lastSeason ?? "—"}</strong><small>{right?.isCareerComplete ? "完整职业生涯覆盖" : "当前数据库覆盖范围"}</small></div>
+          <div><strong>{right?.warehouseStartSeason ?? right?.firstSeason ?? "—"}</strong><span>至</span><strong>{right?.warehouseEndSeason ?? right?.lastSeason ?? "—"}</strong><small>{right?.isCareerComplete ? "完整职业生涯" : "当前收录范围"}</small></div>
         </div>
       </section>
     </div>
@@ -248,7 +243,7 @@ function H2HTab({ data }: { data: PlayerCompareSnapshot }) {
         <MetricRow label="历史赢局" left={h2h.leftFrames} right={h2h.rightFrames} />
         <MetricRow label="退赛获胜" left={h2h.leftWalkovers} right={h2h.rightWalkovers} trend="neutral" />
       </div>
-      {h2h.draws || h2h.leftWalkovers || h2h.rightWalkovers ? <p className={styles.h2hNote}>交手统计包含官方比赛结果；退赛可计入比赛结果，但不会用伪造局分补齐逐局统计。{h2h.draws ? ` 当前有 ${h2h.draws} 场平局。` : ""}</p> : null}
+      {h2h.draws || h2h.leftWalkovers || h2h.rightWalkovers ? <p className={styles.h2hNote}>交手统计包含正式比赛结果；退赛计入比赛结果，不计入逐局比分统计。{h2h.draws ? ` 当前有 ${h2h.draws} 场平局。` : ""}</p> : null}
     </section>
     <section className={styles.sectionCard}>
       <header className={styles.sectionHeader}><small>MEETING HISTORY</small><h2>历史交手</h2></header>
@@ -258,7 +253,7 @@ function H2HTab({ data }: { data: PlayerCompareSnapshot }) {
           <div><small>{meeting.eventNameZh} · {meeting.roundLabelZh}</small><strong>{data.players[0].shortNameZh || data.players[0].nameZh} {meeting.leftScore ?? "—"} : {meeting.rightScore ?? "—"} {data.players[1].shortNameZh || data.players[1].nameZh}</strong>{meeting.isWalkover || meeting.note ? <span>{meeting.note ?? "退赛结果"}</span> : null}</div>
           <em className={meeting.winnerSide === "left" ? styles.leftWin : meeting.winnerSide === "right" ? styles.rightWin : ""}>{meeting.winnerSide === "left" ? "左胜" : meeting.winnerSide === "right" ? "右胜" : "平"}</em>
         </article>)}
-      </div> : <div className={styles.emptyState}>当前数据库没有识别到两名球员的正式交手记录。</div>}
+      </div> : <div className={styles.emptyState}>暂无两名球员的正式比赛交手记录。</div>}
     </section>
   </div>;
 }
@@ -283,7 +278,7 @@ function HonoursTab({ data }: { data: PlayerCompareSnapshot }) {
         <HonourTile title="大师赛" left={left?.mastersTitles} right={right?.mastersTitles} label="大师赛冠军" />
         <HonourTile title="三大赛" left={left?.tripleCrownTitles} right={right?.tripleCrownTitles} label="三大赛冠军合计" />
         <HonourTile title="排名赛" left={left?.rankingTitles} right={right?.rankingTitles} label="排名赛冠军" />
-        <HonourTile title="职业赛事" left={left?.titlesTotal} right={right?.titlesTotal} label="本站聚合冠军" />
+        <HonourTile title="职业赛事" left={left?.titlesTotal} right={right?.titlesTotal} label="冠军合计" />
       </div>
       <p className={styles.h2hNote}>冠军统计以赛事最终冠军为口径；多阶段赛事不会把中间阶段重复计为冠军。</p>
     </section>
@@ -311,7 +306,7 @@ function PlayerSelector({
     return players.filter((player) => {
       if (!player.isCurrentTour) return false;
       if (filter === "top16" && (player.currentRank === null || player.currentRank > 16)) return false;
-      if (filter === "china" && !["CN", "CHN"].includes(player.countryCode ?? "")) return false;
+      if (filter === "china" && !CHINA_REGION_CODES.has((player.countryCode ?? "").toUpperCase())) return false;
       if (!keyword) return true;
       return [player.nameZh, player.nameEn, player.shortNameZh ?? "", player.nationalityZh ?? ""].some((value) => value.toLowerCase().includes(keyword));
     });
@@ -319,16 +314,16 @@ function PlayerSelector({
 
   return <div className={styles.modalBackdrop} role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
     <section className={styles.selectorModal} role="dialog" aria-modal="true" aria-label={`选择${side === "left" ? "左侧" : "右侧"}球员`}>
-      <header><div><small>PLAYER SELECTOR</small><h2>选择职业球员</h2></div><button type="button" onClick={onClose} aria-label="关闭">×</button></header>
+      <header><div><small>PLAYERS</small><h2>选择职业球员</h2></div><button type="button" onClick={onClose} aria-label="关闭">×</button></header>
       <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索中文名 / 英文名" />
       <div className={styles.selectorFilters}>
         <button className={filter === "all" ? styles.filterActive : ""} onClick={() => setFilter("all")}>全部</button>
-        <button className={filter === "top16" ? styles.filterActive : ""} onClick={() => setFilter("top16")}>TOP 16</button>
+        <button className={filter === "top16" ? styles.filterActive : ""} onClick={() => setFilter("top16")}>前16</button>
         <button className={filter === "china" ? styles.filterActive : ""} onClick={() => setFilter("china")}>中国球员</button>
       </div>
       <div className={styles.selectorList}>
         {filtered.map((player) => <button type="button" disabled={player.slug === otherSlug} onClick={() => onSelect(player.slug)} key={player.id}>
-          <b>{player.currentRank ?? "—"}</b><PlayerAvatar player={player} /><span><strong>{player.nameZh}</strong><small>{player.nameEn} · {player.nationalityZh ?? ""}</small></span><em>{player.slug === otherSlug ? "已选择" : "选择"}</em>
+          <b>{player.currentRank ?? "—"}</b><PlayerAvatar player={player} /><span><strong>{player.nameZh}</strong><small>{player.nameEn}{player.nationalityZh ? ` · ${player.nationalityZh}` : ""}</small></span><em>{player.slug === otherSlug ? "已选择" : "选择"}</em>
         </button>)}
       </div>
     </section>
@@ -406,6 +401,7 @@ export default function PlayerCompareClient({
   };
 
   const [leftPlayer, rightPlayer] = data?.players ?? [players.find((player) => player.slug === selected[0]), players.find((player) => player.slug === selected[1])];
+  const updated = data ? displayUpdated(data.updatedAt) : null;
 
   return <main className={styles.page}>
     <PublicSiteHeader active="players" />
@@ -420,13 +416,13 @@ export default function PlayerCompareClient({
       <div className={styles.playersHero}>
         <button type="button" className={styles.playerHero} onClick={() => setSelectorSide("left")}>
           {leftPlayer ? <PlayerAvatar player={leftPlayer} large /> : null}
-          <div><strong>{leftPlayer?.nameZh ?? "选择球员"}</strong><small>{leftPlayer?.nameEn ?? ""}</small><span>{leftPlayer?.currentRank ? `世界 #${leftPlayer.currentRank}` : "排名待同步"} · {leftPlayer?.nationalityZh ?? ""}</span></div>
+          <div><strong>{leftPlayer?.nameZh ?? "选择球员"}</strong><small>{leftPlayer?.nameEn ?? ""}</small><span>{leftPlayer?.currentRank ? `世界 #${leftPlayer.currentRank}` : "暂无排名"}{leftPlayer?.nationalityZh ? ` · ${leftPlayer.nationalityZh}` : ""}</span></div>
           <em>更换球员</em>
         </button>
-        <div className={styles.vsControl}><button className={styles.swapButton} type="button" onClick={swapPlayers} aria-label="交换球员">⇄<span>VS</span></button><small>{loading ? "同步中…" : data ? `更新 ${displayUpdated(data.updatedAt)}` : "数据加载中"}</small></div>
+        <div className={styles.vsControl}><button className={styles.swapButton} type="button" onClick={swapPlayers} aria-label="交换球员">⇄<span>VS</span></button><small>{loading ? "正在更新…" : data ? updated ? `更新 ${updated}` : "" : "正在加载…"}</small></div>
         <button type="button" className={`${styles.playerHero} ${styles.playerHeroRight}`} onClick={() => setSelectorSide("right")}>
           {rightPlayer ? <PlayerAvatar player={rightPlayer} large /> : null}
-          <div><strong>{rightPlayer?.nameZh ?? "选择球员"}</strong><small>{rightPlayer?.nameEn ?? ""}</small><span>{rightPlayer?.currentRank ? `世界 #${rightPlayer.currentRank}` : "排名待同步"} · {rightPlayer?.nationalityZh ?? ""}</span></div>
+          <div><strong>{rightPlayer?.nameZh ?? "选择球员"}</strong><small>{rightPlayer?.nameEn ?? ""}</small><span>{rightPlayer?.currentRank ? `世界 #${rightPlayer.currentRank}` : "暂无排名"}{rightPlayer?.nationalityZh ? ` · ${rightPlayer.nationalityZh}` : ""}</span></div>
           <em>更换球员</em>
         </button>
       </div>
@@ -447,8 +443,8 @@ export default function PlayerCompareClient({
       {tab === "honours" ? <HonoursTab data={data} /> : null}
       <footer className={styles.dataFooter}>
         <strong>数据说明</strong>
-        <p>当前第一阶段仅开放职业巡回赛球员。赛季聚合、比赛与逐局数据来自147数据局现有数据仓库及官方同步链路；缺失数据统一显示“—”，不会当作 0。</p>
-        <span>当前赛季逐局覆盖：{data.coverage.leftFramePct === null ? "—" : `${data.coverage.leftFramePct.toFixed(1)}%`} / {data.coverage.rightFramePct === null ? "—" : `${data.coverage.rightFramePct.toFixed(1)}%`} · 更新 {displayUpdated(data.updatedAt)}</span>
+        <p>目前支持职业巡回赛球员对比。部分历史比赛可能缺少完整的逐局统计，相关效率指标仅基于本站已收录的逐局记录计算；暂无数据的项目以“—”显示。</p>
+        {updated ? <span>数据更新：{updated}</span> : null}
       </footer>
     </>}
 
