@@ -57,8 +57,9 @@ test("honours detail supports URL and back navigation plus player drill-down", (
   assert.doesNotMatch(root, /SnookerRootController/);
 });
 
-test("honours UI states the current database scope instead of claiming a complete historical archive", () => {
-  assert.match(honours, /本站已入库职业生涯统计/);
+test("honours UI explains the collected career scope without operations language", () => {
+  assert.match(honours, /统计范围：本站已收录的职业生涯荣誉数据/);
+  assert.doesNotMatch(honours, /已入库/);
   assert.match(honours, /hub\.sourceName/);
   assert.match(hub, /WST 职业生涯统计/);
 });
