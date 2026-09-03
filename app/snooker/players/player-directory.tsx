@@ -5,13 +5,13 @@ import type { SnookerPlayerListItem, SnookerPlayerStatus } from "@/lib/snooker/p
 import { prefetchPlayerExperience } from "./player-detail-client";
 import styles from "./player.module.css";
 
-export type PlayerFilter = "all" | "china" | "top16" | "current";
+export type PlayerFilter = "all" | "china" | "top32" | "current";
 
 const filters: Array<{ id: PlayerFilter; label: string }> = [
-  { id: "all", label: "全部" },
-  { id: "china", label: "中国" },
-  { id: "top16", label: "TOP 16" },
-  { id: "current", label: "巡回" },
+  { id: "current", label: "本赛季职业球员" },
+  { id: "china", label: "中国球员" },
+  { id: "top32", label: "世界排名TOP32" },
+  { id: "all", label: "全部球员" },
 ];
 
 function initials(name: string) {
@@ -83,7 +83,7 @@ export function PlayerDirectoryContent({
     return players.filter(isConcretePlayer).filter((player) => {
       const status = resolvedPlayerStatus(player);
       if (filter === "china" && player.countryCode !== "CHN" && player.countryCode !== "CN") return false;
-      if (filter === "top16" && (player.currentRank === null || player.currentRank > 16)) return false;
+      if (filter === "top32" && (player.currentRank === null || player.currentRank > 32)) return false;
       if (filter === "current" && status !== "tour") return false;
       if (!needle) return true;
       const haystack = `${player.nameZh} ${player.shortNameZh ?? ""} ${player.nameEn} ${player.nationalityZh ?? ""}`.toLocaleLowerCase("zh-CN");

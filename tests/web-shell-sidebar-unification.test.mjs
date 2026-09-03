@@ -41,6 +41,28 @@ test("player tournament and data sidebars share titled card hierarchy", async ()
   assert.match(history, /className=\{styles\.historyRecordNav\}/);
 });
 
+test("tournament and player primary menus share the same selected-button hierarchy", async () => {
+  const [rootUi, eventCss, player, playerCss] = await Promise.all([
+    read("app/snooker/snooker-data-center-v2.tsx"),
+    read("app/snooker/snooker-priority.module.css"),
+    read("app/snooker/players/player-directory.tsx"),
+    read("app/snooker/players/player.module.css"),
+  ]);
+
+  assert.match(rootUi, /const desktopVisibleCount = 5/);
+  assert.match(eventCss, /\.eventModeTabs \.eventModeActive\{border-color:var\(--accent\);background:var\(--accent\);color:#fff;box-shadow:0 6px 13px var\(--accent-shadow\)\}/);
+  assert.match(playerCss, /\.filters button\.filterActive\{color:#fff;border-color:var\(--accent\);background:var\(--accent\);box-shadow:0 6px 13px var\(--accent-shadow\)\}/);
+  assert.match(eventCss, /\.seasonRail button\.seasonActive\{border-color:var\(--accent\);background:var\(--accent-soft\)/);
+  assert.match(eventCss, /\.seasonMoreButton\{[^}]*font-size:10px/);
+  assert.ok(player.indexOf('{ id: "current", label: "本赛季职业球员" }') < player.indexOf('{ id: "china", label: "中国球员" }'));
+  assert.ok(player.indexOf('{ id: "china", label: "中国球员" }') < player.indexOf('{ id: "top32", label: "世界排名TOP32" }'));
+  assert.ok(player.indexOf('{ id: "top32", label: "世界排名TOP32" }') < player.indexOf('{ id: "all", label: "全部球员" }'));
+  assert.match(player, /filter === "top32" && \(player\.currentRank === null \|\| player\.currentRank > 32\)/);
+  assert.match(rootUi, /useState<PlayerFilter>\("current"\)/);
+  assert.match(eventCss, /\.recentEventCardTop>small\{grid-column:2;grid-row:1;justify-self:end;align-self:start\}/);
+  assert.match(eventCss, /\.recentEventCard>span\{grid-column:2;grid-row:2 \/ span 3/);
+});
+
 test("sticky table headers lose their top radius only after pinning", async () => {
   const [rootUi, priority, ranking, dataCss, technicalCss, history, historyCss] = await Promise.all([
     read("app/snooker/snooker-data-center-v2.tsx"),

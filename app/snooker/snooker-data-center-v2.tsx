@@ -748,7 +748,7 @@ function RecentEventCard({ item, onOpen, onPrefetch }: { item: SnookerCalendarEv
 function SeasonSelector({ seasons, value, onChange, onPrefetch }: { seasons: string[]; value: string; onChange: (season: string) => void; onPrefetch?: (season: string) => void }) {
   const rail = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
-  const desktopVisibleCount = 6;
+  const desktopVisibleCount = 5;
   const hiddenCount = Math.max(0, seasons.length - desktopVisibleCount);
   const scroll = (direction: -1 | 1) => rail.current?.scrollBy({ left: direction * 180, behavior: "auto" });
   return <div className={priority.seasonSelector} data-expanded={expanded ? "true" : "false"} aria-label="赛季选择器">
@@ -840,7 +840,7 @@ export default function SnookerDataCenterV2({
   const [refreshing, setRefreshing] = useState(false);
   const [eventListMode, setEventListMode] = useState<EventListMode>("recent");
   const [playerQuery, setPlayerQuery] = useState("");
-  const [playerFilter, setPlayerFilter] = useState<PlayerFilter>("all");
+  const [playerFilter, setPlayerFilter] = useState<PlayerFilter>("current");
   const [matchDataTab, setMatchDataTab] = useState<MatchDataTab>("match");
   const [matchUpdatedAt, setMatchUpdatedAt] = useState<Record<string, string>>({});
   const [selectedRankingKey, setSelectedRankingKey] = useState<SnookerCurrentRankingKey>(initialKey);
