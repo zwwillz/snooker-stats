@@ -32,8 +32,8 @@ test("event navigation reuses one in-flight detail request for champion and sche
   assert.match(ui, /eventDetailInFlight = useRef\(new Map/);
   assert.match(ui, /eventDetailInFlight\.current\.get\(slug\)/);
   assert.match(ui, /onPrefetch=\{\(\) => void ensureEventDetail\(item\.slug\)\}/);
-  assert.match(ui, /正在读取冠军信息/);
-  assert.match(ui, /决赛结果与赛程同步加载中/);
+  assert.match(ui, /正在加载冠军信息/);
+  assert.match(ui, /正在加载决赛结果与赛程/);
   assert.match(css, /\.championCardLoading/);
 });
 

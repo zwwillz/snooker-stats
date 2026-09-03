@@ -87,3 +87,12 @@
   .rankingStaticRow>span small{font-size:var(--snooker-type-secondary)}
   .rankingStaticRow>em{font-size:var(--snooker-type-compact-data)}
 }
+
+/* WEB_HOME_TYPOGRAPHY_V1 */
+@media (min-width:1024px){
+  .homePlayerName{max-width:150px;font-size:14px!important}
+  .rankingStaticRow>strong{font-size:14px}
+  .rankingStaticRow>span b{font-size:14px}
+  .rankingStaticRow>span small{font-size:11px}
+  .rankingStaticRow>em{font-size:12px}
+}

@@ -107,8 +107,8 @@ test("event overview typography and public copy are user-facing", async () => {
   assert.match(ui, /eyebrow="PRIZE MONEY" title="奖金分配"/);
   assert.match(ui, /className=\{polish\.championCard\}/);
   assert.match(ui, /CHAMPION · 本届冠军/);
-  assert.match(ui, /赛程陆续公布中/);
-  assert.match(ui, /更多赛程公布后将在这里更新/);
+  assert.match(ui, /赛程持续更新/);
+  assert.match(ui, /更多赛程信息将在补充后更新/);
   assert.doesNotMatch(ui, /官方当前已公布/);
   assert.doesNotMatch(ui, /完赛后冻结保存到本站数据库/);
   assert.doesNotMatch(ui, /WST Match Centre/);
@@ -134,7 +134,7 @@ test("recent events use current-season raw events and avoid duplicating the feat
   assert.match(ui, /item\?\.id !== recentFeaturedEvent\?\.id/);
   assert.match(ui, /eventStatusText.*eventStatusClass\(item\.status\).*eventStatusLabel\(item\)/s);
   assert.match(ui, /<StatusPill status="type" label=\{typeZh\} \/>/);
-  assert.match(ui, /eyebrow="RECENT TOURNAMENTS" title="近期赛事" action="最多 5 站"/);
+  assert.match(ui, /eyebrow="RECENT TOURNAMENTS" title="近期赛事" \/>/);
   assert.match(ui, /查看本赛季完整赛历/);
   assert.match(ui, /actionClassName=\{`\$\{polish\.eventStatusText\} \$\{eventStatusClass\(nextEventCard\.status\)\}`\}/);
   assert.match(css, /\.eventStatusLive>span\{background:#eaf3ff!important;color:#2465a8!important\}/);

@@ -126,7 +126,7 @@ test("recent events stay capped at five cards and the season calendar keeps indi
   assert.match(uiSource, /const recentCardEvents = \[firstUpcomingCurrent, \.\.\.recentCompletedEvents\]/);
   assert.match(uiSource, /\.slice\(0, 4\)/);
   assert.match(uiSource, /recentCardEvents\.map/);
-  assert.match(uiSource, /最多 5 站/);
+  assert.match(uiSource, /eyebrow="RECENT TOURNAMENTS" title="近期赛事"/);
   assert.match(uiSource, /查看本赛季完整赛历/);
   assert.match(uiSource, /selectedSeasonEvents\.map/);
   assert.doesNotMatch(uiSource, /多阶段赛事合并为一站/);
@@ -140,7 +140,7 @@ test("database-backed completed events can open their own schedules and matches"
   assert.match(uiSource, /const full = eventBySlug\.get\(detail\.slug\)/);
   assert.match(uiSource, /orderedScheduleRounds\(full\)\.map/);
   assert.match(uiSource, /openMatch\(match\.id, full\.slug\)/);
-  assert.match(uiSource, /详细赛程暂未公布/);
+  assert.match(uiSource, /暂无详细赛程/);
   assert.match(dbSource, /eventDetails/);
   assert.match(dbSource, /buildEventDetails/);
 });
@@ -152,7 +152,8 @@ test("home result card marks the winner and persists until the next event begins
   assert.match(uiSource, /headlineMatch\.winnerId === headlineMatch\.player1Id/);
   assert.match(uiSource, /headlineMatch\.winnerId === headlineMatch\.player2Id/);
   assert.match(uiSource, /className=\{priority\.scoreUpdated\}/);
-  assert.match(uiSource, /更新 \{formatUpdatedAt\(sourceHealth\?\.fetchedAt\)\}/);
+  assert.match(uiSource, /const homeUpdated = formatUpdatedAt\(sourceHealth\?\.fetchedAt\)/);
+  assert.match(uiSource, /homeUpdated \? <span className=\{priority\.scoreUpdated\}>[\s\S]*?更新 \{homeUpdated\}/);
   assert.doesNotMatch(uiSource, /sourceHealth\?\.sourceLabel/);
 });
 

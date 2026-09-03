@@ -79,7 +79,7 @@ test("recent tournaments show the live event, next event and three latest comple
   assert.match(ui, /const recentCardEvents = \[firstUpcomingCurrent, \.\.\.recentCompletedEvents\]/);
   assert.match(ui, /\.slice\(0, 4\)/);
   assert.match(ui, /eventListMode === "calendar" \? <SeasonSelector/);
-  assert.match(ui, /action="最多 5 站"/);
+  assert.match(ui, /eyebrow="RECENT TOURNAMENTS" title="近期赛事" \/>/);
   assert.match(ui, /查看本赛季完整赛历/);
 });
 
@@ -97,7 +97,7 @@ test("historical match detail only exposes official match statistics", async () 
 test("tournament-facing copy avoids internal database language", async () => {
   const ui = await read("app/snooker/snooker-data-center-v2.tsx");
   assert.match(ui, /CHAMPION · 本届冠军/);
-  assert.match(ui, /赛程陆续公布中/);
+  assert.match(ui, /赛程持续更新/);
   assert.match(ui, /比赛数据实时更新/);
   assert.doesNotMatch(ui, /详细赛程尚未入库/);
   assert.doesNotMatch(ui, /本站数据库实时快照/);
