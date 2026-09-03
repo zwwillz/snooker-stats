@@ -34,7 +34,7 @@ test("canonical player deep links use root query params", () => {
 
 test("player directory search and filter state are owned by the persistent root", () => {
   assert.match(root, /const \[playerQuery, setPlayerQuery\] = useState\(""\)/);
-  assert.match(root, /const \[playerFilter, setPlayerFilter\] = useState<PlayerFilter>\("all"\)/);
+  assert.match(root, /const \[playerFilter, setPlayerFilter\] = useState<PlayerFilter>\("current"\)/);
   assert.match(root, /query=\{playerQuery\} filter=\{playerFilter\}/);
   assert.match(directory, /query: string/);
   assert.match(directory, /filter: PlayerFilter/);

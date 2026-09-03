@@ -26,7 +26,7 @@ test("web player directory uses a left filter rail, sticky search, and one-colum
   assert.match(css, /@media \(min-width:1024px\)\{[\s\S]*?\.pageIntro h1\{margin-top:7px;font-size:42px\}/);
   assert.match(directory, /className=\{styles\.directorySidebar\}/);
   assert.match(directory, /searchStuck \? styles\.searchBoxStuck/);
-  assert.match(css, /\.directoryLayout\{display:grid;grid-template-columns:190px minmax\(0,1fr\)/);
+  assert.match(css, /\.directoryLayout\{display:grid;grid-template-columns:200px minmax\(0,1fr\)/);
   assert.match(css, /\.searchBox\{position:sticky;top:var\(--snooker-header-height,64px\)/);
   assert.match(css, /\.searchBoxStuck\{border-radius:0!important\}/);
   assert.match(css, /\.playerDirectory\{display:block;overflow:visible\}/);
