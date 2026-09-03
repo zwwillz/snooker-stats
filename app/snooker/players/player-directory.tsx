@@ -13,7 +13,7 @@ const CHINA_REGION_NAMES = new Set(["中国", "中国香港", "香港", "中国�
 const filters: Array<{ id: PlayerFilter; label: string }> = [
   { id: "current", label: "本赛季职业球员" },
   { id: "china", label: "中国球员" },
-  { id: "top32", label: "世界排名TOP32" },
+  { id: "top32", label: "世界排名前32" },
   { id: "all", label: "全部球员" },
 ];
 
@@ -178,15 +178,15 @@ export function PlayerDirectoryContent({
   return (
     <>
       <section className={styles.pageIntro}>
-        <small>PLAYER DATABASE</small>
+        <small>PLAYERS</small>
         <h1>球员</h1>
-        <p>世界斯诺克球员数据库。中文名、英文标准名、世界排名与球员资料统一由独立数据中心维护。</p>
+        <p>查看世界斯诺克球员资料、当前排名与职业生涯数据。</p>
       </section>
 
       <div className={styles.directoryLayout}>
         <aside className={styles.directorySidebar} aria-label="球员筛选">
           <div className={styles.directorySidebarHeading}>
-            <small>PLAYER FILTER</small>
+            <small>PLAYERS</small>
             <strong>球员筛选</strong>
           </div>
           <div className={styles.filters}>
@@ -237,7 +237,7 @@ export function PlayerDirectoryContent({
                       <b>{player.nameZh}</b>
                       <small>{player.nameEn}</small>
                       <p>
-                        {player.nationalityZh ?? "国籍待补充"}
+                        {player.nationalityZh ?? "—"}
                         {statusLabel ? <i data-player-status={status}>{statusLabel}</i> : null}
                       </p>
                     </span>
@@ -252,7 +252,7 @@ export function PlayerDirectoryContent({
                 );
               }) : <div className={styles.emptyState}>没有找到匹配的球员。<br />可以尝试中文名、英文名或切换筛选条件。</div>}
               {hasMore ? <div className={styles.emptyState} ref={loadMoreError ? null : loadMoreRef}>
-                {loadingMore ? "正在加载更多球员…" : <button type="button" onClick={onLoadMore}>{loadMoreError ? "加载未完成，点击重试" : "继续加载历史球员"}</button>}
+                {loadingMore ? "正在加载更多球员…" : <button type="button" onClick={onLoadMore}>{loadMoreError ? "加载失败，点击重试" : "加载更多球员"}</button>}
               </div> : null}
             </div>
           </section>
