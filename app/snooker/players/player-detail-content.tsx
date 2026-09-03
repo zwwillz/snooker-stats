@@ -13,7 +13,8 @@ function integer(value: number | null) {
   return value === null ? "—" : value.toLocaleString("en-GB");
 }
 
-function count(value: number | null | undefined) {
+function count(value: number | null | undefined, hasCareerData: boolean) {
+  if (!hasCareerData) return "—";
   return (value ?? 0).toLocaleString("en-GB");
 }
 
@@ -30,7 +31,7 @@ function ranking(value: number | null) {
 }
 
 function birthLabel(value: string | null) {
-  if (!value) return "出生日期待补充";
+  if (!value) return "—";
   const [year, month, day] = value.split("-");
   return `${year}.${month}.${day}`;
 }
@@ -136,31 +137,32 @@ export function PlayerDetailContent({
   const visibleBio = bioExpanded || bio.length <= 520 ? bio : `${bio.slice(0, 520).trimEnd()}…`;
   const highlights = historyExpanded ? player.highlights : player.highlights.slice(0, 6);
   const career = player.career;
+  const hasCareerData = Boolean(career);
 
   const careerCards = [
-    { en: "RANKING TITLES", zh: "排名赛冠军", value: count(career?.rankingTitles) },
-    { en: "RANKING FINALS", zh: "排名赛决赛", value: count(career?.rankingFinals) },
-    { en: "TRIPLE CROWN", zh: "三大赛冠军", value: count(career?.tripleCrownTitles) },
-    { en: "CAREER 147s", zh: "生涯147", value: count(career?.career147s) },
+    { en: "RANKING TITLES", zh: "排名赛冠军", value: count(career?.rankingTitles, hasCareerData) },
+    { en: "RANKING FINALS", zh: "排名赛决赛", value: count(career?.rankingFinals, hasCareerData) },
+    { en: "TRIPLE CROWN", zh: "三大赛冠军", value: count(career?.tripleCrownTitles, hasCareerData) },
+    { en: "CAREER 147s", zh: "生涯147", value: count(career?.career147s, hasCareerData) },
   ];
 
   const tripleCards = [
     {
       en: "WORLD CHAMPIONSHIP",
       zh: "世锦赛",
-      value: count(career?.worldChampionshipTitles),
+      value: count(career?.worldChampionshipTitles, hasCareerData),
       logo: "/snooker/triple-crown/world-championship.webp",
     },
     {
       en: "UK CHAMPIONSHIP",
       zh: "英锦赛",
-      value: count(career?.ukChampionshipTitles),
+      value: count(career?.ukChampionshipTitles, hasCareerData),
       logo: "/snooker/triple-crown/uk-championship.webp",
     },
     {
       en: "THE MASTERS",
       zh: "大师赛",
-      value: count(career?.mastersTitles),
+      value: count(career?.mastersTitles, hasCareerData),
       logo: "/snooker/triple-crown/masters.webp",
     },
   ];
@@ -174,7 +176,7 @@ export function PlayerDetailContent({
           <h1>{player.nameZh}</h1>
           <p>{player.nameEn}</p>
           {player.nicknameZh ? <p className={styles.nickname}>“{player.nicknameZh}”</p> : null}
-          <span className={styles.countryPill}>{player.nationalityZh ?? "国籍待补充"}</span>
+          <span className={styles.countryPill}>{player.nationalityZh ?? "—"}</span>
 
           <div className={styles.heroRank}>
             <span><small>世界排名</small><strong>{ranking(player.currentRank)}</strong></span>
@@ -182,7 +184,7 @@ export function PlayerDetailContent({
           </div>
           <div className={styles.heroFacts}>
             <span>{birthLabel(player.dateOfBirth)}{age === null ? "" : ` · ${age}岁`}</span>
-            <span>{player.turnedPro === null ? "转职业年份待补充" : `${player.turnedPro}年转为职业球员`}</span>
+            <span>{player.turnedPro === null ? "—" : `${player.turnedPro}年转为职业球员`}</span>
           </div>
         </div>
         <div className={styles.heroPortrait}>
