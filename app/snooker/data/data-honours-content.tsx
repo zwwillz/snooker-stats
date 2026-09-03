@@ -75,7 +75,7 @@ export function HonoursLeadersSection({
               <span><strong>{player?.nameZh ?? leader.playerSlug}</strong><small>{player?.nameEn ?? leader.playerSlug}</small></span>
             </div>
             <div className={styles.seasonLeaderValue}><b>{formatHonoursValue(list, leader.value)}</b><span>{tieCount > 1 ? `${tieCount} 人并列` : "当前领先"}</span></div>
-          </> : <div className={styles.seasonLeaderEmpty}>数据准备中</div>}
+          </> : <div className={styles.seasonLeaderEmpty}>暂无数据</div>}
         </button>;
       })}
     </div>
@@ -129,7 +129,7 @@ export function HonoursDetailContent({
 
   return <div className={detailStyles.detailContent}>
     <aside className={detailStyles.technicalSidebar}>
-      <div className={detailStyles.technicalSidebarHeading}><small>HONOURS FILTER</small><strong>荣誉榜单</strong></div>
+      <div className={detailStyles.technicalSidebarHeading}><small>HONOURS</small><strong>荣誉榜单</strong></div>
       <div className={detailStyles.technicalMetricNav} role="tablist" aria-label="荣誉榜指标">
         {hub.lists.map((list) => <button
           type="button"
@@ -160,14 +160,14 @@ export function HonoursDetailContent({
             <i>›</i>
           </button>;
         })}
-        {!selected.rows.length ? <div className={styles.emptyState}>当前数据库暂无该项荣誉数据。</div> : null}
+        {!selected.rows.length ? <div className={styles.emptyState}>暂无该项荣誉数据。</div> : null}
       </div>
       <div className={detailStyles.rankingFooterMeta}>
         <span>来源：{hub.sourceName}{updated ? ` · 更新 ${updated}` : ""}</span>
-        <span>口径：本站已入库职业生涯统计</span>
+        <span>统计范围：本站已收录的职业生涯荣誉数据</span>
       </div>
       </div>
-    </section> : <section className={styles.card}><div className={styles.emptyState}>荣誉榜数据正在准备中。</div></section>}
+    </section> : <section className={styles.card}><div className={styles.emptyState}>暂无荣誉榜数据。</div></section>}
   </div>;
 }
 
