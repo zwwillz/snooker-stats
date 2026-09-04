@@ -52,6 +52,16 @@
   gap: 11px;
 }
 
+.players > div:first-child .avatar {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.players > div:first-child strong,
+.players > div:first-child small {
+  grid-column: 2;
+}
+
 .players > div:last-child {
   grid-template-columns: 1fr 54px;
   text-align: right;
