@@ -20,6 +20,23 @@ test('home and data compare actions inherit neighboring button typography', () =
   assert.doesNotMatch(css, /\.actionFrame \.actionReset\s*\{[^}]*font-weight:\s*850/);
 });
 
+test('compare teaser keeps each rank grouped under the matching player name', () => {
+  const css = read('app/snooker/compare/player-compare-teaser.module.css');
+  assert.match(css, /\.players > div:first-child \.avatar\s*\{[^}]*grid-column:\s*1;[^}]*grid-row:\s*1 \/ span 2;/);
+  assert.match(css, /\.players > div:first-child strong,\s*\.players > div:first-child small\s*\{[^}]*grid-column:\s*2;/);
+  assert.match(css, /\.players > div:last-child \.avatar\s*\{[^}]*grid-column:\s*2;[^}]*grid-row:\s*1 \/ span 2;/);
+  assert.match(css, /\.players > div:last-child strong,\s*\.players > div:last-child small\s*\{[^}]*grid-column:\s*1;/);
+});
+
+test('world ranking snapshots keep public player ranking fields synchronized', () => {
+  const migration = read('supabase/migrations/20260904092000_keep_player_world_rank_in_sync.sql');
+  assert.match(migration, /when \(new\.ranking_type = 'world_official'\)/);
+  assert.match(migration, /current_rank = new\.rank/);
+  assert.match(migration, /ranking_points = coalesce\(new\.ranking_money, new\.points\)/);
+  assert.match(migration, /from public\.snooker_latest_rankings r/);
+  assert.match(migration, /r\.list_key = 'world_official'/);
+});
+
 test('compare return restores the exact source route including player/data SPA state', () => {
   const compare = read('app/snooker/compare/player-compare-client.tsx');
   const player = read('app/snooker/players/player-detail-inline.tsx');
