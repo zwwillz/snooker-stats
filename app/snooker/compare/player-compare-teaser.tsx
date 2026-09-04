@@ -15,6 +15,16 @@ function Avatar({ player }: { player: SnookerPlayerListItem }) {
   return <span className={styles.avatar}>{player.avatarUrl ? <img src={player.avatarUrl} alt="" loading="lazy" decoding="async" /> : initials(player.nameEn)}</span>;
 }
 
+function PlayerIdentity({ player }: { player: SnookerPlayerListItem }) {
+  return <div className={styles.playerIdentity}>
+    <div className={styles.avatarRank}>
+      <Avatar player={player} />
+      <small>世界 #{player.currentRank ?? "—"}</small>
+    </div>
+    <strong>{player.nameZh}</strong>
+  </div>;
+}
+
 function percent(value: number | null | undefined) {
   return value === null || value === undefined ? "—" : `${value.toFixed(1)}%`;
 }
@@ -113,9 +123,9 @@ export default function PlayerCompareTeaser({
       </header>
     </div>
     <div className={styles.players}>
-      <div><Avatar player={left} /><strong>{left.nameZh}</strong><small>世界 #{left.currentRank ?? "—"}</small></div>
+      <PlayerIdentity player={left} />
       <b>VS</b>
-      <div><Avatar player={right} /><strong>{right.nameZh}</strong><small>世界 #{right.currentRank ?? "—"}</small></div>
+      <PlayerIdentity player={right} />
     </div>
     <div className={styles.metrics}>
       <div><strong>{data ? percent(leftStats?.matchWinRate) : "—"}</strong><span>比赛胜率</span><strong>{data ? percent(rightStats?.matchWinRate) : "—"}</strong></div>
