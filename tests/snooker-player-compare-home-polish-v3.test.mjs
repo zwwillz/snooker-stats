@@ -20,12 +20,12 @@ test('home and data compare actions inherit neighboring button typography', () =
   assert.doesNotMatch(css, /\.actionFrame \.actionReset\s*\{[^}]*font-weight:\s*850/);
 });
 
-test('compare teaser keeps each rank grouped under the matching player name', () => {
+test('compare teaser groups each world rank directly beneath its avatar', () => {
+  const source = read('app/snooker/compare/player-compare-teaser.tsx');
   const css = read('app/snooker/compare/player-compare-teaser.module.css');
-  assert.match(css, /\.players > div:first-child \.avatar\s*\{[^}]*grid-column:\s*1;[^}]*grid-row:\s*1 \/ span 2;/);
-  assert.match(css, /\.players > div:first-child strong,\s*\.players > div:first-child small\s*\{[^}]*grid-column:\s*2;/);
-  assert.match(css, /\.players > div:last-child \.avatar\s*\{[^}]*grid-column:\s*2;[^}]*grid-row:\s*1 \/ span 2;/);
-  assert.match(css, /\.players > div:last-child strong,\s*\.players > div:last-child small\s*\{[^}]*grid-column:\s*1;/);
+  assert.match(source, /<div className=\{styles\.avatarRank\}>\s*<Avatar player=\{player\} \/>\s*<small>世界 #\{player\.currentRank \?\? "—"\}<\/small>/);
+  assert.match(css, /\.avatarRank\s*\{[^}]*flex-direction:\s*column;[^}]*align-items:\s*center;/);
+  assert.match(css, /\.players > \.playerIdentity:last-child\s*\{[^}]*flex-direction:\s*row-reverse;/);
 });
 
 test('world ranking snapshots keep public player ranking fields synchronized', () => {
